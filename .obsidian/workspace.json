@@ -13,12 +13,12 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "cdm_wiki/index.md",
+                "file": "cdm_wiki/overview/cdm_architecture.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "index"
+              "title": "cdm_architecture"
             }
           }
         ]
@@ -191,11 +191,13 @@
   },
   "active": "9c581f54afe0f6e8",
   "lastOpenFiles": [
-    "cdm_wiki/CDM_INDEX.md",
+    "cdm_wiki/concepts/fpml_ingestion.md",
+    "cdm_wiki/concepts/event_lifecycle.md",
+    "cdm_wiki/concepts/front_office_pricing_bounded_context.md",
     "cdm_wiki/index.md",
+    "cdm_wiki/CDM_INDEX.md",
     "README.md",
     "common-domain-model/rosetta-source/src/main/rosetta/ingest-fpml-confirmation-product-swap-func.rosetta",
-    "cdm_wiki/concepts/fpml_ingestion.md",
     "cdm_wiki/SCHEMA.md",
     "cdm_wiki/README.md",
     "新しいフォルダー",

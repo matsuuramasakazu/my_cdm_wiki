@@ -84,9 +84,15 @@ cdm_wiki/
    `## [YYYY-MM-DD] query | <質問の件名>`
 
 ### 3.3 Lint ワークフロー（整合性・健全性チェック）
-定期的に Wiki の品質を監査する手順：
-1. **リンク切れチェック**: [index.md](index.md) や各ページのリンクが正しく開けるか検証する。
-2. **孤立ページ検出**: [index.md](index.md) にリンクされていないページがないか確認する。
-3. **矛盾・更新検証**: 古い記述が新しい一次情報と矛盾していないか確認する。
-4. **ログ追記**: チェック結果を [log.md](log.md) に追記する：
-   `## [YYYY-MM-DD] lint | Checked N pages, zero broken links`
+定期的に Wiki の品質を自動監査する手順：
+1. **自動バリデータの実行**:
+   ```bash
+   python ../.agents/skills/cdm-wiki-manager/scripts/validate_wiki.py
+   ```
+2. **検証項目**:
+   - **リンク切れチェック**: `index.md` や各ページの相対リンクが実在するか自動検証。
+   - **孤立ページ検出**: `index.md` に登録されていないコンテンツページがないか検出。
+   - **Frontmatter 検証**: 必須キー（`title`, `category`, `sources`, `last_updated`, `tags`）および親ディレクトリとのカテゴリ一致を検証。
+   - **フォーマット検証**: `log.md` のアクション・日付形式の整合性を検証。
+3. **ログ追記**: チェック結果を [log.md](log.md) に追記する：
+   `## [YYYY-MM-DD] lint | Checked N pages, zero errors`

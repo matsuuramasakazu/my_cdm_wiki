@@ -32,5 +32,26 @@
 - `concepts/fpml_ingestion.md` を更新し、CDM に標準組み込みの FpML Ingestion 機能と、標準非提供の Export/Projection 仕様（カスタム実装が必要である旨）および金利スワップ (IRS) の `TradeState` ↔ FpML ノード対応表を記録・保存。
 - `index.md` の該当ページ要約文を更新。
 - 事実誤認（CDM 標準での Export サポート）に関する Wiki 記述の訂正を実施。
+## [2026-08-12] query | CDMに基づくフロントオフィスプライシング業務のBounded Context分割とマイクロサービス設計
+- CDM をドメインリファレンスとして活用し、フロントオフィスのプライシング業務を 5 つの Bounded Context（Market Data, Indication & Quoting, Pricing & Risk, Trade Negotiation & Confirmation, Trade Capture & Booking）に分割。
+- 各コンテキストにおける CDM オブジェクト（`PriceQuantity`, `TradableProduct`, `Payout`, `WorkflowStep`, `TradeState` 等）の役割・対応関係を定義。
+- `index.md` カタログを更新。
 
+## [2026-08-12] query | 約定条件 Solver（逆算・探索）処理のコンテキスト所属および PV 計算エンジン依存関係の追加
+- `concepts/front_office_pricing_bounded_context.md` にサブセクション 2.6 を追加。
+- 約定条件（Par Coupon, Strike 等）を解く Solver 処理の主要実行エンジンとしての位置付け（Pricing & Risk Valuation Context）と呼出元（Indication / Negotiation Context）の役割分担を定義。
+- Solver 探索ループにおける PV 計算エンジンへのインメモリ・ローカル依存性を解説。
+
+## [2026-08-14] query | FpML PartyReference (xsd:IDREF / ecore:reference) 属性仕様と CDM 参照解決構造の反映
+- `concepts/fpml_ingestion.md` にセクション 5 を追加。
+- XML スキーマにおける `xsd:ID` / `xsd:IDREF` の参照整合性保証、EMF ECore バインディング用 `ecore:reference` メタデータ、および CDM (`ReferenceWithMetaParty`) での `href` 解決構造を記録。
+- `index.md` の要約を更新。
+
+## [2026-08-14] setup | AI Agent ハーネスの最適化（Antigravity Skills 新設・自動リンター配備）
+- Antigravity 2.0 Skills 機構を導入し、`.agents/skills/` 配下に以下を新設：
+  - `cdm-wiki-manager`: Wiki ライフサイクル（Query還元, Ingest, Lint, Frontmatter規約）の自動管理スキル。
+  - `cdm-wiki-manager/scripts/validate_wiki.py`: Wiki 整合性・壊れたリンク・Frontmatter・カタログ登録の自動検証リンター。
+  - `cdm-navigator`: 140+ の Rosetta DSL / Java コードベース高速探索・逆引きスキル。
+- `.agents/AGENTS.md` および `cdm_wiki/SCHEMA.md` のルール・手順書を洗練・同期。
+- `validate_wiki.py` による自動整合性チェックを実施（Error: 0）。
 

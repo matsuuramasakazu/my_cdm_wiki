@@ -1,18 +1,16 @@
 # FINOS Common Domain Model (CDM) LLM-Wiki
 
-`cdm_workspace/cdm_wiki/` へようこそ。
-
 本 Wiki は、[FINOS Common Domain Model (CDM)](CDM_INDEX.md) に関する知識を蓄積・維持するための AI 管理型ナレッジベースです。[Andre Karpathy 氏の LLM Wiki 構想](https://gist.github.com/karpathy/442a6bf555914893e9891c11519de94f) に基づいて構築されています。
 
 ---
 
-## 🤖 重要: AI エージェント向け指示事項（Antigravity IDE ハーネス）
+## 🤖 重要: AI エージェント向け指示事項
 
 > [!IMPORTANT]
 > 本ワークスペースで Wiki 操作（ソース取り込み、質問回答、または整合性チェック）を行う際：
-> 1. **Wiki 規約**: Wiki の構造、Frontmatter 規格、運用フローについては、必ず [SCHEMA.md](SCHEMA.md) を事前に確認してください。
-> 2. **ソースコード探索**: `../common-domain-model/` 内のソースコードや Rosetta DSL ファイルを探索する際は、必ず [CDM_INDEX.md](CDM_INDEX.md) を一次ナビゲーションインデックスとして利用してください。
-> 3. **メンテナンスルール**: ページの作成・更新を行った際は、必ず [index.md](index.md) を更新し、[log.md](log.md) に操作履歴を追記してください。
+> 1. **Wiki 規約 & スキル**: Wiki の構造、Frontmatter 規格、運用フローについては [SCHEMA.md](SCHEMA.md) およびワークスペーススキル `cdm-wiki-manager` を確認してください。
+> 2. **ソースコード探索**: `../common-domain-model/` 内のソースコードや Rosetta DSL ファイルを探索する際は、[CDM_INDEX.md](CDM_INDEX.md) および `cdm-navigator` スキルを利用してください。
+> 3. **メンテナンス & バリデーション**: ページの作成・更新後は [index.md](index.md) と [log.md](log.md) を更新し、`python ../.agents/skills/cdm-wiki-manager/scripts/validate_wiki.py` を実行してください。
 
 ---
 
