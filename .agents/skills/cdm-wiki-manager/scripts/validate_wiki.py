@@ -3,17 +3,19 @@
 validate_wiki.py - CDM LLM-Wiki 整合性・リンター検証スクリプト
 
 CDM LLM-Wiki の構造規約、YAML Frontmatter、Markdown リンクの健全性、
-index.md 登録状況、log.md フォーマットを自動検証します。
+外部 URL の HTTP 接続確認、index.md 登録状況、log.md フォーマットを自動検証します。
 標準ライブラリのみで動作します。
 
 使用法:
-    python validate_wiki.py [--wiki-dir <path>]
+    python validate_wiki.py [--wiki-dir <path>] [--skip-external]
 """
 
 import os
 import sys
 import re
 import argparse
+import urllib.request
+import urllib.error
 from pathlib import Path
 from typing import List, Dict, Tuple, Set
 
@@ -32,16 +34,19 @@ if hasattr(sys.stderr, "reconfigure"):
 VALID_CATEGORIES = {"sources", "overview", "concepts", "entities", "functions"}
 MANAGEMENT_FILES = {"CDM_INDEX.md", "README.md", "SCHEMA.md", "index.md", "log.md"}
 VALID_LOG_ACTIONS = {"setup", "ingest", "query", "refactor", "lint", "update"}
+USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
 
 
 class WikiValidator:
-    def __init__(self, wiki_dir: Path, workspace_root: Path):
+    def __init__(self, wiki_dir: Path, workspace_root: Path, check_external: bool = True):
         self.wiki_dir = wiki_dir.resolve()
         self.workspace_root = workspace_root.resolve()
+        self.check_external = check_external
         self.errors: List[str] = []
         self.warnings: List[str] = []
         self.checked_files_count = 0
         self.checked_links_count = 0
+        self.checked_external_urls: Dict[str, Tuple[bool, str]] = {}
 
     def log_error(self, file_path: Path, msg: str):
         rel_path = file_path.relative_to(self.workspace_root) if file_path.is_relative_to(self.workspace_root) else file_path
@@ -50,6 +55,54 @@ class WikiValidator:
     def log_warning(self, file_path: Path, msg: str):
         rel_path = file_path.relative_to(self.workspace_root) if file_path.is_relative_to(self.workspace_root) else file_path
         self.warnings.append(f"⚠️  [WARN]  {rel_path}: {msg}")
+
+    def check_external_url(self, url: str) -> Tuple[bool, str]:
+        """外部 URL の HTTP 接続性を確認する（キャッシュ付き）"""
+        if url in self.checked_external_urls:
+            return self.checked_external_urls[url]
+
+        import ssl
+        ctx = ssl.create_default_context()
+        ctx.check_hostname = False
+        ctx.verify_mode = ssl.CERT_NONE
+
+        req = urllib.request.Request(
+            url,
+            headers={"User-Agent": USER_AGENT}
+        )
+        try:
+            # まず HEAD で確認、405 等なら GET で確認
+            try:
+                head_req = urllib.request.Request(url, headers={"User-Agent": USER_AGENT}, method="HEAD")
+                with urllib.request.urlopen(head_req, timeout=10, context=ctx) as resp:
+                    if resp.status in (200, 301, 302, 307, 308):
+                        self.checked_external_urls[url] = (True, f"HTTP {resp.status}")
+                        return (True, f"HTTP {resp.status}")
+            except Exception:
+                pass
+
+            # GET リクエスト（ヘッダー・本文の疎通確認）
+            with urllib.request.urlopen(req, timeout=10, context=ctx) as resp:
+                status = resp.status
+                if status in (200, 301, 302, 307, 308):
+                    self.checked_external_urls[url] = (True, f"HTTP {status}")
+                    return (True, f"HTTP {status}")
+                else:
+                    res = (False, f"HTTP {status}")
+                    self.checked_external_urls[url] = res
+                    return res
+        except urllib.error.HTTPError as e:
+            res = (False, f"HTTPError {e.code}: {e.reason}")
+            self.checked_external_urls[url] = res
+            return res
+        except urllib.error.URLError as e:
+            res = (False, f"URLError: {e.reason}")
+            self.checked_external_urls[url] = res
+            return res
+        except Exception as e:
+            res = (False, f"Error: {str(e)}")
+            self.checked_external_urls[url] = res
+            return res
 
     def parse_frontmatter(self, file_path: Path, content: str) -> Dict[str, str]:
         """YAML frontmatter を簡易パースして辞書化する"""
@@ -109,14 +162,31 @@ class WikiValidator:
         return re.findall(pattern, no_code)
 
     def validate_links_in_file(self, file_path: Path, content: str):
-        """ファイル内の全 Markdown 相対リンクの実在性を検証"""
+        """ファイル内の全 Markdown 相対リンクおよび外部 URL の実在性を検証"""
         links = self.extract_markdown_links(content)
         for text, link in links:
             link = link.strip()
             self.checked_links_count += 1
 
-            # 外部 URL やメールリンクはスキップ
-            if link.startswith(("http://", "https://", "mailto:", "ftp://")):
+            # メールリンクはスキップ
+            if link.startswith("mailto:"):
+                continue
+
+            # 外部 URL の場合
+            if link.startswith(("http://", "https://")):
+                if self.check_external:
+                    success, detail = self.check_external_url(link)
+                    if not success:
+                        if "403" in detail:
+                            self.log_warning(
+                                file_path,
+                                f"外部URL接続確認 (WAF/403注意): '{link}' -> {detail}"
+                            )
+                        else:
+                            self.log_error(
+                                file_path,
+                                f"外部URL接続失敗 (リンク切れ): '{link}' (テキスト: '{text}') -> {detail}"
+                            )
                 continue
 
             # アンカーリンクのみ (#header) の場合
@@ -184,6 +254,8 @@ class WikiValidator:
 
     def run(self) -> bool:
         print(f"🔍 CDM LLM-Wiki の整合性検証を開始: {self.wiki_dir}")
+        if self.check_external:
+            print("🌐 外部 URL の事前接続確認: 有効")
         print("-" * 60)
 
         # 全 .md ファイルを走査
@@ -217,6 +289,8 @@ class WikiValidator:
         # 結果サマリー
         print(f"📊 検証完了: {self.checked_files_count} ファイル, {self.checked_links_count} リンクを検査しました。")
         print(f"   コンテンツページ数: {len(content_files)}")
+        if self.check_external:
+            print(f"   外部 URL 検査数: {len(self.checked_external_urls)} 件")
         print("-" * 60)
 
         if self.warnings:
@@ -245,6 +319,11 @@ def main():
         default=None,
         help="cdm_wiki ディレクトリへのパス (デフォルト: 自動検出)"
     )
+    parser.add_argument(
+        "--skip-external",
+        action="store_true",
+        help="外部 URL の HTTP 接続チェックをスキップする"
+    )
     args = parser.parse_args()
 
     script_path = Path(__file__).resolve()
@@ -269,7 +348,11 @@ def main():
         print(f"Error: cdm_wiki ディレクトリが見つかりません: {wiki_dir}")
         sys.exit(1)
 
-    validator = WikiValidator(wiki_dir=wiki_dir, workspace_root=workspace_root)
+    validator = WikiValidator(
+        wiki_dir=wiki_dir,
+        workspace_root=workspace_root,
+        check_external=not args.skip_external
+    )
     success = validator.run()
     sys.exit(0 if success else 1)
 

@@ -55,3 +55,16 @@
 - `.agents/AGENTS.md` および `cdm_wiki/SCHEMA.md` のルール・手順書を洗練・同期。
 - `validate_wiki.py` による自動整合性チェックを実施（Error: 0）。
 
+## [2026-08-14] ingest | CDM 外部公式一次情報・標準規格リンク集の追加
+- `sources/official_external_sources.md` を新規作成。
+- FINOS CDM 公式ポータル、GitHub、Rune DSL ドキュメント、ISDA / ICMA / ISLA の 3 大業界団体リソース、FpML 仕様ライブラリ、および GLEIF / CPMI-IOSCO 等の関連国際規格の一次情報リンクを体系化。
+- `index.md` カタログに登録。
+
+## [2026-08-14] update | 外部 URL 事前接続確認の絶対ルール化およびリンター機能拡張
+- `validate_wiki.py` に外部 URL の HTTP 接続性（200 OK）自動検証機能を実装。
+- `sources/official_external_sources.md` 内の全 URL をテストし、確実に接続可能な正確な URL のみに精査・更新。
+- `.agents/AGENTS.md`、`cdm_wiki/SCHEMA.md`、および `cdm-wiki-manager/SKILL.md` に「外部 URL 事前接続確認の義務（絶対ルール）」を明文化。
+- 全件リンター監査を実行し合格（全 16 ファイル・156 リンク・外部 URL 19 件 Error: 0）。
+
+
+

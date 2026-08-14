@@ -86,10 +86,12 @@ tags: [cdm, rosetta, derivatives, tag_name]
 ```
 
 ### ハイパーリンク規格
-- 必ず Markdown 相対リンクを使用します（例: `[TradeState](../entities/core_data_types.md)` または `[product-asset-type.rosetta](../../common-domain-model/rosetta-source/src/main/rosetta/product-asset-type.rosetta)`）。
-- アンカー付きリンクもサポートされます（例: `[決済条件](../concepts/product_modeling.md#2-決済条件)`）。
+- **ローカル相対リンク**: 必ず Markdown 相対リンクを使用します（例: `[TradeState](../entities/core_data_types.md)` または `[product-asset-type.rosetta](../../common-domain-model/rosetta-source/src/main/rosetta/product-asset-type.rosetta)`）。
+- **外部 URL 接続確認（絶対ルール）**: 外部 URL を掲載する際は、事前に必ず HTTP 疎通テスト（200 OK）を行い、実在する正確な URL のみを記載します。
+- **アンカーリンク**: アンカー付きリンクもサポートされます（例: `[決済条件](../concepts/product_modeling.md#2-決済条件)`）。
 
 ---
 
-## 🚫 不可変性の原則
-- `common-domain-model/` ディレクトリ配下のソースコードおよび DSL ファイルは**一次情報（Raw Source）**であり、Wiki 操作や質問回答においてエージェントが直接編集してはなりません。
+## 🚫 不可変性 & 品質管理の原則
+- **一次ソース不可変**: `common-domain-model/` ディレクトリ配下のソースコードおよび DSL ファイルは読み取り専用であり、直接編集してはなりません。
+- **URL 接続性保証**: 未検証の URL や 404/エラーとなるリンクの掲載は固く禁止されます。必ず `validate_wiki.py` を実行して合格を確認してください。

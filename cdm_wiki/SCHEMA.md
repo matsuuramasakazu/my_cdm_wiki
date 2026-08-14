@@ -59,7 +59,9 @@ cdm_wiki/
   tags: [cdm, rosetta, derivatives]
   ---
   ```
-- **ハイパーリンク規約**: 相対パスを使用した Markdown リンク（例: `[product-asset-type.rosetta](../common-domain-model/rosetta-source/src/main/rosetta/product-asset-type.rosetta)`）を記述する。
+- **ハイパーリンク規約**:
+  - **ローカル相対リンク**: 相対パスを使用した Markdown リンク（例: `[product-asset-type.rosetta](../common-domain-model/rosetta-source/src/main/rosetta/product-asset-type.rosetta)`）を記述する。
+  - **外部 URL 接続確認（絶対ルール）**: 外部 URL（`https://...`）を掲載する際は、必ず事前に HTTP リクエスト等で疎通確認（200 OK）を行い、有効性が確認された URL のみを掲載しなければならない。リンター `validate_wiki.py` にて自動検証される。
 
 ---
 

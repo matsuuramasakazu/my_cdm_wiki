@@ -16,6 +16,7 @@
 ## 2. 取り込み済み一次ソース (`sources/`)
 
 - **[cdm_index_source.md](sources/cdm_index_source.md)**: 一次ソース [CDM_INDEX.md](CDM_INDEX.md) およびリポジトリ全体構造の総合要約。
+- **[official_external_sources.md](sources/official_external_sources.md)**: FINOS、ISDA、ICMA、ISLA、FpML、REGnosys (Rune DSL)、国際規制標準等の公式外部一次情報・リファレンスリンク集。
 
 ---
 
