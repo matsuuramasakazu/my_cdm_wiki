@@ -34,6 +34,7 @@
 - **[legal_and_margin.md](concepts/legal_and_margin.md)**: ISDA/ICMA/ISLA マスターアグリーメント、CSA (担保契約)、Initial/Variation Margin 計算規則。
 - **[observables_and_rates.md](concepts/observables_and_rates.md)**: 参照金利(FRO: SOFR, EURIBOR, TONA)、複利計算、日数計算(Day Count)。
 - **[front_office_pricing_bounded_context.md](concepts/front_office_pricing_bounded_context.md)**: CDMをリファレンスとするフロントオフィス・プライシング業務の5つのBounded Context分割およびマイクロサービスアーキテクチャ設計。
+- **[json_serialization_and_dialects.md](concepts/json_serialization_and_dialects.md)**: CDM JSON のシリアライゼーション仕様、@メタデータアノテーション構造、および用途・参照解決・DRR別の主要方言とJava/Python対応能力。
 
 ---
 

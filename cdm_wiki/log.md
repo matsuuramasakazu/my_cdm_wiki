@@ -66,5 +66,17 @@
 - `.agents/AGENTS.md`、`cdm_wiki/SCHEMA.md`、および `cdm-wiki-manager/SKILL.md` に「外部 URL 事前接続確認の義務（絶対ルール）」を明文化。
 - 全件リンター監査を実行し合格（全 16 ファイル・156 リンク・外部 URL 19 件 Error: 0）。
 
+## [2026-08-18] query | CDM JSON シリアライゼーション仕様と主要方言の整理・還元（CDM 7.x/6.x 準拠）
+- `concepts/json_serialization_and_dialects.md` を作成・改訂。
+- CDM の JSON 表現における 3 つの主要差異軸（メタデータ修飾 Qualified vs Unqualified、参照解決 Normalized vs Resolved、用途射影 Core Domain vs DRR/Projection）を体系化（不要な Legacy 2.x/3.x 記述を排除）。
+- 現行メジャー `v7.x` / 直前メジャー `v6.x` を前提とした Java (`RuneJsonObjectMapper` / Jackson) および Python (`cdm-python` / Pydantic) のシリアライズ・デシリアライズ対応能力マトリクスと技術的根拠・公式一次情報リンク（FINOS, Rune, ISDA）を整備。
+- Unqualified JSON のシステム間相互運用における 3 大アーキテクチャパターン（汎用 P2P 相互運用での Qualified 必須性、UI 配信 Consumer パターン、型確定 API/BFF Adapter パターン）を追記。
+- JSON シリアライズにおける参照ポインタ表現体系（`@key` / `@key:external` / `@key:location` と `@ref` / `@ref:external` / `@ref:scoped` / `@ref:location`、および `ReferenceWithMeta<T>` の解決ライフサイクル）を追記。
+- `globalKey`（`@key`）が主キーではなくコンテンツハッシュ（決定論的構造ハッシュ）である仕様特性と、同一ドキュメント内に重複 `globalKey`（`"globalKey": "0"` 等）が存在することの妥当性・仕様適合性を追記。
+- `index.md` カタログに登録。
+
+
+
+
 
 
