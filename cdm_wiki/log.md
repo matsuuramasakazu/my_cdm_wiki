@@ -96,3 +96,8 @@
 - `event-common-type.rosetta`, `product-template-type.rosetta`, `product-asset-type.rosetta`, `product-asset-floatingrate-type.rosetta` 等からプレーン金利スワップ（Fixed/Float IRS）の 4 階層型構造を抽出。
 - `TradeState` $\rightarrow$ `Trade` (`TradableProduct`) $\rightarrow$ `EconomicTerms` $\rightarrow$ `InterestRatePayout`（Fixed/Floating）の詳細なクラス関連および属性定義を Mermaid クラス図として体系化。
 - `concepts/vanilla_irs_trade_structure.md` を新規作成し、`index.md` カタログに登録。
+
+## [2026-08-19] query | 元本スケジュール定義クラス（NonNegativeQuantitySchedule, DatedValue, PrincipalPayments）の体系化
+- 想定元本スケジュール（Amortizing/Step Notional）、元本交換スケジュール（PrincipalPayments）、為替連動リセット（FxLinkedNotionalSchedule）の型構造を特定。
+- `concepts/vanilla_irs_trade_structure.md` にセクション 3 を追加し、クラス図と属性対応表を追記。
+
