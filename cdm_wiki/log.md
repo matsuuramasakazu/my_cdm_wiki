@@ -73,10 +73,26 @@
 - Unqualified JSON のシステム間相互運用における 3 大アーキテクチャパターン（汎用 P2P 相互運用での Qualified 必須性、UI 配信 Consumer パターン、型確定 API/BFF Adapter パターン）を追記。
 - JSON シリアライズにおける参照ポインタ表現体系（`@key` / `@key:external` / `@key:location` と `@ref` / `@ref:external` / `@ref:scoped` / `@ref:location`、および `ReferenceWithMeta<T>` の解決ライフサイクル）を追記。
 - `globalKey`（`@key`）が主キーではなくコンテンツハッシュ（決定論的構造ハッシュ）である仕様特性と、同一ドキュメント内に重複 `globalKey`（`"globalKey": "0"` 等）が存在することの妥当性・仕様適合性を追記。
+- 用途特化射影（Core Domain, Ingest中間形式, DRR）と 2 つの直交軸（Qualified/Unqualified × Normalized/Resolved）の明確な対応関係マッピング表を整理・追記。
 - `index.md` カタログに登録。
 
+## [2026-08-18] query | CDM 商品自動分類（Product Qualification）の階層判定アーキテクチャと具体例の整理・拡充
+- `functions/qualification_and_calculation.md` を更新。
+- ISDA Taxonomy v2 に準拠した 4 階層コンポーザブル判定体系（Asset Class → Base Product → Sub Product → Transaction Type）を整理。
+- バニラ金利スワップ（IRS）、OISスワップ、通貨スワップ（Cross-Currency Swap）、為替NDF、スワップション、株式TRS等の具体的な Rosetta DSL 判定関数（`Qualify_`）および判定ルール・コード例を解説。
+- 規制報告（Trade Reporting）自動化やシステム間相互運用における実務的メリットを体系化。
 
+## [2026-08-19] query | Rosetta DSL の全 Type (759件) および Function (1,303件) のドメイン・機能別集計とカタログ化
+- `rosetta-source/src/main/rosetta/` 配下の全 145 ファイルを網羅的に構文解析。
+- `type`（759件）、`func`（1,303件）、`enum`（279件）のドメインプレフィックス別（`ingest-fpml`, `product`, `legaldocumentation`, `base`, `event`, `observable`, `margin-schedule`）およびビジネス機能別の集計・分類を実施。
+- `overview/rosetta_dsl_inventory.md` を新規作成し、`index.md` カタログに登録。
 
+## [2026-08-19] query | 手動作成 Java コード（42ファイル / 43クラス）の機能別分類とメトリクス化
+- `rosetta-source/src/main/java/` 配下の手動実装 Java クラス（全 42 ファイル）を解析。
+- ネイティブ関数実装（28件）、証券貸借・決済ワークフロー（5件）、自動分類判定エンジン（3件）、Guice DI & ランタイム設定（3件）、市場観測 & コードリスト（3件）の 5 大分類に体系化。
+- `overview/rosetta_dsl_inventory.md` および `overview/cdm_architecture.md` を更新。
 
-
-
+## [2026-08-19] query | プレーン金利スワップ（Vanilla IRS）の Trade 型構造 & クラス図の整理・還元
+- `event-common-type.rosetta`, `product-template-type.rosetta`, `product-asset-type.rosetta`, `product-asset-floatingrate-type.rosetta` 等からプレーン金利スワップ（Fixed/Float IRS）の 4 階層型構造を抽出。
+- `TradeState` $\rightarrow$ `Trade` (`TradableProduct`) $\rightarrow$ `EconomicTerms` $\rightarrow$ `InterestRatePayout`（Fixed/Floating）の詳細なクラス関連および属性定義を Mermaid クラス図として体系化。
+- `concepts/vanilla_irs_trade_structure.md` を新規作成し、`index.md` カタログに登録。

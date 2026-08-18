@@ -23,6 +23,7 @@
 ## 3. システムアーキテクチャ & 設定 (`overview/`)
 
 - **[cdm_architecture.md](overview/cdm_architecture.md)**: CDM の全体構造、Rosetta (Rune) DSL ソース配置、および自動生成 Java クラスへの対応法則。
+- **[rosetta_dsl_inventory.md](overview/rosetta_dsl_inventory.md)**: Rosetta DSL 定義（Type 759件、Function 1,303件、Enum 279件）のドメイン別・機能別分類メトリクス & カタログ。
 
 ---
 
@@ -35,6 +36,7 @@
 - **[observables_and_rates.md](concepts/observables_and_rates.md)**: 参照金利(FRO: SOFR, EURIBOR, TONA)、複利計算、日数計算(Day Count)。
 - **[front_office_pricing_bounded_context.md](concepts/front_office_pricing_bounded_context.md)**: CDMをリファレンスとするフロントオフィス・プライシング業務の5つのBounded Context分割およびマイクロサービスアーキテクチャ設計。
 - **[json_serialization_and_dialects.md](concepts/json_serialization_and_dialects.md)**: CDM JSON のシリアライゼーション仕様、@メタデータアノテーション構造、および用途・参照解決・DRR別の主要方言とJava/Python対応能力。
+- **[vanilla_irs_trade_structure.md](concepts/vanilla_irs_trade_structure.md)**: プレーン金利スワップ（Vanilla IRS）の `TradeState` / `Trade` の 4 階層型構造および Rosetta DSL クラス図リファレンス。
 
 ---
 

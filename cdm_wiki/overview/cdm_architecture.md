@@ -44,10 +44,26 @@ DSL 内の 1 つの `type` 定義（例: `Payout`）から生成される構造�
 
 ---
 
-## 3. 手動実装 Java 拡張
+## 3. 手動実装 Java 拡張 (`src/main/java`)
 
-`src/main/java/` に配置：
-- **ランタイム設定**: `org.finos.cdm.CdmRuntimeModule`（Guice 依存性注入モジュール）
-- **自動分類ハンドラー**: `org.finos.cdm.qualify`
-  - `EconomicTermsQualificationHandler.java`: 商品適格性判定エンジン
-  - `BusinessEventQualificationHandler.java`: イベント適格性判定エンジン
+Rosetta DSL 単体では表現できない処理やフレームワーク結合を担う全 42 ファイル（43 クラス）の手動 Java 実装群です。
+
+1. **ネイティブ関数実装 (`cdm.*.functions.*Impl.java`)**: 28 ファイル
+   - 日時・カレンダー計算（`cdm.base.datetime.functions`: 11 ファイル）
+   - 数学・丸め・ベクトル演算（`cdm.base.math.functions`: 6 ファイル）
+   - FpML データ抽出・キー生成（`cdm.ingest.fpml.*`: 6 ファイル）
+   - スケジュール計算 & OpenGamma Strata 連携（`cdm.product.common.schedule.functions`: 5 ファイル）
+2. **証券貸借・決済ワークフロー (`cdm.security.lending.functions`)**: 5 ファイル
+   - 新規・返却決済ワークフロー実行（`RunNewSettlementWorkflow`, `RunReturnSettlementWorkflow` 等）
+3. **自動分類ハンドラー & エンジン (`org.finos.cdm.qualify`)**: 3 ファイル
+   - `EconomicTermsQualificationHandler.java`: 商品適格性判定エンジン
+   - `BusinessEventQualificationHandler.java`: イベント適格性判定エンジン
+   - `CdmQualificationHandlerProvider.java`: ハンドラープロバイダー
+4. **フレームワーク DI & ランタイム設定 (`org.finos.cdm.*`)**: 3 ファイル
+   - `CdmRuntimeModule.java`: Guice 依存性注入モジュール
+   - `CdmReferenceConfig.java`: 参照解決・ハッシュ設定
+   - `ResourcesUtils.java`: クラスパス内リソース読み込み
+5. **市場観測プロバイダ & コードリスト (`cdm.observable.*`, `org.finos.cdm.codelist`)**: 3 ファイル
+
+詳細なクラス一覧とメトリクスについては [rosetta_dsl_inventory.md](rosetta_dsl_inventory.md) を参照してください。
+

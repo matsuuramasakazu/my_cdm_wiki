@@ -105,14 +105,16 @@ CDM は取引主体（Party）、計算日スケジュール、数量（Quantity
 
 ---
 
-## 4. 方言③: 用途特化射影（Domain CDM vs Projection / DRR JSON）
+## 4. 方言③: 用途特化射影（Core Domain vs Ingest vs Projection / DRR JSON）
 
-1. **Core Domain CDM JSON**:
-   - [core_data_types.md](../entities/core_data_types.md) に定義された完全な `TradeState` / `BusinessEvent` 構造。
-2. **Ingest 中間形式 JSON**:
-   - Genericode コードリスト変換（`codelist2cdmjson.xsl`）や FpML マッピングパイプラインの中間出力 JSON。
-3. **Digital Regulatory Reporting (DRR) JSON**:
-   - 各国規制当局（CFTC、EMIR Refit、JFSA、ASIC、MAS 等）の提出要件に合わせて、CDM 内部状態から ISO 20022 準拠の JSON / XML スキーマへ射影（Projection）した派生データ形式。
+用途特化射影における各データ形式は、前述の 2 つの直交軸（**Qualified vs Unqualified** × **Normalized vs Resolved**）において以下のように位置付けられます：
+
+| 用途特化形式 | メタデータ修飾 (軸1) | 参照解決状態 (軸2) | 該当する表現・理由 |
+|---|:---:|:---:|---|
+| **1. Core Domain CDM JSON**<br>([core_data_types.md](../entities/core_data_types.md) の `TradeState`, `BusinessEvent` 等) | **Qualified** (標準)<br>*(または Unqualified)* | **Normalized** (標準)<br>*(または Resolved)* | **【標準】Qualified + Normalized**<br>CDM ランタイムが扱う標準状態。`@type` による多態性解決と `@key`/`@ref` によるグラフ参照を持つ。<br>*(※社内 Web API / UI 用途では Unqualified + Resolved に変換して利用)* |
+| **2. Ingest 中間形式 JSON**<br>・`fpml-confirmation-to-trade-state`<br>・`codelist` JSON (`codelist2cdmjson.xsl`) | <br>**Qualified**<br>**Unqualified** | <br>**Normalized**<br>**Resolved** | <br>**Qualified + Normalized**: FpML の `id`/`href` を `@key:external` / `@ref:scoped` にマッピングし、CDM の `@type` を付与した形式。<br>**Unqualified + Resolved**: Genericode XML から XSLT で変換されたコードリスト。`@` メタデータを持たず、ネストされたリストとして完結。 |
+| **3. Digital Regulatory Reporting (DRR) JSON**<br>(規制報告提出用) | **Unqualified**<br>(規制指定スキーマ) | **Resolved** | **Unqualified + Resolved (規制固有)**<br>各国規制当局（CFTC、EMIR Refit、JFSA 等）指定の ISO 20022 / CDE スキーマ等に射影された、メタデータなし・完全展開されたフラット/ツリー JSON。 |
+
 
 ---
 
