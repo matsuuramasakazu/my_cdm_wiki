@@ -30,7 +30,7 @@
 ## 4. ドメイン概念 & ビジネスロジック (`concepts/`)
 
 - **[product_modeling.md](concepts/product_modeling.md)**: 金利スワップ(IRS)、CDS、株式/オプション、コモディティ、スケジュール、決済条件、商品自動分類(Qualification)。
-- **[event_lifecycle.md](concepts/event_lifecycle.md)**: 取引ライフサイクルイベント（Execution, Clearing, Novation, Allocation, Termination）およびポジション管理。
+- **[event_lifecycle.md](concepts/event_lifecycle.md)**: 取引ライフサイクルイベント（BusinessEvent、13の不可分操作PrimitiveInstruction、Before/After状態遷移モデル、Novation/Allocation等）。
 - **[fpml_ingestion.md](concepts/fpml_ingestion.md)**: FpML XML メッセージと CDM オブジェクトの相互変換・マッピング構造、IRS TradeState 対応表、および PartyReference (xsd:IDREF) 参照解決。
 - **[legal_and_margin.md](concepts/legal_and_margin.md)**: ISDA/ICMA/ISLA マスターアグリーメント、CSA (担保契約)、Initial/Variation Margin 計算規則。
 - **[observables_and_rates.md](concepts/observables_and_rates.md)**: 参照金利(FRO: SOFR, EURIBOR, TONA)、複利計算、日数計算(Day Count)。

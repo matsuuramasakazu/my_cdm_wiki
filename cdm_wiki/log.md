@@ -101,3 +101,10 @@
 - 想定元本スケジュール（Amortizing/Step Notional）、元本交換スケジュール（PrincipalPayments）、為替連動リセット（FxLinkedNotionalSchedule）の型構造を特定。
 - `concepts/vanilla_irs_trade_structure.md` にセクション 3 を追加し、クラス図と属性対応表を追記。
 
+## [2026-08-19] query | 取引ライフサイクルイベント（BusinessEvent）のデータ構造 & 関数型状態遷移の体系化
+- `event-common-type.rosetta`, `event-workflow-type.rosetta`, `event-common-func.rosetta`, `event-qualification-func.rosetta` を分析。
+- `BusinessEvent` の Before/After 状態遷移モデル、13 種類の最小単位操作（`PrimitiveInstruction`）、および Novation/Allocation/Execution の具象フローを整理。
+- `concepts/event_lifecycle.md` を大幅に拡充し、`index.md` カタログを更新。
+
+
+
