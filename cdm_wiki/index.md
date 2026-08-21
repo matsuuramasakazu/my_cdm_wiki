@@ -24,6 +24,7 @@
 
 - **[cdm_architecture.md](overview/cdm_architecture.md)**: CDM の全体構造、Rosetta (Rune) DSL ソース配置、および自動生成 Java クラスへの対応法則。
 - **[rosetta_dsl_inventory.md](overview/rosetta_dsl_inventory.md)**: Rosetta DSL 定義（Type 759件、Function 1,303件、Enum 279件）のドメイン別・機能別分類メトリクス & カタログ。
+- **[versioning_and_compatibility.md](overview/versioning_and_compatibility.md)**: FINOS CDM のバージョニング体系（SemVer 2.0.0）、メジャー/マイナーのインクリメント基準、および後方互換性の保証範囲と境界。
 
 ---
 

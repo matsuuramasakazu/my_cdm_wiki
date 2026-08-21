@@ -106,5 +106,8 @@
 - `BusinessEvent` の Before/After 状態遷移モデル、13 種類の最小単位操作（`PrimitiveInstruction`）、および Novation/Allocation/Execution の具象フローを整理。
 - `concepts/event_lifecycle.md` を大幅に拡充し、`index.md` カタログを更新。
 
-
-
+## [2026-08-21] query | CDM バージョニング体系（SemVer）と後方互換性保証範囲の整理・還元
+- FINOS CDM の Semantic Versioning 2.0.0 仕様（`MAJOR.MINOR.PATCH` および `-DEV` プレリリース）を体系化。
+- メジャーバージョン（破壊的変更: 削除/改名/型変更/必須化/条件厳格化）およびマイナーバージョン（後方互換機能追加: オプショナル属性/新規型/新規関数/Enum値追加）のインクリメント基準を定義。
+- 同一メジャーバージョン内における後方互換性の保証範囲（過去データの 100% 妥当性保証、Java/API ソース・バイナリ互換性）および前方互換性・Enum網羅性チェック等の留意点を整理。
+- `overview/versioning_and_compatibility.md` を新規作成し、`index.md` カタログに登録。
