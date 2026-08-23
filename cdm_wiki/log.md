@@ -111,3 +111,10 @@
 - メジャーバージョン（破壊的変更: 削除/改名/型変更/必須化/条件厳格化）およびマイナーバージョン（後方互換機能追加: オプショナル属性/新規型/新規関数/Enum値追加）のインクリメント基準を定義。
 - 同一メジャーバージョン内における後方互換性の保証範囲（過去データの 100% 妥当性保証、Java/API ソース・バイナリ互換性）および前方互換性・Enum網羅性チェック等の留意点を整理。
 - `overview/versioning_and_compatibility.md` を新規作成し、`index.md` カタログに登録。
+
+## [2026-08-24] query | CDM バージョニング・互換性ドキュメントへの公式一次情報引用の具体化・追記
+- `overview/versioning_and_compatibility.md` に、FINOS CDM 公式ドキュメント（Versioning, Change Control Guidelines, Maintenance and Release, Major Release Scheduling Guidelines）からの英語原文引用および具体的セクション参照を追記。
+- 破壊的変更（Prohibited changes: 構造変更/削除/改名/制約厳格化/DSL式無効化/公開API変更）と許容変更（Allowed changes: 制約緩和/テストパック追加/文書更新/オプショナル要素追加）の公式定義を原文引用とともに整理。
+- PR 分類（Bug fix / Enhancement / Technical）およびリリースビルド（Major / Minor / Patch / Dev）ごとの承認者要件マトリクス（Maintainer, CRWG, SWG, TAWG）を公式ドキュメントから引用・体系化。
+- `sources/official_external_sources.md` および `index.md` に公式ガバナンス・バージョニングドキュメントへのリンクを反映。
+
