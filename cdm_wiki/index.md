@@ -38,6 +38,9 @@
 - **[front_office_pricing_bounded_context.md](concepts/front_office_pricing_bounded_context.md)**: CDMをリファレンスとするフロントオフィス・プライシング業務の5つのBounded Context分割およびマイクロサービスアーキテクチャ設計。
 - **[json_serialization_and_dialects.md](concepts/json_serialization_and_dialects.md)**: CDM JSON のシリアライゼーション仕様、@メタデータアノテーション構造、および用途・参照解決・DRR別の主要方言とJava/Python対応能力。
 - **[vanilla_irs_trade_structure.md](concepts/vanilla_irs_trade_structure.md)**: プレーン金利スワップ（Vanilla IRS）の `TradeState` / `Trade` の 4 階層型構造および Rosetta DSL クラス図リファレンス。
+- **[tradable_product_and_tradelot.md](concepts/tradable_product_and_tradelot.md)**: TradableProduct における product (NonTransferableProduct) と tradeLot (TradeLot) の分離設計思想、名目元本と価格の参照解決メカニズム、および principalPayment の実額表現。
+- **[contract_dates_modeling.md](concepts/contract_dates_modeling.md)**: 契約日付モデリングにおける EconomicTerms と CalculationPeriodDates の effectiveDate / terminationDate の使い分けと解決ロジック。
+- **[workflow_step_and_lifecycle_samples.md](concepts/workflow_step_and_lifecycle_samples.md)**: FpML 5.13 execution advice 由来の Ingestion 出力サンプル全18件に基づく WorkflowStep 構造、Primitiveライフサイクル操作、訂正・取消追跡、および EMIR Refit 規制分類。
 
 ---
 

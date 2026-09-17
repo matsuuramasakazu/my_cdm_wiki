@@ -333,6 +333,8 @@ classDiagram
 ---
 
 ## 4. 関連ドキュメント
+- [contract_dates_modeling.md](contract_dates_modeling.md): 契約日付モデリング：EconomicTerms と CalculationPeriodDates における effectiveDate / terminationDate の使い分け
+- [tradable_product_and_tradelot.md](tradable_product_and_tradelot.md): TradableProduct における product と tradeLot の分離構造 & 元本参照解決
 - [product_modeling.md](product_modeling.md): 商品モデリング & ISDA 分類体系
 - [event_lifecycle.md](event_lifecycle.md): 取引ライフサイクルと TradeState 状態遷移
 - [core_data_types.md](../entities/core_data_types.md): 主要エンティティ & データ型リファレンス

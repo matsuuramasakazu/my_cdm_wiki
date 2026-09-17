@@ -17,20 +17,20 @@ tags: [cdm, finos, isda, icma, isla, fpml, rosetta, rune, standards, references]
 
 ## 1. FINOS CDM 公式リソース（コード・ドキュメント・コミュニティ）
 
-| リソース名 | URL | 内容・用途 |
-|---|---|---|
-| **FINOS CDM ドキュメントポータル** | [https://cdm.finos.org/](https://cdm.finos.org/) | CDM 公式技術ドキュメント。6つのモデリング次元、プロダクトモデル、イベントライフサイクル仕様。 |
-| **FINOS CDM バージョニング仕様** | [https://cdm.finos.org/docs/versioning](https://cdm.finos.org/docs/versioning) | SemVer 2.0.0 の採用、バージョン番号構造、Production / Development リリーストレイン定義。 |
-| **FINOS CDM 変更管理ガイドライン** | [https://cdm.finos.org/docs/change-control-guidelines](https://cdm.finos.org/docs/change-control-guidelines) | 後方互換性の定義、Prohibited / Allowed 変更の個別ルール、PR 承認要件マトリクス。 |
-| **FINOS CDM 保守 & リリース手順** | [https://cdm.finos.org/docs/maintenance-and-release](https://cdm.finos.org/docs/maintenance-and-release) | リリースビルド承認マトリクス、PR レビューチェックリスト、ダウンストリーム依存検証。 |
-| **FINOS CDM メジャーリリース計画指針** | [https://cdm.finos.org/docs/major-release-scheduling-guidelines](https://cdm.finos.org/docs/major-release-scheduling-guidelines) | メジャーリリースの目的、SWG による3ヶ月前計画と承認、移行ガイド（Migration Guide）規定。 |
-| **FINOS CDM GitHub リポジトリ** | [https://github.com/finos/common-domain-model](https://github.com/finos/common-domain-model) | CDM 公式オープンソースコードベース（Rosetta DSL ソース、Java 生成クラス、テストスイート）。 |
-| **FINOS CDM ロードマップ** | [https://github.com/finos/common-domain-model/blob/master/ROADMAP.md](https://github.com/finos/common-domain-model/blob/master/ROADMAP.md) | 公式リリース計画および将来機能の開発ロードマップ。 |
-| **FINOS CDM プロジェクト概要** | [https://www.finos.org/common-domain-model](https://www.finos.org/common-domain-model) | FINOS コミュニティ、ガバナンス、ワーキンググループ活動情報。 |
-| **FINOS コミュニティ** | [https://www.finos.org/community](https://www.finos.org/community) | FINOS 各プロジェクトのコミュニティ参加およびワーキンググループ情報。 |
-| **Rune DSL (旧 Rosetta DSL) ドキュメント** | [https://docs.rosetta-technology.io/](https://docs.rosetta-technology.io/) | REGnosys / FINOS 提供の DSL 言語仕様、構文リファレンス、およびモデリングガイド。 |
-| **Rune DSL GitHub リポジトリ** | [https://github.com/finos/rune-dsl](https://github.com/finos/rune-dsl) | Rune (Rosetta) DSL のパーサー・ジェネレーター・IDE プラグインのオープンソースリポジトリ。 |
-| **REGnosys Rosetta DSL リポジトリ** | [https://github.com/REGnosys/rosetta-dsl](https://github.com/REGnosys/rosetta-dsl) | Rosetta DSL コア実装およびコンパイラリポジトリ。 |
+| リソース名                               | URL                                                                                                                                        | 内容・用途                                                           |
+| ----------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------- |
+| **FINOS CDM ドキュメントポータル**            | [https://cdm.finos.org/](https://cdm.finos.org/)                                                                                           | CDM 公式技術ドキュメント。6つのモデリング次元、プロダクトモデル、イベントライフサイクル仕様。               |
+| **FINOS CDM バージョニング仕様**             | [https://cdm.finos.org/docs/versioning](https://cdm.finos.org/docs/versioning)                                                             | SemVer 2.0.0 の採用、バージョン番号構造、Production / Development リリーストレイン定義。 |
+| **FINOS CDM 変更管理ガイドライン**            | [https://cdm.finos.org/docs/change-control-guidelines](https://cdm.finos.org/docs/change-control-guidelines)                               | 後方互換性の定義、Prohibited / Allowed 変更の個別ルール、PR 承認要件マトリクス。            |
+| **FINOS CDM 保守 & リリース手順**           | [https://cdm.finos.org/docs/maintenance-and-release](https://cdm.finos.org/docs/maintenance-and-release)                                   | リリースビルド承認マトリクス、PR レビューチェックリスト、ダウンストリーム依存検証。                     |
+| **FINOS CDM メジャーリリース計画指針**          | [https://cdm.finos.org/docs/major-release-scheduling-guidelines](https://cdm.finos.org/docs/major-release-scheduling-guidelines)           | メジャーリリースの目的、SWG による3ヶ月前計画と承認、移行ガイド（Migration Guide）規定。          |
+| **FINOS CDM GitHub リポジトリ**          | [https://github.com/finos/common-domain-model](https://github.com/finos/common-domain-model)                                               | CDM 公式オープンソースコードベース（Rosetta DSL ソース、Java 生成クラス、テストスイート）。        |
+| **FINOS CDM ロードマップ**                | [https://github.com/finos/common-domain-model/blob/master/ROADMAP.md](https://github.com/finos/common-domain-model/blob/master/ROADMAP.md) | 公式リリース計画および将来機能の開発ロードマップ。                                       |
+| **FINOS CDM プロジェクト概要**              | [https://www.finos.org/common-domain-model](https://www.finos.org/common-domain-model)                                                     | FINOS コミュニティ、ガバナンス、ワーキンググループ活動情報。                               |
+| **FINOS コミュニティ**                    | [https://www.finos.org/community](https://www.finos.org/community)                                                                         | FINOS 各プロジェクトのコミュニティ参加およびワーキンググループ情報。                           |
+| **Rune DSL (旧 Rosetta DSL) ドキュメント** | [https://docs.rosetta-technology.io/](https://docs.rosetta-technology.io/)                                                                 | REGnosys / FINOS 提供の DSL 言語仕様、構文リファレンス、およびモデリングガイド。             |
+| **Rune DSL GitHub リポジトリ**           | [https://github.com/finos/rune-dsl](https://github.com/finos/rune-dsl)                                                                     | Rune (Rosetta) DSL のパーサー・ジェネレーター・IDE プラグインのオープンソースリポジトリ。        |
+| **REGnosys Rosetta DSL リポジトリ**      | [https://github.com/REGnosys/rosetta-dsl](https://github.com/REGnosys/rosetta-dsl)                                                         | Rosetta DSL コア実装およびコンパイラリポジトリ。                                  |
 
 ---
 

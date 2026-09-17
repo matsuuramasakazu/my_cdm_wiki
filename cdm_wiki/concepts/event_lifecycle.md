@@ -91,15 +91,15 @@ classDiagram
 
 `BusinessEvent` (`cdm.event.common.BusinessEvent` extends `EventInstruction`) は以下の属性で構成されます：
 
-| 属性名 | 型 | 多重度 | 役割・解説 |
-|---|---|---|---|
-| **`eventQualifier`** | `string` | `(0..1)` | 自動分類されたビジネスイベント区分名（例: `"Execution"`, `"Novation"`, `"Allocation"`, `"PartialTermination"` 等）。`event-qualification-func.rosetta` のルールにより自動判定されます。 |
-| **`instruction`** | `Instruction` | `(0..*)` | イベントを構成するプリミティブ操作のリスト。変更前状態（`before`）と実行指示（`primitiveInstruction`）をカプセル化。 |
-| **`after`** | `TradeState` | `(0..*)` | イベント実行によって新しく生成された取引状態（After TradeState）。1対1の変更だけでなく、1対N（Allocation）、N対1（Compression）をサポートするため複数指定可能。 |
-| **`eventDate`** | `date` | `(1..1)` | イベント発生日（約定日、解約合意日、利率決定日等）。 |
-| **`effectiveDate`** | `date` | `(0..1)` | イベントの法的・契約上の効力発生日（Value Date）。 |
-| **`intent`** | `EventIntentEnum` | `(0..1)` | イベント意図のアノテーション（例: 数量減額が「部分解約」か「ポートフォリオ再調整」か「エラー訂正」かを明示的に区別する際に使用）。 |
-| **`packageInformation`** | `IdentifiedList` | `(0..1)` | 複数取引がパッケージとして同時約定・処理された場合の識別子・共通情報。 |
+| 属性名                      | 型                 | 多重度      | 役割・解説                                                                                                                                            |
+| ------------------------ | ----------------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **`eventQualifier`**     | `string`          | `(0..1)` | 自動分類されたビジネスイベント区分名（例: `"Execution"`, `"Novation"`, `"Allocation"`, `"PartialTermination"` 等）。`event-qualification-func.rosetta` のルールにより自動判定されます。 |
+| **`instruction`**        | `Instruction`     | `(0..*)` | イベントを構成するプリミティブ操作のリスト。変更前状態（`before`）と実行指示（`primitiveInstruction`）をカプセル化。                                                                        |
+| **`after`**              | `TradeState`      | `(0..*)` | イベント実行によって新しく生成された取引状態（After TradeState）。1対1の変更だけでなく、1対N（Allocation）、N対1（Compression）をサポートするため複数指定可能。                                            |
+| **`eventDate`**          | `date`            | `(1..1)` | イベント発生日（約定日、解約合意日、利率決定日等）。                                                                                                                       |
+| **`effectiveDate`**      | `date`            | `(0..1)` | イベントの法的・契約上の効力発生日（Value Date）。                                                                                                                   |
+| **`intent`**             | `EventIntentEnum` | `(0..1)` | イベント意図のアノテーション（例: 数量減額が「部分解約」か「ポートフォリオ再調整」か「エラー訂正」かを明示的に区別する際に使用）。                                                                               |
+| **`packageInformation`** | `IdentifiedList`  | `(0..1)` | 複数取引がパッケージとして同時約定・処理された場合の識別子・共通情報。                                                                                                              |
 
 ---
 

@@ -118,3 +118,21 @@
 - PR 分類（Bug fix / Enhancement / Technical）およびリリースビルド（Major / Minor / Patch / Dev）ごとの承認者要件マトリクス（Maintainer, CRWG, SWG, TAWG）を公式ドキュメントから引用・体系化。
 - `sources/official_external_sources.md` および `index.md` に公式ガバナンス・バージョニングドキュメントへのリンクを反映。
 
+## [2026-09-16] query | TradableProduct における product と tradeLot の分離構造 & 元本参照解決の解説
+- `TradableProduct` における `product` (`NonTransferableProduct`) と `tradeLot` (`TradeLot`) の関心事の分離設計思想（商品条項定義 vs 約定ロット経済条件）を解明。
+- `tradeLot` 内の `quantity` に名目元本実額（Notional Amount）が直接保持される仕組みと、`@ref:scoped` によるポインタ参照解決メカニズムを整理。
+- `principalPayment` の `principalAmount` が元本交換の実金額（`Money` 型の実額）であることを DSL および FpML Ingestion コード（`MapPrincipalPayment`）から実証。
+- `concepts/tradable_product_and_tradelot.md` を作成し、`index.md`、`vanilla_irs_trade_structure.md`、`log.md` を更新。
+
+## [2026-09-16] query | EconomicTerms と CalculationPeriodDates における effectiveDate / terminationDate の使い分けと解決ロジック
+- `EconomicTerms`（契約全体レベル：CDS, Repo, GMSLA等）と `CalculationPeriodDates`（個別レグレベル：IRS, CCS等の利息ストリーム）における日付階層とスコープの違いを解明。
+- 金利スワップにおいてレグ側に日付が配置される実務的理由（通貨別カレンダー休日の非対称性、スタブ期間の独立性、変形スワップ）および FpML Ingestion でのマッピング差異を整理。
+- CDM 証拠金計算ロジック（`margin-schedule-func.rosetta` の `AuxiliarEffectiveDate` / `AuxiliarTerminationDate`）における `min` / `max` 集約による日付解決仕様を体系化。
+- `concepts/contract_dates_modeling.md` を新規作成し、`index.md`、`vanilla_irs_trade_structure.md`、`log.md` を更新。
+
+## [2026-09-17] query | WorkflowStep 構造と FpML ライフサイクル変換サンプル (Execution Advice) の解説
+- `fpml-5-13-processes-execution-advice` フォルダ内の CDM JSON 出力サンプル全18件を網羅的に分析。
+- CDM における `WorkflowStep` の役割（外部メッセージとビジネスイベントの分離、`proposedEvent` vs `businessEvent` vs `rejected`、Lineage管理）を体系化。
+- 取引ライフサイクル（新規約定 `ContractFormation`、一部契約更改 `Novation` (`split`)、中途解約 `quantityChange` (value=0 で全部解約)、条件変更 `ContractTermsAmendment`）における Primitive 操作と `before` 状態の組み合わせモデルを解説。
+- FpML メッセージの訂正（`action: "Correct"`）と取消（`executionAdviceRetracted`）の CDM での追跡手法、およびコモディティ現物レグ・ESMA EMIR REFIT 規制分類（ISO 4914 UPI, SWAP タクソノミー）を整理。
+- `concepts/workflow_step_and_lifecycle_samples.md` を新規作成し、`index.md` および `log.md` を更新。
