@@ -136,3 +136,4 @@
 - 取引ライフサイクル（新規約定 `ContractFormation`、一部契約更改 `Novation` (`split`)、中途解約 `quantityChange` (value=0 で全部解約)、条件変更 `ContractTermsAmendment`）における Primitive 操作と `before` 状態の組み合わせモデルを解説。
 - FpML メッセージの訂正（`action: "Correct"`）と取消（`executionAdviceRetracted`）の CDM での追跡手法、およびコモディティ現物レグ・ESMA EMIR REFIT 規制分類（ISO 4914 UPI, SWAP タクソノミー）を整理。
 - `concepts/workflow_step_and_lifecycle_samples.md` を新規作成し、`index.md` および `log.md` を更新。
+- ワークフロー JSON デシリアライズ後の状態遷移実行メカニズム（`Create_AcceptedWorkflowStepFromInstruction`, `Create_BusinessEvent`, `Create_TradeState` による `after: TradeState` 生成）、Validation、Qualification、キャッシュフロー試算、DRR 規制報告連携、Java/Python 実装アプローチを体系化して追記。

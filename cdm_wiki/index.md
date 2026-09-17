@@ -40,7 +40,7 @@
 - **[vanilla_irs_trade_structure.md](concepts/vanilla_irs_trade_structure.md)**: プレーン金利スワップ（Vanilla IRS）の `TradeState` / `Trade` の 4 階層型構造および Rosetta DSL クラス図リファレンス。
 - **[tradable_product_and_tradelot.md](concepts/tradable_product_and_tradelot.md)**: TradableProduct における product (NonTransferableProduct) と tradeLot (TradeLot) の分離設計思想、名目元本と価格の参照解決メカニズム、および principalPayment の実額表現。
 - **[contract_dates_modeling.md](concepts/contract_dates_modeling.md)**: 契約日付モデリングにおける EconomicTerms と CalculationPeriodDates の effectiveDate / terminationDate の使い分けと解決ロジック。
-- **[workflow_step_and_lifecycle_samples.md](concepts/workflow_step_and_lifecycle_samples.md)**: FpML 5.13 execution advice 由来の Ingestion 出力サンプル全18件に基づく WorkflowStep 構造、Primitiveライフサイクル操作、訂正・取消追跡、および EMIR Refit 規制分類。
+- **[workflow_step_and_lifecycle_samples.md](concepts/workflow_step_and_lifecycle_samples.md)**: FpML 5.13 execution advice 由来の Ingestion 出力サンプル全18件に基づく WorkflowStep 構造、Primitiveライフサイクル操作、訂正・取消追跡、EMIR Refit 規制分類、および JSON デシリアライズ後の状態遷移実行（after: TradeState 生成）メカニズム。
 
 ---
 

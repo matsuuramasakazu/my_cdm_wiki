@@ -249,8 +249,76 @@ FpML メッセージ処理において極めて重要な「後からの訂正」
 
 ---
 
-## 7. 関連ドキュメント・リンク
+## 7. JSON デシリアライズにより実行可能な処理 & 状態遷移メカニズム
+
+これらの `WorkflowStep` JSON ファイルを Java や Python 等の環境でデシリアライズ（オブジェクト化）することで、単なるデータ参照にとどまらず、**CDM 標準の組み込み関数によるライフサイクル状態遷移の実行、バリデーション、キャッシュフロー計算、規制報告連携**などの高度なビジネスロジックを実行できます。
+
+```mermaid
+graph TD
+    JSON[WorkflowStep JSON<br/>proposedEvent] -->|Deserialize| WS_Obj[WorkflowStep オブジェクト]
+    WS_Obj -->|Create_AcceptedWorkflowStepFromInstruction| Accepted_WS[Accepted WorkflowStep]
+    Accepted_WS -->|Create_BusinessEvent| BE[BusinessEvent]
+    BE -->|Create_TradeState / Create_Split| After[after: TradeState<br/>最新の取引状態]
+    After -->|Qualify_| Qual[商品・イベント自動判定<br/>ISDA Taxonomy]
+    After -->|Calculation Funcs| CF[キャッシュフロー・利息計算<br/>スケジュール展開]
+    After -->|ISDA DRR| Rep[規制報告メッセージ自動生成<br/>EMIR / CFTC / JFSA]
+```
+
+### (1) 提案イベントの実行と確定状態（`after: TradeState`）の生成
+
+ユーザーが最も関心を寄せる「**event の action / instruction を実行して after の `TradeState` を生成できるか？**」という点について、CDM にはまさにそのための純粋関数群が標準実装されています：
+
+1. **`Create_AcceptedWorkflowStepFromInstruction`**:
+   - `proposedEvent` を含む `WorkflowStep` を入力とし、提案を承認（Accept）した新しい `WorkflowStep` を生成します。
+   - 内部で `Create_BusinessEvent` を呼び出します。
+2. **`Create_BusinessEvent`**:
+   - 各 `instruction`（`primitiveInstruction` と `before` の `TradeState`）に対して、該当するプリミティブ処理関数を呼び出します。
+3. **`Create_TradeState` / `Create_Split` / `Create_Exercise`**:
+   - **契約更改の場合 (`split`)**: `Create_Split` が呼ばれ、分割された複数の新 `TradeState`（残存取引と新取引）が生成されます。
+   - **単一取引変更の場合**: `Create_TradeState` 内で以下の順序でプリミティブが適用されます：
+     $$\text{execution} \rightarrow \text{quantityChange} \rightarrow \text{termsChange} \rightarrow \text{partyChange} \rightarrow \text{contractFormation} \rightarrow \text{transfer} \dots$$
+   - 中途解約（全部解約）であれば数量が 0 となり、`state.closedState = Terminated` の確定状態（`after`）が返されます。
+4. **系統管理（Lineage）の自動確立**:
+   - 生成された承認済みステップの `previousWorkflowStep` に元の提案ステップの `@key` が自動バインドされ、完全な監査トレースが成立します。
+
+### (2) CDM 組み込みビジネスルール・整合性検証（Validation）
+
+Rosetta の型システムには多数の `condition`（不変条件・整合性制約）が定義されており、デシリアライズ時に自動監査できます：
+- **ワークフロー制約**: キャンセル済みのステップに対して承認や新規イベントを作成しようとしていないか（`CancelledProposedStep`）。
+- **状態制約**: 数量が負になっていないか、開始日と終了日の前後関係が正当か、必要な当事者参照が解決されているか。
+
+### (3) 商品自動適格性判定（Product Qualification）
+
+生成された `after.trade` に対し、CDM の `Qualify_` 関数群を実行できます：
+- 外部タグや自己申告に頼らず、契約の経済的条件（`Payout`、`RateSpecification` 等）から、ISDA Taxonomy（例: `InterestRate_IRSwap_FixedFloat`, `CreditDefaultSwap_SingleName`）を数学的に判定・検証。
+
+### (4) スケジュール展開 & キャッシュフロー・利息試算
+
+デシリアライズされた `TradeState` を元に、以下の計算関数を評価可能：
+- **利息計算期間の展開**: `CalculationPeriodDates` から各クーポンの開始日・終了日・支払日リストを生成。
+- **リセット & 浮動レート計算**: `ResolveObservation` や複利計算ロジックを適用して各期の確定支払額を計算。
+- **担保・証拠金計算**: CDM の証拠金計算関数や ISDA SIMM インプットの算出。
+
+### (5) 国際規制レポーティング（ISDA DRR）連携
+
+デシリアライズした `TradeState` や `BusinessEvent` をそのまま ISDA DRR（Digital Regulatory Reporting）の入力として供給することで：
+- ESMA EMIR Refit、CFTC、JFSA（金融庁）、ASIC 等の各法域の規制報告ルールを評価し、規制当局へ提出する ISO 20022 XML 形式の取引報告メッセージを自動生成できます。
+
+---
+
+## 8. 言語別の実装アプローチ（Java vs Python）
+
+| 機能・観点 | Java (公式リファレンス) | Python (rosetta-models / SDK) |
+|---|---|---|
+| **デシリアライズ** | `RosettaObjectMapper.getDefault()` により型安全に完全マッピング | `rosetta-models` / Pydantic / dataclass により JSON パース |
+| **状態遷移の実行** | `Create_AcceptedWorkflowStepFromInstruction.evaluate(ws)` でネイティブ実行 | Java マイクロサービス（REST/gRPC）経由で実行、または DRR パイプライン連携 |
+| **型補完・IDE支援** | Builder パターン、厳密な型階層、Javadoc 完全対応 | 型ヒント（Type Hints）、属性辞書アクセス |
+
+---
+
+## 9. 関連ドキュメント・リンク
 - [取引イベント & ライフサイクル (Business Event データ構造)](./event_lifecycle.md)
 - [FpML メッセージ取り込み & マッピングアーキテクチャ](./fpml_ingestion.md)
 - [CDM JSON シリアライゼーション仕様 & 方言比較](./json_serialization_and_dialects.md)
-- [event-workflow-type.rosetta](../../common-domain-model/rosetta-source/src/main/rosetta/event-workflow-type.rosetta)
+- [event-workflow-func.rosetta](../../common-domain-model/rosetta-source/src/main/rosetta/event-workflow-func.rosetta)
+- [event-common-func.rosetta](../../common-domain-model/rosetta-source/src/main/rosetta/event-common-func.rosetta)

@@ -74,7 +74,7 @@ class WikiValidator:
             # まず HEAD で確認、405 等なら GET で確認
             try:
                 head_req = urllib.request.Request(url, headers={"User-Agent": USER_AGENT}, method="HEAD")
-                with urllib.request.urlopen(head_req, timeout=10, context=ctx) as resp:
+                with urllib.request.urlopen(head_req, timeout=30, context=ctx) as resp:
                     if resp.status in (200, 301, 302, 307, 308):
                         self.checked_external_urls[url] = (True, f"HTTP {resp.status}")
                         return (True, f"HTTP {resp.status}")
@@ -82,7 +82,7 @@ class WikiValidator:
                 pass
 
             # GET リクエスト（ヘッダー・本文の疎通確認）
-            with urllib.request.urlopen(req, timeout=10, context=ctx) as resp:
+            with urllib.request.urlopen(req, timeout=60, context=ctx) as resp:
                 status = resp.status
                 if status in (200, 301, 302, 307, 308):
                     self.checked_external_urls[url] = (True, f"HTTP {status}")
