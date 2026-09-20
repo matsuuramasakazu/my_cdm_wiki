@@ -5,10 +5,12 @@ sources:
   - "../CDM_INDEX.md"
   - "common-domain-model/rosetta-source/src/main/rosetta/event-common-type.rosetta"
   - "common-domain-model/rosetta-source/src/main/rosetta/event-common-func.rosetta"
+  - "common-domain-model/rosetta-source/src/main/rosetta/event-instructioncomposition-reset-type.rosetta"
+  - "common-domain-model/rosetta-source/src/main/rosetta/event-instructioncomposition-reset-func.rosetta"
   - "common-domain-model/rosetta-source/src/main/rosetta/event-workflow-type.rosetta"
   - "common-domain-model/rosetta-source/src/main/rosetta/event-qualification-func.rosetta"
-last_updated: "2026-08-19"
-tags: [events, lifecycle, business_event, instruction, primitive, trade_state, novation, allocation]
+last_updated: "2026-09-20"
+tags: [events, lifecycle, business_event, instruction, primitive, trade_state, reset, instruction_composition]
 ---
 
 # 取引イベント & ライフサイクル (Business Event データ構造)
@@ -155,9 +157,29 @@ classDiagram
                                                                                                  └── after[2]: TradeState(Fund2: 40M, Executed)
 ```
 
+### 4.4 金利・指標リセット（Reset）と Instruction Composition（命令合成機構）
+浮動金利のリセット処理においては、複雑な日付計算や観測日調整を段階的・関数型に合成する **Instruction Composition 機構**（`event-instructioncomposition-reset-*`）が定義されています。
+
+```mermaid
+graph TD
+    Step2["Reset Step 2: 計算期間決定<br>(DetermineUnadjustedCalculationPeriodInstruction)"] --> Step4["Reset Step 4: リセット日調整<br>(AdjustDateInstruction)"]
+    Step4 --> Step5["Reset Step 5: 未調整観測日決定<br>(DetermineUnadjustedObservationDatesInstruction)"]
+    Step5 --> Step6["Reset Step 6: 観測日営業日調整<br>(AdjustObservationDatesInstruction)"]
+    Step6 --> Exec["リセット命令実行<br>(ResetInstruction -> ResetHistory 更新)"]
+```
+
+- **段階的命令生成**:
+  1. `Create_DetermineUnadjustedCalculationPeriodInstruction`: 金利計算期間（Unadjusted Calculation Period）を特定。
+  2. `Create_AdjustDateInstruction`: 営業日カレンダーに基づくリセット日（Reset Date）の営業日調整。
+  3. `Create_DetermineUnadjustedObservationDatesInstruction`: 複利・平均計算（Compounding / Averaging）に必要な未調整観測日リストを生成。
+  4. `Create_AdjustObservationDatesInstruction`: 祝日・休日カレンダーを考慮した観測日（Observation Dates）の調整。
+  5. `UpdateResetCompositionState`: 各ステップの完了状態を管理し、次ステップの合成指示を決定（オーケストレーション）。
+
 ---
 
 ## 5. 関連ドキュメント
+- [contract_dates_modeling.md](contract_dates_modeling.md): 契約レベル・レグレベルの日付階層 & 営業日調整モデル
+- [workflow_step_and_lifecycle_samples.md](workflow_step_and_lifecycle_samples.md): WorkflowStep によるライフサイクルイベントの追跡
 - [vanilla_irs_trade_structure.md](vanilla_irs_trade_structure.md): バニラ IRS の TradeState / Trade クラス図
 - [core_data_types.md](../entities/core_data_types.md): 主要エンティティ & データ型リファレンス
 - [qualification_and_calculation.md](../functions/qualification_and_calculation.md): イベント自動適格性判定（`Qualify_`）の解説

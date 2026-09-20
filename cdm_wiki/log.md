@@ -137,3 +137,13 @@
 - FpML メッセージの訂正（`action: "Correct"`）と取消（`executionAdviceRetracted`）の CDM での追跡手法、およびコモディティ現物レグ・ESMA EMIR REFIT 規制分類（ISO 4914 UPI, SWAP タクソノミー）を整理。
 - `concepts/workflow_step_and_lifecycle_samples.md` を新規作成し、`index.md` および `log.md` を更新。
 - ワークフロー JSON デシリアライズ後の状態遷移実行メカニズム（`Create_AcceptedWorkflowStepFromInstruction`, `Create_BusinessEvent`, `Create_TradeState` による `after: TradeState` 生成）、Validation、Qualification、キャッシュフロー試算、DRR 規制報告連携、Java/Python 実装アプローチを体系化して追記。
+
+## [2026-09-20] update | 一次ソース最新版（CDM 7.0.0 → 7.4.0 / 7.x.x）への Wiki 全面整合性同期
+- 一次ソース `common-domain-model/rosetta-source/src` の 7.0.0 から 7.4.0（7.x.x ブランチ `efe1cb15c`）への更新に伴う整合性調査を実施。
+- `overview/rosetta_dsl_inventory.md` の定義メトリクスを最新化：Type 759→780型（+21型）、Function 1,303→1,323関数（+20関数）、Enum 279→280列挙型（+1型）。ドメイン別・機能別分類内訳を更新。
+- `overview/versioning_and_compatibility.md` に CDM 7.x 系（7.0.0〜7.4.0 安定本番版、7.x.x 開発ブランチ）のリリース状況と位置づけを追記。
+- `concepts/event_lifecycle.md` にリセット処理の Instruction Composition 機構（Reset Step 2〜6: `event-instructioncomposition-reset-*`）の段階的合成設計を追記。
+- `concepts/contract_dates_modeling.md` に CDM 7.x で追加された営業日調整・日付シフト関数群（`base-datetime-func`）および `CalculationPeriodImpl.java` の拡張を反映。
+- `concepts/fpml_ingestion.md` に FpML `executionNotification` 取込マッピングおよび当事者識別子スキーム拡張を追記。
+- `concepts/observables_and_rates.md` に参照金利観測種別判定ロジック（`DetermineObservationType` 等）を追記。
+- `CDM_INDEX.md`、`sources/cdm_index_source.md`、`index.md` のナビゲーションおよびカタログ要約を最新状態に同期。

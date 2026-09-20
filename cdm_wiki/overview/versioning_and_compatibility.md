@@ -9,7 +9,7 @@ sources:
   - "https://cdm.finos.org/docs/maintenance-and-release"
   - "https://cdm.finos.org/docs/major-release-scheduling-guidelines"
   - "https://semver.org/spec/v2.0.0.html"
-last_updated: "2026-08-24"
+last_updated: "2026-09-20"
 tags: [cdm, finos, versioning, semver, compatibility, breaking-changes, releases, governance]
 ---
 
@@ -24,7 +24,7 @@ FINOS Common Domain Model (CDM) は、金融業界全体（デリバティブ、
 ## 1. CDM バージョン番号の基本構造 & リリーストレイン
 
 ### 1.1 SemVer 2.0.0 の採用
-CDM のリリースバージョンは `MAJOR.MINOR.PATCH`（例: `6.24.0`, `7.1.0`）という 3 つの数字で表されます。
+CDM のリリースバージョンは `MAJOR.MINOR.PATCH`（例: `7.0.0`, `7.4.0`）という 3 つの数字で表されます。
 
 ```text
        MAJOR . MINOR . PATCH  [-DEV.x]
@@ -52,9 +52,12 @@ CDM では、コミュニティによる迅速な機能開発と金融機関の�
 
 | トレイン種別 | バージョン表記例 | 破壊的変更の可否 | 主な用途・利用対象 | アクセス権限 |
 |---|---|---|---|---|
-| **Development Version (DEV)** | `7.0.0-DEV.12` | ⭕ **許可**（互換性保証なし） | 次期メジャー向け新機能のプロトタイピング、コミュニティ開発 | Read / Write |
-| **Production Version (安定本番版)** | `6.24.0` | ❌ **厳格禁止**（後方互換性維持） | 本番システム、金融インフラ、規制報告パイプラインでの安定運用 | Read-Only |
-| **Earlier Production / LTS** | `5.20.0` | ❌ **厳格禁止**（保守のみ） | 旧バージョンを利用中の機関向け（段階的にサポート終了へ移行） | Read-Only |
+| **Development Version (DEV / HEAD)** | `8.x.x` (`8.0.0-DEV.x`) | ⭕ **許可**（互換性保証なし） | 次期機能のプロトタイピング、コミュニティ開発 | Read / Write |
+| **Production Version (最新安定本番版)** | `7.4.0` (7.0.0〜7.4.0) | ❌ **厳格禁止**（後方互換性維持） | 本番システム、金融インフラ、規制報告パイプラインでの安定運用 | Read-Only |
+| **Earlier Production / LTS** | `6.28.1` | ❌ **厳格禁止**（保守のみ） | 旧メジャー（CDM 6系）を利用中の機関向け（段階的移行支援） | Read-Only |
+
+> [!NOTE]
+> CDM 7.0.0 のメジャーリリース以降、7.1.0、7.2.0、7.3.0、7.4.0 と後方互換性を維持したマイナーリリースが順次実施されています。本 Wiki の一次ソースは 7.0.0 をベースとしつつ、最新の 7.4.0+（7.x.x ブランチ）の知見を取り込んでいます。
 
 ---
 
@@ -180,7 +183,7 @@ FINOS CDM では、変更が誤って破壊的にならないよう、PR の種�
 | **Major Release** (例: `7.0.0`) | **Maintainer 2 名 + SWG** | SWG による事前計画（3ヶ月前）。前回メジャーからの変更差分分析を含む。 |
 | **Minor Release** (例: `6.24.0`) | **Maintainer 2 名** | Maintainer が管理。約4週間隔での集約リリースを目標とする。 |
 | **Patch Release** (例: `6.24.1`) | **Maintainer 1 名** | Maintainer が不具合修正 PR の状況に応じて随時スケジューリング。 |
-| **Development Release** (例: `7.0.0-DEV.12`) | **Maintainer 1 名** | Maintainer が随時発行（PR 承認・テスト通過後即座にリリース可能）。 |
+| **Development Release** (例: `8.0.0-DEV.12`) | **Maintainer 1 名** | Maintainer が随時発行（PR 承認・テスト通過後即座にリリース可能）。 |
 
 ---
 

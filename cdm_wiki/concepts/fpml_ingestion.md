@@ -3,8 +3,8 @@ title: "FpML メッセージ取り込み & マッピングアーキテクチャ"
 category: "concepts"
 sources:
   - "../CDM_INDEX.md"
-last_updated: "2026-08-14"
-tags: [fpml, xml, ingestion, mapping, confirmation, swap, tradestate, partyreference, idref]
+last_updated: "2026-09-20"
+tags: [fpml, xml, ingestion, mapping, confirmation, swap, tradestate, partyreference, idref, execution_notification]
 ---
 
 # FpML メッセージ取り込み & マッピングアーキテクチャ
@@ -58,5 +58,23 @@ FpML における当事者参照（`PartyReference`）は、XML 文書内での�
 - **`ecore:reference` メタデータ**:
   - FpML XML Schema に付与される EMF (Eclipse Modeling Framework) 用アノテーションであり、XML スキーマから Java オブジェクトモデル（EMF ECore）を生成する際に、単なる文字列 ID ではなく該当の `Party` クラスインスタンスへの直接オブジェクト参照としてバインドされるよう指示します。
 - **CDM での参照解決 (`ReferenceWithMetaParty`)**:
-  - CDM (Rosetta DSL) では、`PartyReference` は `ReferenceWithMetaParty` / `Party` オブジェクトとして扱われ、FpML Ingestion 時に `href` ID を元に `trade -> party` リスト内の該当 `Party` インスタンスと自動解決・バインドされます（[ingest-fpml-confirmation-party-func.rosetta](../../common-domain-model/rosetta-source/src/main/rosetta/ingest-fpml-confirmation-party-func.rosetta) 参照）。
+  - CDM 側では `ReferenceWithMetaParty`（`externalReference` / `globalReference`）型として取り込まれ、CDM の参照解決エンジンにより該当 `Party` オブジェクトへの紐付けが行われます。
 
+---
+
+## 6. 執行通知 (ExecutionNotification) および自然人識別子マッピング
+
+FpML Ingestion では、執行通知メッセージおよび詳細な当事者識別子の取り込みロジックが提供されています：
+
+1. **`executionNotification` から `ExecutionInstruction` へのマッピング**:
+   - `ingest-fpml-confirmation-message-func.rosetta` および `ingest-fpml-confirmation-workflowstep-func.rosetta` において、FpML の `executionNotification` メッセージから CDM の `ExecutionInstruction` を直接生成するマッピングロジック（`MapTradeToExecutionInstruction` 等）が定義されています。
+2. **自然人・当事者識別子スキームのサポート**:
+   - `ingest-fpml-confirmation-party-func.rosetta` および `ingest-fpml-confirmation-other-func.rosetta` において、`personId` / `identifierType` と FpML 標準スキーム（LEI, NaturalPerson 等）を相互変換する `MapPersonIdentifierTypeEnum` 等の関数が備わっており、規制報告（MiFIR/EMIR REFIT）における自然人識別子の取り込みに対応しています。
+
+---
+
+## 7. 関連ドキュメント
+- [workflow_step_and_lifecycle_samples.md](workflow_step_and_lifecycle_samples.md): FpML executionAdvice からの WorkflowStep 変換サンプル解説
+- [contract_dates_modeling.md](contract_dates_modeling.md): FpML Ingestion におけるレグ・商品日付の振り分け
+- [vanilla_irs_trade_structure.md](vanilla_irs_trade_structure.md): TradeState 構造解説
+- [ingest-fpml-confirmation-party-func.rosetta](../../common-domain-model/rosetta-source/src/main/rosetta/ingest-fpml-confirmation-party-func.rosetta): 当事者マッピング関数定義

@@ -67,6 +67,7 @@ Rosetta DSL ファイルは `[ドメイン]-[サブドメイン]-[種類].rosett
 | 目的・知りたいこと | 優先参照ファイル | 補足キーワード・型名 |
 |---|---|---|
 | **取引イベント定義 (Execution, Clearing, Novation, Termination 等)** | [event-common-type.rosetta](../common-domain-model/rosetta-source/src/main/rosetta/event-common-type.rosetta) | `BusinessEvent`, `TradeState`, `Instruction` |
+| **金利・指標リセット & 命令合成 (Reset & Instruction Composition)** | [event-instructioncomposition-reset-type.rosetta](../common-domain-model/rosetta-source/src/main/rosetta/event-instructioncomposition-reset-type.rosetta)<br>[event-instructioncomposition-reset-func.rosetta](../common-domain-model/rosetta-source/src/main/rosetta/event-instructioncomposition-reset-func.rosetta) | `DetermineUnadjustedCalculationPeriodInstruction`, `AdjustObservationDatesInstruction`, `UpdateResetCompositionState` |
 | **イベント発生・状態更新ロジック** | [event-common-func.rosetta](../common-domain-model/rosetta-source/src/main/rosetta/event-common-func.rosetta) | `Create_Execution`, `Process_Allocation` |
 | **イベント自動判定 (Event Qualification)** | [event-qualification-func.rosetta](../common-domain-model/rosetta-source/src/main/rosetta/event-qualification-func.rosetta) | `Qualify_BusinessEvent`, `isQualifyingEvent` |
 | **ワークフロー・オーケストレーション** | [event-workflow-type.rosetta](../common-domain-model/rosetta-source/src/main/rosetta/event-workflow-type.rosetta)<br>[event-workflow-func.rosetta](../common-domain-model/rosetta-source/src/main/rosetta/event-workflow-func.rosetta) | `WorkflowStep`, `EventInstruction` |
@@ -76,7 +77,8 @@ Rosetta DSL ファイルは `[ドメイン]-[サブドメイン]-[種類].rosett
 
 | 目的・知りたいこと | 優先参照ファイル | 補足キーワード・型名 |
 |---|---|---|
-| **ヘッダー・当事者・共通データの取り込み** | [ingest-fpml-confirmation-common-func.rosetta](../common-domain-model/rosetta-source/src/main/rosetta/ingest-fpml-confirmation-common-func.rosetta)<br>[ingest-fpml-confirmation-party-func.rosetta](../common-domain-model/rosetta-source/src/main/rosetta/ingest-fpml-confirmation-party-func.rosetta) | `Ingest_FpML_Confirmation` |
+| **ヘッダー・当事者・共通データの取り込み** | [ingest-fpml-confirmation-common-func.rosetta](../common-domain-model/rosetta-source/src/main/rosetta/ingest-fpml-confirmation-common-func.rosetta)<br>[ingest-fpml-confirmation-party-func.rosetta](../common-domain-model/rosetta-source/src/main/rosetta/ingest-fpml-confirmation-party-func.rosetta) | `Ingest_FpML_Confirmation`, `MapPersonIdentifierTypeEnum` |
+| **執行通知・ワークフローステップ取込** | [ingest-fpml-confirmation-message-func.rosetta](../common-domain-model/rosetta-source/src/main/rosetta/ingest-fpml-confirmation-message-func.rosetta)<br>[ingest-fpml-confirmation-workflowstep-func.rosetta](../common-domain-model/rosetta-source/src/main/rosetta/ingest-fpml-confirmation-workflowstep-func.rosetta) | `MapTradeToExecutionInstruction`, `executionNotification` |
 | **特定商品別 FpML マッピング (全33ファイル)** | [ingest-fpml-confirmation-product-swap-func.rosetta](../common-domain-model/rosetta-source/src/main/rosetta/ingest-fpml-confirmation-product-swap-func.rosetta)<br>[ingest-fpml-confirmation-product-creditdefaultswap-func.rosetta](../common-domain-model/rosetta-source/src/main/rosetta/ingest-fpml-confirmation-product-creditdefaultswap-func.rosetta)<br>[ingest-fpml-confirmation-product-fxoption-func.rosetta](../common-domain-model/rosetta-source/src/main/rosetta/ingest-fpml-confirmation-product-fxoption-func.rosetta) など | `ingest-fpml-confirmation-product-*.rosetta` |
 
 ### 3.4 法的文書・契約・担保 (Legal Documentation & Margin)
@@ -91,7 +93,7 @@ Rosetta DSL ファイルは `[ドメイン]-[サブドメイン]-[種類].rosett
 
 | 目的・知りたいこと | 優先参照ファイル | 補足キーワード・型名 |
 |---|---|---|
-| **FRO (Floating Rate Option / 参照金利インデックス)** | [observable-asset-fro-enum.rosetta](../common-domain-model/rosetta-source/src/main/rosetta/observable-asset-fro-enum.rosetta)<br>[observable-asset-fro-type.rosetta](../common-domain-model/rosetta-source/src/main/rosetta/observable-asset-fro-type.rosetta) | `FloatingRateOptionEnum`, `SOFR`, `EURIBOR`, `TONA` |
+| **FRO (Floating Rate Option / 参照金利インデックス)** | [observable-asset-fro-enum.rosetta](../common-domain-model/rosetta-source/src/main/rosetta/observable-asset-fro-enum.rosetta)<br>[observable-asset-fro-type.rosetta](../common-domain-model/rosetta-source/src/main/rosetta/observable-asset-fro-type.rosetta)<br>[observable-asset-fro-func.rosetta](../common-domain-model/rosetta-source/src/main/rosetta/observable-asset-fro-func.rosetta) | `FloatingRateOptionEnum`, `DetermineObservationType`, `SOFR`, `TONA` |
 | **金利計算・複利・Term Rate 計算** | [observable-asset-calculatedrate-func.rosetta](../common-domain-model/rosetta-source/src/main/rosetta/observable-asset-calculatedrate-func.rosetta)<br>[observable-asset-calculatedrate-type.rosetta](../common-domain-model/rosetta-source/src/main/rosetta/observable-asset-calculatedrate-type.rosetta) | `CalculateFloatingRate`, `CompoundedIndex` |
 | **価格・評価・単価・数量 (PriceQuantity)** | [observable-asset-type.rosetta](../common-domain-model/rosetta-source/src/main/rosetta/observable-asset-type.rosetta)<br>[observable-asset-func.rosetta](../common-domain-model/rosetta-source/src/main/rosetta/observable-asset-func.rosetta) | `Price`, `Quantity`, `Observable` |
 
@@ -99,7 +101,7 @@ Rosetta DSL ファイルは `[ドメイン]-[サブドメイン]-[種類].rosett
 
 | 目的・知りたいこと | 優先参照ファイル | 補足キーワード・型名 |
 |---|---|---|
-| **営業日・カレンダー・日数計算 (Day Count)** | [base-datetime-type.rosetta](../common-domain-model/rosetta-source/src/main/rosetta/base-datetime-type.rosetta)<br>[base-datetime-daycount-func.rosetta](../common-domain-model/rosetta-source/src/main/rosetta/base-datetime-daycount-func.rosetta) | `BusinessCenterEnum`, `DayCountFractionEnum` |
+| **営業日調整・カレンダー・日数計算 (Day Count)** | [base-datetime-type.rosetta](../common-domain-model/rosetta-source/src/main/rosetta/base-datetime-type.rosetta)<br>[base-datetime-func.rosetta](../common-domain-model/rosetta-source/src/main/rosetta/base-datetime-func.rosetta)<br>[base-datetime-daycount-func.rosetta](../common-domain-model/rosetta-source/src/main/rosetta/base-datetime-daycount-func.rosetta) | `AdjustDateToBusinessDayConvention`, `ShiftBusinessDays`, `BusinessCenterEnum`, `DayCountFractionEnum` |
 | **当事者・法人識別子 (Party & LEI)** | [base-staticdata-party-type.rosetta](../common-domain-model/rosetta-source/src/main/rosetta/base-staticdata-party-type.rosetta)<br>[base-staticdata-identifier-type.rosetta](../common-domain-model/rosetta-source/src/main/rosetta/base-staticdata-identifier-type.rosetta) | `Party`, `PartyRole`, `LegalEntity` |
 | **数学・端数処理 (Rounding)** | [base-math-type.rosetta](../common-domain-model/rosetta-source/src/main/rosetta/base-math-type.rosetta)<br>[base-math-func.rosetta](../common-domain-model/rosetta-source/src/main/rosetta/base-math-func.rosetta) | `Rounding`, `ArithmeticOperationEnum` |
 

@@ -6,11 +6,12 @@ sources:
   - "vanilla_irs_trade_structure.md"
   - "../../common-domain-model/rosetta-source/src/main/rosetta/product-template-type.rosetta"
   - "../../common-domain-model/rosetta-source/src/main/rosetta/product-common-schedule-type.rosetta"
+  - "../../common-domain-model/rosetta-source/src/main/rosetta/base-datetime-func.rosetta"
   - "../../common-domain-model/rosetta-source/src/main/rosetta/margin-schedule-func.rosetta"
   - "../../common-domain-model/rosetta-source/src/main/rosetta/ingest-fpml-confirmation-product-swap-func.rosetta"
   - "../../common-domain-model/rosetta-source/src/main/rosetta/ingest-fpml-confirmation-product-creditdefaultswap-func.rosetta"
-last_updated: "2026-09-16"
-tags: [cdm, rosetta, effectivedate, terminationdate, economicterms, calculationperioddates, swap, dates]
+last_updated: "2026-09-20"
+tags: [cdm, rosetta, effectivedate, terminationdate, economicterms, calculationperioddates, swap, dates, businessday]
 ---
 
 # 契約日付モデリング：EconomicTerms と CalculationPeriodDates における effectiveDate / terminationDate の使い分け
@@ -127,6 +128,15 @@ func AuxiliarTerminationDate:
 
 ### 4.2 汎用商品の有効期間抽出関数
 CDS や Repo など全体日付を持つ商品については、`economicTerms -> effectiveDate` および `economicTerms -> terminationDate` を直接抽出します（`StandardizedScheduleDuration` 関数等）。
+
+### 4.3 営業日調整・日付ユーティリティ関数群 (`base-datetime-func`)
+CDM では、日付計算および営業日調整に関する関数型ユーティリティ（[`base-datetime-func.rosetta`](../../common-domain-model/rosetta-source/src/main/rosetta/base-datetime-func.rosetta)）が標準提供されています：
+
+- **`AdjustDateToBusinessDayConvention`**: 指定された営業日調整慣行（Following, ModifiedFollowing, Preceding, Nearest 等）に基づき日付を調整。
+- **`AdjustDateToFollowingBusinessDay` / `AdjustDateToPrecedingBusinessDay`**: 休日カレンダーを参照して翌営業日・前営業日にシフト。
+- **`ShiftBusinessDays`**: 指定された営業日数だけ前後にシフトする関数。
+- **`GenerateCalendarDateList` / `ExpandMissingObservationDates`**: 観測期間内の全日付の展開、および休日による欠落観測日を補完するリスト生成関数。
+- **Java ネイティブ実装 (`CalculationPeriodImpl.java`)**: OpenGamma Strata ライブラリとの連携および日付・期間生成ロジックが実装され、精度の高いキャッシュフロー期間算出がサポートされています。
 
 ---
 

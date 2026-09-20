@@ -23,23 +23,23 @@
 ## 3. システムアーキテクチャ & 設定 (`overview/`)
 
 - **[cdm_architecture.md](overview/cdm_architecture.md)**: CDM の全体構造、Rosetta (Rune) DSL ソース配置、および自動生成 Java クラスへの対応法則。
-- **[rosetta_dsl_inventory.md](overview/rosetta_dsl_inventory.md)**: Rosetta DSL 定義（Type 759件、Function 1,303件、Enum 279件）のドメイン別・機能別分類メトリクス & カタログ。
-- **[versioning_and_compatibility.md](overview/versioning_and_compatibility.md)**: FINOS CDM のバージョニング体系（SemVer 2.0.0）、公式ドキュメント引用に基づく変更種別定義（破壊的変更 vs 許容変更）、後方互換性の保証範囲、および PR・リリースの承認ガバナンス。
+- **[rosetta_dsl_inventory.md](overview/rosetta_dsl_inventory.md)**: Rosetta DSL 定義（Type 780件、Function 1,323件、Enum 280件）のドメイン別・機能別分類メトリクス & カタログ。
+- **[versioning_and_compatibility.md](overview/versioning_and_compatibility.md)**: FINOS CDM のバージョニング体系（SemVer 2.0.0）、公式ドキュメント引用に基づく変更種別定義（破壊的変更 vs 許容変更）、後方互換性の保証範囲、および CDM 7.x（7.4.0安定本番版、7.x.x開発ブランチ）のリリースガバナンス。
 
 ---
 
 ## 4. ドメイン概念 & ビジネスロジック (`concepts/`)
 
 - **[product_modeling.md](concepts/product_modeling.md)**: 金利スワップ(IRS)、CDS、株式/オプション、コモディティ、スケジュール、決済条件、商品自動分類(Qualification)。
-- **[event_lifecycle.md](concepts/event_lifecycle.md)**: 取引ライフサイクルイベント（BusinessEvent、13の不可分操作PrimitiveInstruction、Before/After状態遷移モデル、Novation/Allocation等）。
-- **[fpml_ingestion.md](concepts/fpml_ingestion.md)**: FpML XML メッセージと CDM オブジェクトの相互変換・マッピング構造、IRS TradeState 対応表、および PartyReference (xsd:IDREF) 参照解決。
+- **[event_lifecycle.md](concepts/event_lifecycle.md)**: 取引ライフサイクルイベント（BusinessEvent、13の不可分操作PrimitiveInstruction、リセット処理のInstruction Composition機構、Before/After状態遷移モデル等）。
+- **[fpml_ingestion.md](concepts/fpml_ingestion.md)**: FpML XML メッセージと CDM オブジェクトの相互変換・マッピング構造、executionNotification取込、IRS TradeState 対応表、および PartyReference (xsd:IDREF) 参照解決。
 - **[legal_and_margin.md](concepts/legal_and_margin.md)**: ISDA/ICMA/ISLA マスターアグリーメント、CSA (担保契約)、Initial/Variation Margin 計算規則。
-- **[observables_and_rates.md](concepts/observables_and_rates.md)**: 参照金利(FRO: SOFR, EURIBOR, TONA)、複利計算、日数計算(Day Count)。
+- **[observables_and_rates.md](concepts/observables_and_rates.md)**: 参照金利(FRO: SOFR, EURIBOR, TONA)、観測種別判定(DetermineObservationType)、複利計算、日数計算(Day Count)。
 - **[front_office_pricing_bounded_context.md](concepts/front_office_pricing_bounded_context.md)**: CDMをリファレンスとするフロントオフィス・プライシング業務の5つのBounded Context分割およびマイクロサービスアーキテクチャ設計。
 - **[json_serialization_and_dialects.md](concepts/json_serialization_and_dialects.md)**: CDM JSON のシリアライゼーション仕様、@メタデータアノテーション構造、および用途・参照解決・DRR別の主要方言とJava/Python対応能力。
 - **[vanilla_irs_trade_structure.md](concepts/vanilla_irs_trade_structure.md)**: プレーン金利スワップ（Vanilla IRS）の `TradeState` / `Trade` の 4 階層型構造および Rosetta DSL クラス図リファレンス。
 - **[tradable_product_and_tradelot.md](concepts/tradable_product_and_tradelot.md)**: TradableProduct における product (NonTransferableProduct) と tradeLot (TradeLot) の分離設計思想、名目元本と価格の参照解決メカニズム、および principalPayment の実額表現。
-- **[contract_dates_modeling.md](concepts/contract_dates_modeling.md)**: 契約日付モデリングにおける EconomicTerms と CalculationPeriodDates の effectiveDate / terminationDate の使い分けと解決ロジック。
+- **[contract_dates_modeling.md](concepts/contract_dates_modeling.md)**: 契約日付モデリングにおける EconomicTerms と CalculationPeriodDates の使い分け、営業日調整関数群(base-datetime-func)、および解決ロジック。
 - **[workflow_step_and_lifecycle_samples.md](concepts/workflow_step_and_lifecycle_samples.md)**: FpML 5.13 execution advice 由来の Ingestion 出力サンプル全18件に基づく WorkflowStep 構造、Primitiveライフサイクル操作、訂正・取消追跡、EMIR Refit 規制分類、および JSON デシリアライズ後の状態遷移実行（after: TradeState 生成）メカニズム。
 
 ---
