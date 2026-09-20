@@ -147,3 +147,11 @@
 - `concepts/fpml_ingestion.md` に FpML `executionNotification` 取込マッピングおよび当事者識別子スキーム拡張を追記。
 - `concepts/observables_and_rates.md` に参照金利観測種別判定ロジック（`DetermineObservationType` 等）を追記。
 - `CDM_INDEX.md`、`sources/cdm_index_source.md`、`index.md` のナビゲーションおよびカタログ要約を最新状態に同期。
+
+## [2026-09-20] query | Java版CDMライブラリ パッケージ作成のための前提環境調査・検証
+- Java版CDMライブラリ（`cdm-java`）のビルド・パッケージングに必要な基盤要件（JDK 21制約、Maven 3.9+、Java 8互換バイトコード出力）を特定。
+- コード生成基盤を支えるテクノロジー・プロダクト群（Rune / Rosetta DSL 10.13.0, rosetta.code-gen 12.19.0, Eclipse Xtext 2.38.0, rune-fpml 3.8.0）を整理。
+- 機能分類別の依存プロダクト群（Guice 6.0.0, OpenGamma Strata 1.7.0, Jackson 2.18.10, Saxon-HE 10.6, jsoup 1.23.2, Guava 33.3.1-jre）を体系化。
+- 実機環境で全5段階の動的検証を実施：バージョン確認、Maven Enforcer Plugin 制約チェック、プロパティ値評価、`rune-maven-plugin` による Rosetta DSL からの Java コード自動生成（6,300+クラス）、`mvn package` による JAR パッケージ生成（25.5MB `cdm-java-0.0.0.master-SNAPSHOT.jar`）。ハルシネーションを完全に排除した検証エビデンスを実証。
+- `overview/java_cdm_build_and_packaging.md` を新規作成。コード生成基盤パイプライン図と解説の 1 対 1 対応、接続確認済み公式 GitHub URL（42件）、直接参照プロダクト一覧への詳細情報集約、および推移的依存ライブラリ（親プロダクト別カテゴリ分類）の表形式一覧化を実施。
+- `index.md` および `log.md` を更新し、`validate_wiki.py` による整合性バリデーション（エラー0件）を確認。
