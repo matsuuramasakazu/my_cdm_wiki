@@ -26,6 +26,7 @@
 - **[rosetta_dsl_inventory.md](overview/rosetta_dsl_inventory.md)**: Rosetta DSL 定義（Type 780件、Function 1,323件、Enum 280件）のドメイン別・機能別分類メトリクス & カタログ。
 - **[versioning_and_compatibility.md](overview/versioning_and_compatibility.md)**: FINOS CDM のバージョニング体系（SemVer 2.0.0）、公式ドキュメント引用に基づく変更種別定義（破壊的変更 vs 許容変更）、後方互換性の保証範囲、および CDM 7.x（7.4.0安定本番版、7.x.x開発ブランチ）のリリースガバナンス。
 - **[java_cdm_build_and_packaging.md](overview/java_cdm_build_and_packaging.md)**: Java版CDMライブラリ（`cdm-java`）のパッケージ作成における前提環境要件（JDK 21、Maven 3.9+）、コード生成基盤テクノロジー（Rune、Eclipse Xtext、rune-fpml）、機能分類別依存プロダクト、および実機検証エビデンス。
+- **[python_cdm_build_and_packaging.md](overview/python_cdm_build_and_packaging.md)**: Python版CDMライブラリ（`finos-cdm`）のパッケージ作成における前提環境要件（Java 21、Python 3.11+）、コード生成基盤プロダクト（Rune Python Generator）、ビルド/パッケージングツール（wheel、setuptools）、実行時/テスト依存プロダクト（Pydantic v2、rune.runtime、pytest）、および実機検証エビデンス。
 
 ---
 

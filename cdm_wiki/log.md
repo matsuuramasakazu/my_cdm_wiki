@@ -155,3 +155,12 @@
 - 実機環境で全5段階の動的検証を実施：バージョン確認、Maven Enforcer Plugin 制約チェック、プロパティ値評価、`rune-maven-plugin` による Rosetta DSL からの Java コード自動生成（6,300+クラス）、`mvn package` による JAR パッケージ生成（25.5MB `cdm-java-0.0.0.master-SNAPSHOT.jar`）。ハルシネーションを完全に排除した検証エビデンスを実証。
 - `overview/java_cdm_build_and_packaging.md` を新規作成。コード生成基盤パイプライン図と解説の 1 対 1 対応、接続確認済み公式 GitHub URL（42件）、直接参照プロダクト一覧への詳細情報集約、および推移的依存ライブラリ（親プロダクト別カテゴリ分類）の表形式一覧化を実施。
 - `index.md` および `log.md` を更新し、`validate_wiki.py` による整合性バリデーション（エラー0件）を確認。
+
+## [2026-09-20] query | Python版CDMライブラリ パッケージ作成のための前提環境調査・検証
+- Python版CDMライブラリ（`finos-cdm`）のコード生成・ビルド・パッケージングに必要な前提基盤要件（Java 21, Python 3.11+, Maven 3.9+, Git 2.x）を特定。
+- コード生成基盤テクノロジー（Rune Python Generator `finos/rune-python-generator:10.13.0.0`, Rosetta DSL `10.13.0`, `rune-fpml:3.8.0`）を整理。
+- ビルド・パッケージングツール（`pip`, `venv`, `wheel`, `setuptools>=77.0.3`, `build`, `twine`）および実行時依存（`pydantic>=2.10.3`, `rune.runtime>=2.2.0,<3.0.0`）、推移的依存（`annotated-types`, `pydantic-core`, `typing-extensions`, `typing-inspection`, `python-dateutil`, `tzdata`, `six`）、テスト依存（`pytest`, `pluggy`, `iniconfig`, `packaging`, `colorama`, `pygments`）を全列挙し、公式GitHubリポジトリ（全件HTTP 200疎通確認済）とともに体系化。
+- 実機環境で全6段階の動的検証を実施：ローカル基盤ツールバージョン確認、DSLバージョンおよびジェネレータJAR取得確認、FpML依存確認、`PythonCodeGeneratorCLI` による Python コード生成実行（1,728ファイル出力）、`pyproject.toml` 依存解析、一時仮想環境での wheel パッケージビルド（`finos_cdm-0.0.0-py3-none-any.whl` 2.03MB生成）、インストールおよび `pytest` によるインポートテスト（`TradeState` のインポート確認 1 passed in 9.18s）。ハルシネーションを完全に排除した検証エビデンスを実証。
+- `overview/python_cdm_build_and_packaging.md` を新規作成し、`index.md`、`log.md` を更新。
+- `python-10.13.0.0.jar` の内部 META-INF メタデータ（`jar -tf`）および `rune-python-generator` リポジトリの `pom.xml` / `mvn dependency:tree` 解析を実施。ジェネレータが直接依存する10プロダクト（`rune-lang`, `rune-runtime`, `emf.codegen.ecore`, `guice`, `commons-cli`, `commons-io`, `jgrapht-core`, `slf4j-api`, `logback-classic`, `log4j-over-slf4j`）および推移的依存（Eclipse Xtext 2.44.0, Guava 33.6.0, Jackson 2.18.10 等）を機能カテゴリ別に体系化して `overview/python_cdm_build_and_packaging.md` に追記。`validate_wiki.py` による整合性バリデーション（全68件外部URL疎通、エラー0件）を確認。
+
