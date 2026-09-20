@@ -33,3 +33,4 @@
   2. **カタログ & ログ同期**: ページの作成・更新後は [index.md](../cdm_wiki/index.md) および [log.md](../cdm_wiki/log.md) を即座に更新すること。
   3. **自動バリデーション実行**: 編集後はリンタースクリプト `validate_wiki.py` を実行してエラー 0 件を確認すること。
   4. 詳細手順・規約については、ワークスペーススキル [cdm-wiki-manager](skills/cdm-wiki-manager/SKILL.md) および [SCHEMA.md](../cdm_wiki/SCHEMA.md) を参照すること。
+  5. 一次ソース（`common-domain-model/rosetta-source`）のバージョン更新・最新化を Wiki に反映する際は、ワークスペーススキル [cdm-source-sync](skills/cdm-source-sync/SKILL.md) の標準作業手順に従い、現在の一次ソース断面に基づく客観的解説および本文不変時の `last_updated` 保持原則を徹底すること。
