@@ -164,3 +164,11 @@
 - `overview/python_cdm_build_and_packaging.md` を新規作成し、`index.md`、`log.md` を更新。
 - `python-10.13.0.0.jar` の内部 META-INF メタデータ（`jar -tf`）および `rune-python-generator` リポジトリの `pom.xml` / `mvn dependency:tree` 解析を実施。ジェネレータが直接依存する10プロダクト（`rune-lang`, `rune-runtime`, `emf.codegen.ecore`, `guice`, `commons-cli`, `commons-io`, `jgrapht-core`, `slf4j-api`, `logback-classic`, `log4j-over-slf4j`）および推移的依存（Eclipse Xtext 2.44.0, Guava 33.6.0, Jackson 2.18.10 等）を機能カテゴリ別に体系化して `overview/python_cdm_build_and_packaging.md` に追記。`validate_wiki.py` による整合性バリデーション（全68件外部URL疎通、エラー0件）を確認。
 
+## [2026-09-24] query | Rune DSL から cdm-json-schema を生成する処理フローの一次ソース調査・実機検証
+- 一次ソース（`common-domain-model/rosetta-source/pom.xml`, ルート `pom.xml`, `rune-config.yml`, `codefresh.yml`, `docs/download.md`, `website/scripts/`）を調査。
+- 入力ソース事前集約（`maven-resources-plugin` による CDM + FpML DSL の集約）、JSON Schema 生成（`json-schema` プロファイル、`rune-maven-plugin`、`CDMRosettaSetup`、`default-cdm-generators`）、ZIP パッケージング & 配布（Codefresh CI/CD `DeployJsonSchema`）、および公式ポータルサイト反映（`download-schemas.js`）の一連の処理フローを特定。
+- 実機検証を実施：`mvn generate-sources -P json-schema` を実行し、`src/generated/jsonschema/` に 1,142 件の `.schema.json` ファイルが生成されることを確認（BUILD SUCCESS, 所要時間 2分05秒）。
+- `overview/json_schema_generation_and_packaging.md` を新規作成（実行エビデンス追記）し、`index.md` および `log.md` を更新。
+
+
+
