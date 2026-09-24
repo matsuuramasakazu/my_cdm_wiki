@@ -170,5 +170,19 @@
 - 実機検証を実施：`mvn generate-sources -P json-schema` を実行し、`src/generated/jsonschema/` に 1,142 件の `.schema.json` ファイルが生成されることを確認（BUILD SUCCESS, 所要時間 2分05秒）。
 - `overview/json_schema_generation_and_packaging.md` を新規作成（実行エビデンス追記）し、`index.md` および `log.md` を更新。
 
+## [2026-09-24] query | CVA計算に必要な担保・契約・顧客・ネッティング情報の一次ソースDSL調査
+- CVA（信用評価調整）計算に必要な 4 大要素（担保情報、契約情報、顧客・相手方情報、ネッティング情報）の Rosetta DSL 定義を一次ソースより特定・調査。
+- 担保情報: `Threshold`（格付連動/ゼロ転落）、`MinimumTransferAmount`、`CollateralValuationTreatment`（ヘアカット）、`CollateralPortfolio`、`CollateralBalance`。
+- 契約情報: `Trade -> contractDetails: ContractDetails`、`LegalAgreement`、`MasterAgreement`、`governingLaw`。
+- 顧客情報: `Party`（LEI）、`LegalEntity`、`RelatedParty`（Guarantor 代替判定）、`CreditNotation`（格付・PD推計）。
+- ネッティング情報: クローズアウト・ネッティングセット（`MasterAgreement` の `automaticEarlyTermination`、`terminationCurrency`）、マージン・ネッティングセット（`CollateralPortfolio -> portfolioIdentifier`）、決済ネッティング（`StandardSettlementStyleEnum`）。
+- `concepts/cva_calculation_data_modeling.md` を新規作成し、`index.md` および `log.md` を更新。
 
-
+## [2026-09-24] query | CDM Java版ライブラリとPython版ライブラリの非対応（未実装）機能の網羅的調査
+- 一次ソース（`common-domain-model`, `rune-python-generator`, `rune-python-runtime`）を横断調査。
+- フル機能の基準実装である Java版（`cdm-java`）に対し、Python版（`finos-cdm` / `rune-python-generator`）において非対応・未実装となっている機能を4大分類で特定：
+  1. Rosetta DSL構文・アノテーション: DRR構文（`report`, `reporting rule`, `eligibility rule`）、関数継承（`extends`, `super`）、`typeAlias` のドメイン型名喪失（Java Path による基底プリミティブ展開）および named `condition` 脱落、メタデータアノテーション（`[synonym]`, `[deprecated]`, `[rootType]`, `[qualification]`, `[projection]`）の無視。
+  2. ネイティブ関数（Java Native Functions）: Java版 `CdmRuntimeModule` で提供される日付・時刻計算（`CalculationPeriods`, `AddDays`, `DateDifference` 等 11関数）、数値・丸め・ベクトル演算（`RoundToNearest`, `VectorOperation` 等 5関数）、外部データプロバイダー（`BusinessCenterHolidays`, `IndexValueObservation`）、コードリストロード（`LoadCodeList`）が、Python版では未実装スタブ（呼出時 `NotImplementedError`）であることを解明。
+  3. 業務パイプライン・オーケストレーション: 商品・イベント自動分類エンジン（`QualifyProcessorStep`）、外部電文変換（FpML XML/FIX/ISO 20022 からの Ingest / Projection）、外部スキーム動的検証（`[metadata scheme]`）、オブジェクト走査ハッシュ計算・グローバルキー自動付与パイプラインの欠落。
+  4. アーキテクチャ・パラダイム: 不変オブジェクト+Builder vs Pydantic v2モデル、XML/FpML非対応（JSON特化）。
+- `overview/cdm_python_vs_java_feature_parity.md` を新規作成し、`index.md` および `log.md` を更新。

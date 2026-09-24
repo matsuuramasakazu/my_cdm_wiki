@@ -28,6 +28,7 @@
 - **[java_cdm_build_and_packaging.md](overview/java_cdm_build_and_packaging.md)**: Java版CDMライブラリ（`cdm-java`）のパッケージ作成における前提環境要件（JDK 21、Maven 3.9+）、コード生成基盤テクノロジー（Rune、Eclipse Xtext、rune-fpml）、機能分類別依存プロダクト、および実機検証エビデンス。
 - **[python_cdm_build_and_packaging.md](overview/python_cdm_build_and_packaging.md)**: Python版CDMライブラリ（`finos-cdm`）のパッケージ作成における前提環境要件（Java 21、Python 3.11+）、コード生成基盤プロダクト（Rune Python Generator）、ビルド/パッケージングツール（wheel、setuptools）、実行時/テスト依存プロダクト（Pydantic v2、rune.runtime、pytest）、および実機検証エビデンス。
 - **[json_schema_generation_and_packaging.md](overview/json_schema_generation_and_packaging.md)**: Rune DSL から CDM JSON Schema（Draft-07）を生成する Maven プロファイル、セットアップクラス（CDMRosettaSetup）、CI/CD パッケージング & 配布（Codefresh）、およびポータル反映スクリプトの全処理フロー仕様。
+- **[cdm_python_vs_java_feature_parity.md](overview/cdm_python_vs_java_feature_parity.md)**: フル機能の基準実装である Java版ライブラリ（`cdm-java`）に対し、Python版（`finos-cdm` / `rune-python-generator`）で非対応・未実装の機能群（DRR構文、ネイティブ関数、外部電文Ingest、Qualificationエンジン、スキーム検証等）の網羅的対比と制約分析。
 
 
 ---
@@ -45,6 +46,8 @@
 - **[tradable_product_and_tradelot.md](concepts/tradable_product_and_tradelot.md)**: TradableProduct における product (NonTransferableProduct) と tradeLot (TradeLot) の分離設計思想、名目元本と価格の参照解決メカニズム、および principalPayment の実額表現。
 - **[contract_dates_modeling.md](concepts/contract_dates_modeling.md)**: 契約日付モデリングにおける EconomicTerms と CalculationPeriodDates の使い分け、営業日調整関数群(base-datetime-func)、および解決ロジック。
 - **[workflow_step_and_lifecycle_samples.md](concepts/workflow_step_and_lifecycle_samples.md)**: FpML 5.13 execution advice 由来の Ingestion 出力サンプル全18件に基づく WorkflowStep 構造、Primitiveライフサイクル操作、訂正・取消追跡、EMIR Refit 規制分類、および JSON デシリアライズ後の状態遷移実行（after: TradeState 生成）メカニズム。
+- **[cva_calculation_data_modeling.md](concepts/cva_calculation_data_modeling.md)**: CVA（信用評価調整）計算に必要な4大データ要素（担保情報、契約情報、顧客・相手方情報、ネッティング情報）の Rosetta DSL 型定義、ISDA AET・CSA 構造、および CVA エンジン連携仕様。
+
 
 ---
 
