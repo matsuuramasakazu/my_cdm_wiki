@@ -25,3 +25,6 @@ replay_pid*
 
 common-domain-model/
 .obsidian/
+cdm_json/
+rune-python-generator/
+rune-python-runtime/

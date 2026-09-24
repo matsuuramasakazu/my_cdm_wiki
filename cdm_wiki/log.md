@@ -186,3 +186,10 @@
   3. 業務パイプライン・オーケストレーション: 商品・イベント自動分類エンジン（`QualifyProcessorStep`）、外部電文変換（FpML XML/FIX/ISO 20022 からの Ingest / Projection）、外部スキーム動的検証（`[metadata scheme]`）、オブジェクト走査ハッシュ計算・グローバルキー自動付与パイプラインの欠落。
   4. アーキテクチャ・パラダイム: 不変オブジェクト+Builder vs Pydantic v2モデル、XML/FpML非対応（JSON特化）。
 - `overview/cdm_python_vs_java_feature_parity.md` を新規作成し、`index.md` および `log.md` を更新。
+
+## [2026-09-25] query | CDM JSON フォーマットのバージョン 7.x.x と 6.x.x の差異調査
+- FpML Ingest サンプル（`ird-ex01-vanilla-swap.json`）および `cdm-json-schema`（v6.28.1 vs v7.4.0）を実機比較。
+- CDM 7.x における Rune JSON Standard（`@` 属性によるメタデータ表現、不要キー枝刈り、ポリモーフィズムのフラット化）と 6.x (Legacy JSON / RosettaObjectMapper) の根本的差異を解明。
+- サンプルファイルにおける約44%の行数削減（560行→316行）、約43%の文字数削減（16.6KB→9.5KB）を実証。
+- 配布 `cdm-json-schema`（Draft-04）が v7.4.0 でも依然として Legacy JSON 形式であり、Rune JSON サンプルと過渡期的な非同期状態にある重要な技術的留意点を特定。
+- `concepts/json_serialization_and_dialects.md` を作成し、`index.md` および `log.md` を更新。
