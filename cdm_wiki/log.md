@@ -193,3 +193,18 @@
 - サンプルファイルにおける約44%の行数削減（560行→316行）、約43%の文字数削減（16.6KB→9.5KB）を実証。
 - 配布 `cdm-json-schema`（Draft-04）が v7.4.0 でも依然として Legacy JSON 形式であり、Rune JSON サンプルと過渡期的な非同期状態にある重要な技術的留意点を特定。
 - `concepts/json_serialization_and_dialects.md` を作成し、`index.md` および `log.md` を更新。
+
+## [2026-09-30] query | Rune DSLによる独自のCDMモデル拡張ワークフロー調査の反映
+- Rune DSL（旧Rosetta DSL）を用いた独自の型、関数、列挙型追加によるCDM拡張ワークフローを体系化。
+- 外部下流プロジェクト（Downstream / In-house）での自社専用拡張と、FINOS CDM コミュニティ本体（Upstream）へのコントリビューション拡張の2大アプローチを対比。
+- Rune DSL における名前空間分離（namespace）、型継承（extends）、型合成（composition）、列挙型拡張（enum extends）、ビジネス関数（func）の構文仕様を整理。
+- 外部プロジェクトにおける共通プロジェクト構成と `rune-config.yml`（namespaceConfig による CDM の read-only 保護、generators.namespaces）を定義。
+- 【Java版】`rune-maven-plugin`（generate ゴール）による `RosettaModelObject` / Builder パターンの自動生成パイプラインを網羅。
+- 【Python版】`finos/rune-python-generator`（`PythonCodeGeneratorCLI` Fat JAR）による Pydantic v2 準拠の Python クラス群および `pyproject.toml` 自動生成、Wheel パッケージング（PEP 517）、`rune.runtime` 連携パイプラインを追記。
+- Java版 vs Python版のコード生成・実行モデル分岐対比表（ジェネレータ、オブジェクトモデル、シリアライゼーション、ランタイム、制約）を作成。
+- 一次情報ファイル（`rosetta-source/pom.xml`, `rune-config.yml`, `editing.md`, `namespace.md`, `design-principles.md`, `python_cdm_build_and_packaging.md`）および公式外部URL（全件 HTTP 200 OK 疎通確認済）を提示。
+- Pythonプロジェクトにおける `rune-config.yml` の具体的役割（CI/CD名前空間保護、標準メタデータ宣言、共通仕様化ロードマップ）の解説を追記。
+- `concepts/extending_cdm_with_rune_dsl.md` を更新し、`index.md` および `log.md` を同期。
+
+
+
