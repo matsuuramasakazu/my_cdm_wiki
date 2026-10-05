@@ -5,7 +5,7 @@ sources:
   - "../CDM_INDEX.md"
   - "../../common-domain-model/pom.xml"
   - "../../common-domain-model/rosetta-source/pom.xml"
-last_updated: "2026-09-20"
+last_updated: "2026-10-05"
 tags: [cdm, java, maven, build, packaging, rune, xtext]
 ---
 
@@ -26,12 +26,37 @@ Java 版 CDM ライブラリは、ビルド時に Rosetta DSL コードジェネ
 
 CDM Java ライブラリのビルド環境には、以下のソフトウェアおよびバージョン制約が定義されています。
 
-| ソフトウェア / ツール | 要求バージョン / 制約 | 設定箇所 / 根拠 | 役割・備考 |
-| :--- | :--- | :--- | :--- |
-| **Java Development Kit (JDK)** | **Java 21** (`[21,22)`) | [`pom.xml`](../../common-domain-model/pom.xml) `<java.enforced.version>` | Maven Enforcer Plugin により厳格に JDK 21 系（21.x）であることが検証されます。JDK 17 や JDK 22+ ではビルド不可。 |
-| **コンパイル対象 (Target Bytecode)** | **Java 8** (`release: 8`) | [`rosetta-source/pom.xml`](../../common-domain-model/rosetta-source/pom.xml) `<maven.compiler.release>` | ビルド実行環境は JDK 21 ですが、生成される JAR は Java 8 以上で動作する下位互換性が維持されています。 |
-| **Apache Maven** | **3.8.x 以上** (推奨 3.9.x) | 親 POM `org.finos:finos:7` | プラグイン解決およびマルチモジュール（Reactor）ビルドを実行。 |
-| **ネットワーク接続** | **Maven Central** への疎通 | プラグイン・依存関係解決 | 初回ビルド時に Rosetta / Rune プラグイン群および依存 JAR を取得。 |
+| ソフトウェア / ツール                   | 要求バージョン / 制約              | 設定箇所 / 根拠                                                                                               | 役割・備考                                                                             |
+| :----------------------------- | :------------------------ | :------------------------------------------------------------------------------------------------------ | :-------------------------------------------------------------------------------- |
+| **Java Development Kit (JDK)** | **Java 21** (`[21,22)`)   | [`pom.xml`](../../common-domain-model/pom.xml) `<java.enforced.version>`                                | Maven Enforcer Plugin により厳格に JDK 21 系（21.x）であることが検証されます。JDK 17 や JDK 22+ ではビルド不可。 |
+| **コンパイル対象 (Target Bytecode)**  | **Java 8** (`release: 8`) | [`rosetta-source/pom.xml`](../../common-domain-model/rosetta-source/pom.xml) `<maven.compiler.release>` | ビルド実行環境は JDK 21 ですが、生成される JAR は Java 8 以上で動作する下位互換性が維持されています。                     |
+| **Apache Maven**               | **3.8.x 以上** (推奨 3.9.x)   | 親 POM `org.finos:finos:7`                                                                               | プラグイン解決およびマルチモジュール（Reactor）ビルドを実行。                                                |
+| **ネットワーク接続**                   | **Maven Central** への疎通    | プラグイン・依存関係解決                                                                                            | 初回ビルド時に Rosetta / Rune プラグイン群および依存 JAR を取得。                                       |
+
+### 2.1 CDM 利用側（Downstream Project）における Java 8 動作互換性
+
+「CDM 本体をビルドする環境」と「配布された `cdm-java` パッケージを依存関係として利用する環境」では、要求される Java バージョンが明確に異なります。
+
+- **利用側ワークスペースでの動作保証**:
+  `cdm-java` パッケージを Maven 等で依存関係に追加して Java アプリケーションを開発するプロジェクトでは、**Java 21 ではなく Java 8（JDK 8 / JRE 8）でコードを記述・コンパイルし、Java 8 の実行環境上で動作させることができます。**
+- **一次ソースに基づく技術的根拠**:
+  1. **`javac --release 8` による厳格な API 制約**:
+     [`rosetta-source/pom.xml`](../../common-domain-model/rosetta-source/pom.xml) では `<maven.compiler.release>8</maven.compiler.release>` および `<source>8</source><target>8</target>` が指定されています。`javac` の `--release 8` オプションは、生成バイトコードのクラスバージョンを `52`（Java 8）に固定するだけでなく、コンパイル時に Java 8 標準ライブラリの API シグネチャのみを参照可能に制限するため、Java 9 以降のクラスやメソッド（`List.of()` や `var` 等）への誤ったリンクが完全に排除されています。
+  2. **公式リリース（PR #1877 / コミット `fffd1fe9`）の設計意図**:
+     配布アーティファクトのターゲットを Java 11 から 8 へ引き下げた際の公式リリースノート（`RELEASE.md`）には以下のように明記されています：
+     > *To provide a wider compatibility for CDM Java implementors, this release changes the Java version of the distributed CDM Java artefacts from version 11 to 8. CDM Java implementors should update their maven pom.xml to the latest CDM maven artefact (...) and recompile with Java 8 (or later).*
+     金融業界に広く残る Java 8 稼働基盤との互換性を確保することが公式の設計思想です。
+  3. **推移的依存ライブラリの Java 8 バイトコード検証**:
+     `cdm-java` が依存する主要な共通基盤ライブラリ群の実 JAR を `javap` で検証した結果、すべて **`major version: 52`（Java 8）** で提供されていることが確認されています：
+     - `org.finos.rune:rune-runtime:10.13.0` (`major version: 52`)
+     - `org.finos.rune-common:rune-common:12.19.0` (`major version: 52`)
+     - `com.opengamma.strata:strata-basics:1.7.0` (`major version: 52`)
+     - `com.google.guava:guava:33.3.1-jre` (`major version: 52`)
+     - `com.fasterxml.jackson.core:jackson-databind:2.18.10` (`major version: 52`)
+     - `net.sf.saxon:Saxon-HE:10.6` (`major version: 52`)
+     - `org.jsoup:jsoup:1.23.2` (`major version: 52`)
+- **注意点**:
+  CDM リポジトリ内のサンプル（`examples/`）やテスト（`tests/`）モジュールは親 POM の設定を継承しているため `release: 11` でコンパイルされています。CDM リポジトリ内のサンプルコードをそのまま Java 8 環境に流用する場合は、Java 11 依存構文が含まれていないか確認してください。
 
 ---
 
@@ -92,19 +117,19 @@ flowchart TD
 
 [`rosetta-source/pom.xml`](../../common-domain-model/rosetta-source/pom.xml) の `<dependencies>` および `<build><plugins>` で**直接宣言されている主要プロダクト**の一覧です。
 
-| プロダクト名 (GroupId:ArtifactId) | バージョン | 宣言種別 | 概要・役割・技術的背景 | 公式 GitHub リポジトリ (HTTP 200 確認済) |
-| :--- | :--- | :--- | :--- | :--- |
-| **`org.finos.rune:rune-maven-plugin`** | `10.13.0` | Plugin | **DSLコード生成コアプラグイン**。Maven の `generate-sources` フェーズで起動し、全 140+ の `.rosetta` DSL 定義をパースして Java ソース（約 6,300 クラス）を自動出力する。 | [finos/rune-dsl](https://github.com/finos/rune-dsl) |
-| **`org.finos.rune-common:rune-common`** | `12.19.0` | Dependency (compile) | **Rune共通シリアライズ・オブジェクト基盤**。JSON/XML シリアライズ、Jackson 拡張モジュール、メタデータアノテーション（`@key`、`@reference`）解決基盤を提供。 | [finos/rune-common](https://github.com/finos/rune-common) |
-| **`org.finos.rune:rune-runtime`** | `10.13.0` | Dependency (compile) | **Rune実行時ランタイム**。生成された全 Java クラスの基底インターフェース（`RosettaModelObject` 等）や関数実行クラス（`RosettaFunction`）の実行時基盤を提供。 | [finos/rune-dsl](https://github.com/finos/rune-dsl) |
-| **`com.regnosys.rune-fpml:rosetta-source`** | `3.8.0` | Dependency (compile) | **FpMLドメインモデル連携定義**。金融標準 FpML の XML 定義を Rune DSL 形式にインポートしたモデルアーカイブ。ビルド時に解凍されて CDM と統合パースされる。 | [rosetta-models/rune-fpml](https://github.com/rosetta-models/rune-fpml) |
-| **`com.opengamma.strata:strata-basics`** | `1.7.0` | Dependency (compile) | **金融計算・市場データモデリング基盤**。金融市場の営業日カレンダー、テナー、休日調整規則、インデックスなどの標準計算・型定義を提供。 | [OpenGamma/Strata](https://github.com/OpenGamma/Strata) |
-| **`org.jsoup:jsoup`** | `1.23.2` | Dependency (compile) | **HTMLパーサー**。Rosetta モデル内の HTML ドキュメンテーションの解析・サニタイズ処理に使用。 | [jhy/jsoup](https://github.com/jhy/jsoup) |
-| **`net.sf.saxon:Saxon-HE`** | `10.6` | Dependency (compile) | **XML/XSLT変換エンジン**。ISO / FpML コードリスト XML から JSON への変換処理（`CodeListTransformer`）に使用。 | *(SourceForge / Maven Central)* |
-| **`org.finos.rune-testing:rune-testing`** | `12.19.0` | Dependency (test) | **Runeテストハーネス**。Rosetta モデルの単体テスト、構文検証、モック実行用テストユーティリティ。 | [finos/rune-dsl](https://github.com/finos/rune-dsl) |
-| **`commons-cli:commons-cli`** | `1.4` | Dependency (test) | **コマンドライン引数パーサー**。テストや検証ツールの CLI オプション処理に使用。 | *(Apache Commons)* |
-| **`org.junit.jupiter:junit-jupiter`** | `5.9.1` | Dependency (test) | **Java単体テストフレームワーク** (JUnit 5)。 | *(JUnit Team)* |
-| **`org.mockito:mockito-core`** | `5.1.1` | Dependency (test) | **単体テスト用モック作成ライブラリ**。 | *(Mockito)* |
+| プロダクト名 (GroupId:ArtifactId)                 | バージョン     | 宣言種別                 | 概要・役割・技術的背景                                                                                                            | 公式 GitHub リポジトリ (HTTP 200 確認済)                                          |
+| :------------------------------------------ | :-------- | :------------------- | :--------------------------------------------------------------------------------------------------------------------- | :---------------------------------------------------------------------- |
+| **`org.finos.rune:rune-maven-plugin`**      | `10.13.0` | Plugin               | **DSLコード生成コアプラグイン**。Maven の `generate-sources` フェーズで起動し、全 140+ の `.rosetta` DSL 定義をパースして Java ソース（約 6,300 クラス）を自動出力する。 | [finos/rune-dsl](https://github.com/finos/rune-dsl)                     |
+| **`org.finos.rune-common:rune-common`**     | `12.19.0` | Dependency (compile) | **Rune共通シリアライズ・オブジェクト基盤**。JSON/XML シリアライズ、Jackson 拡張モジュール、メタデータアノテーション（`@key`、`@reference`）解決基盤を提供。                    | [finos/rune-common](https://github.com/finos/rune-common)               |
+| **`org.finos.rune:rune-runtime`**           | `10.13.0` | Dependency (compile) | **Rune実行時ランタイム**。生成された全 Java クラスの基底インターフェース（`RosettaModelObject` 等）や関数実行クラス（`RosettaFunction`）の実行時基盤を提供。               | [finos/rune-dsl](https://github.com/finos/rune-dsl)                     |
+| **`com.regnosys.rune-fpml:rosetta-source`** | `3.8.0`   | Dependency (compile) | **FpMLドメインモデル連携定義**。金融標準 FpML の XML 定義を Rune DSL 形式にインポートしたモデルアーカイブ。ビルド時に解凍されて CDM と統合パースされる。                          | [rosetta-models/rune-fpml](https://github.com/rosetta-models/rune-fpml) |
+| **`com.opengamma.strata:strata-basics`**    | `1.7.0`   | Dependency (compile) | **金融計算・市場データモデリング基盤**。金融市場の営業日カレンダー、テナー、休日調整規則、インデックスなどの標準計算・型定義を提供。                                                   | [OpenGamma/Strata](https://github.com/OpenGamma/Strata)                 |
+| **`org.jsoup:jsoup`**                       | `1.23.2`  | Dependency (compile) | **HTMLパーサー**。Rosetta モデル内の HTML ドキュメンテーションの解析・サニタイズ処理に使用。                                                              | [jhy/jsoup](https://github.com/jhy/jsoup)                               |
+| **`net.sf.saxon:Saxon-HE`**                 | `10.6`    | Dependency (compile) | **XML/XSLT変換エンジン**。ISO / FpML コードリスト XML から JSON への変換処理（`CodeListTransformer`）に使用。                                     | *(SourceForge / Maven Central)*                                         |
+| **`org.finos.rune-testing:rune-testing`**   | `12.19.0` | Dependency (test)    | **Runeテストハーネス**。Rosetta モデルの単体テスト、構文検証、モック実行用テストユーティリティ。                                                               | [finos/rune-dsl](https://github.com/finos/rune-dsl)                     |
+| **`commons-cli:commons-cli`**               | `1.4`     | Dependency (test)    | **コマンドライン引数パーサー**。テストや検証ツールの CLI オプション処理に使用。                                                                           | *(Apache Commons)*                                                      |
+| **`org.junit.jupiter:junit-jupiter`**       | `5.9.1`   | Dependency (test)    | **Java単体テストフレームワーク** (JUnit 5)。                                                                                        | *(JUnit Team)*                                                          |
+| **`org.mockito:mockito-core`**              | `5.1.1`   | Dependency (test)    | **単体テスト用モック作成ライブラリ**。                                                                                                  | *(Mockito)*                                                             |
 
 ---
 

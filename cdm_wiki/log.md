@@ -206,5 +206,13 @@
 - Pythonプロジェクトにおける `rune-config.yml` の具体的役割（CI/CD名前空間保護、標準メタデータ宣言、共通仕様化ロードマップ）の解説を追記。
 - `concepts/extending_cdm_with_rune_dsl.md` を更新し、`index.md` および `log.md` を同期。
 
+## [2026-10-05] query | cdm-java 下流利用ワークスペースにおける Java 8 動作互換性の一次ソース検証
+- `rosetta-source/pom.xml` の `<maven.compiler.release>8</maven.compiler.release>` および親 POM の `<java.enforced.version>[21,22)</java.enforced.version>` を一次ソースから比較検証。
+- CDM 本体のビルド環境（アップストリーム）では DSL コード生成基盤（Xtext / Rune プラグイン）の制約により JDK 21 が必須（Enforced）である一方、配布パッケージ `cdm-java` は `javac --release 8` によりコンパイルされていることを解明。
+- コミット `fffd1fe9`（PR #1877）の `RELEASE.md` における設計意図（「To provide a wider compatibility for CDM Java implementors, this release changes the Java version of the distributed CDM Java artefacts from version 11 to 8...」）を特定。
+- 実際にビルドされた `cdm-java-0.0.0.master-SNAPSHOT.jar` および主要ランタイム依存関係（`rune-runtime`, `rune-common`, `strata-basics`, `guava`, `jackson-databind`, `Saxon-HE`, `jsoup`）を `javap` で実機検証し、全クラスが `major version: 52`（Java 8 バイトコード）かつ Java 8 標準 API 制約下で提供されていることを実証。
+- 下流ワークスペースにおいて、JDK 8 を用いて Java 8 でコードを書き、Java 8 でビルド・実行可能であることを確認。
+- `overview/java_cdm_build_and_packaging.md` に「2.1 CDM 利用側（Downstream Project）における Java 8 動作互換性」を追記し、`index.md` および `log.md` を更新。
+
 
 
