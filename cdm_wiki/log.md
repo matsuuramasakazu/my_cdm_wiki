@@ -214,5 +214,15 @@
 - 下流ワークスペースにおいて、JDK 8 を用いて Java 8 でコードを書き、Java 8 でビルド・実行可能であることを確認。
 - `overview/java_cdm_build_and_packaging.md` に「2.1 CDM 利用側（Downstream Project）における Java 8 動作互換性」を追記し、`index.md` および `log.md` を更新。
 
+## [2026-10-07] query | CDMにおけるIndex、通貨、都市、商品一覧のコード値定義調査と反映
+- CDM における「Index」「通貨」「都市」「商品」のコード値定義構造を一次ソース（Rosetta DSL、FpML Genericode XML、同梱 JSON リソース、Java ランタイム実装）から網羅的に調査。
+- 3層コード値管理アーキテクチャ（DSL静的Enum、FpML Coding Scheme動的コードリスト、モデル駆動Qualification自動判定）を解明：
+  1. Index一覧: `observable-asset-type.rosetta` の型階層（`IndexBase` / `choice Index`）、`FloatingRateIndexEnum`（700+ FROコード）、動的スキーム `FloatingRateIndex: FpMLCodingScheme(domain: "floating-rate-index")`、および `floating-rate-index-3-10.json`。
+  2. 通貨一覧: `base-staticdata-asset-common-enum.rosetta` の `ISOCurrencyCodeEnum`（ISO 4217準拠 180+通貨）および継承拡張 `CurrencyCodeEnum extends ISOCurrencyCodeEnum`（FpML nonISOCurrencyScheme 準拠の CNH 等 9通貨）。
+  3. 都市一覧: `base-staticdata-codelist-type.rosetta` の `typeAlias BusinessCenter: FpMLCodingScheme(domain: "business-center")`、`base-datetime-type.rosetta` の `BusinessCenters`、および同梱 JSON リソース `business-center-9-3.json`（JPTO, USNY, GBLO 等 150+都市）。`LoadCodeList` / `ValidateFpMLCodingSchemeDomain` による実行時検証。
+  4. 商品一覧: `base-staticdata-asset-common-type.rosetta` の `ProductTaxonomy`（`TaxonomySourceEnum`: ISDA, CFI, EMIR, CFTC 等、`AssetClassEnum`、`ProductIdTypeEnum`: ISIN, UPI 等）、同梱 JSON リソース（`product-taxonomy-4-0.json`, `product-type-simple-1-7.json`）、および `product-qualification-func.rosetta` によるモデル駆動の自動判定（Qualification）ロジック。
+- 一次情報ソースファイルパス、行数、および事前 HTTP 接続テスト（全件 200 OK）済み外部仕様 URL を特定。
+- `concepts/reference_data_and_codelists.md` を新規作成し、`index.md` および `log.md` を更新。
+
 
 
