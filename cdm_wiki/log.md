@@ -224,5 +224,19 @@
 - 一次情報ソースファイルパス、行数、および事前 HTTP 接続テスト（全件 200 OK）済み外部仕様 URL を特定。
 - `concepts/reference_data_and_codelists.md` を新規作成し、`index.md` および `log.md` を更新。
 
+## [2026-10-07] query | CDM DSLからのJSON Schema生成仕様・対象スコープ・ジェネレータ実装リポジトリの調査反映
+- CDM の Rosetta (Rune) DSL から JSON Schema を生成する仕様、生成スコープ、およびコード所在リポジトリを一次ソース・外部リポジトリから網羅的に調査。
+- ジェネレータ実装コードの所在を特定：
+  - コード本体は `REGnosys/rosetta-code-generators`（GitHub OSS）の `json-schema` モジュール（`com.regnosys.rosetta.code-generators:json-schema`）に存在。
+  - 主要クラス: `JsonSchemaCodeGenerator.java`, `JsonSchemaTypeGenerator.xtend`, `JsonSchemaMetaFieldGenerator.xtend`, `JsonSchemaGeneratorHelper.xtend`, `JsonSchemaTranslator.xtend`。
+  - セットアッププロバイダ: 同リポジトリの `default-cdm-generators` モジュール内の `CDMRosettaSetup.java` および `DefaultExternalGeneratorsProvider.java`。
+  - ビルドプラグイン基盤: `finos/rune-dsl`（`org.finos.rune:rune-maven-plugin`）。
+- JSON Schema 生成対象スコープの詳細仕様を解明：
+  1. ネームスペーススコープ: `rune-config.yml`（`cdm.*`, `com.rosetta.model`）および `JsonSchemaCodeGenerator.java` の `isSupportedModel()` により制御。`cdm.*` の中核モデルおよび `com.rosetta.model` は生成対象。`fpml.*`（FpML外部モデル）、`*.ingest.*`（電文取込用型）、`*.mapping.*`（マッピング定義）は除外。
+  2. DSL構文要素スコープ: `type`（データ型 / Data）、`enum`（列挙型 / RosettaEnumeration）、メタ属性付与に伴うメタ型・参照型（`FieldWithMeta...`, `ReferenceWithMeta...`, `MetaFields` 等）のみ生成。`func`（関数）、`rule`（マッピング）、`condition`/`choice`（動的制約）は対象外。
+  3. 属性・多重度スコープ: 多重度 `1..1` のみ `required` 配列に反映。配列（複数多重度）は `minItems` / `maxItems` つき `array` 表現。生成スキーマ規格は Draft-04（`http://json-schema.org/draft-04/schema#`）。
+- `overview/json_schema_generation_and_packaging.md` を更新し、`index.md` および `log.md` を同期。
+
+
 
 

@@ -27,7 +27,7 @@
 - **[versioning_and_compatibility.md](overview/versioning_and_compatibility.md)**: FINOS CDM のバージョニング体系（SemVer 2.0.0）、公式ドキュメント引用に基づく変更種別定義（破壊的変更 vs 許容変更）、後方互換性の保証範囲、および CDM 7.x（7.4.0安定本番版、7.x.x開発ブランチ）のリリースガバナンス。
 - **[java_cdm_build_and_packaging.md](overview/java_cdm_build_and_packaging.md)**: Java版CDMライブラリ（`cdm-java`）のパッケージ作成前提環境（JDK 21、Maven 3.9+）、下流ワークスペースにおける Java 8 動作互換性（javac `--release 8` / major version 52 実証）、コード生成基盤テクノロジー（Rune、Eclipse Xtext、rune-fpml）、機能分類別依存プロダクト、および実機検証エビデンス。
 - **[python_cdm_build_and_packaging.md](overview/python_cdm_build_and_packaging.md)**: Python版CDMライブラリ（`finos-cdm`）のパッケージ作成における前提環境要件（Java 21、Python 3.11+）、コード生成基盤プロダクト（Rune Python Generator）、ビルド/パッケージングツール（wheel、setuptools）、実行時/テスト依存プロダクト（Pydantic v2、rune.runtime、pytest）、および実機検証エビデンス。
-- **[json_schema_generation_and_packaging.md](overview/json_schema_generation_and_packaging.md)**: Rune DSL から CDM JSON Schema（Draft-07）を生成する Maven プロファイル、セットアップクラス（CDMRosettaSetup）、CI/CD パッケージング & 配布（Codefresh）、およびポータル反映スクリプトの全処理フロー仕様。
+- **[json_schema_generation_and_packaging.md](overview/json_schema_generation_and_packaging.md)**: Rune DSL から CDM JSON Schema を生成する Maven プロファイル、外部ジェネレータ（REGnosys/rosetta-code-generators）、生成対象スコープ（ネームスペース・構文要素）、CI/CD パッケージング & 配布（Codefresh）、およびポータル反映仕様。
 - **[cdm_python_vs_java_feature_parity.md](overview/cdm_python_vs_java_feature_parity.md)**: フル機能の基準実装である Java版ライブラリ（`cdm-java`）に対し、Python版（`finos-cdm` / `rune-python-generator`）で非対応・未実装の機能群（DRR構文、ネイティブ関数、外部電文Ingest、Qualificationエンジン、スキーム検証等）の網羅的対比と制約分析。
 
 

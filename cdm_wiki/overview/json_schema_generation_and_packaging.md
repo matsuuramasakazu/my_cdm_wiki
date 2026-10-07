@@ -9,7 +9,7 @@ sources:
   - "../../common-domain-model/codefresh.yml"
   - "../../common-domain-model/docs/download.md"
   - "../../common-domain-model/website/scripts/README.md"
-last_updated: "2026-09-24"
+last_updated: "2026-10-07"
 tags: [cdm, json-schema, build, packaging, rune, maven, codefresh]
 ---
 
@@ -203,26 +203,109 @@ FINOS CDM の公式ビルド環境（Codefresh CI/CD）では、リリース時�
 
 ---
 
-## 4. ジェネレータ実装の責務境界
+## 4. ジェネレータ実装コードの所在リポジトリとモジュール構成
 
-一次ソースの構造上、コード生成ロジックの責務は以下のように明確に分離されています。
+JSON Schema の生成ロジック本体は、CDM 本体リポジトリ（`common-domain-model`）には直接保持されておらず、**REGnosys 社が保守・公開している外部 OSS リポジトリ** に配置されています。
 
-1. **CDM リポジトリ (`common-domain-model`) の責務**:
-   - Rosetta (Rune) DSL ファイル（一次情報）の記述と保守。
-   - Maven ビルド設定（`pom.xml`）による `rune-maven-plugin` の設定・入出力パス指定。
-   - CI/CD パイプライン（`codefresh.yml`）によるビルド自動化・アーティファクト配布。
-   - Web サイトにおけるスキーマの取り込みと公開。
-2. **外部ジェネレータライブラリの責務**:
-   - `rune-maven-plugin` / `rune-lang` / `rune-runtime` (`org.finos.rune`): DSL のパース・AST 構築・Xtext 連携基盤。
-   - `default-cdm-generators` (`com.regnosys.rosetta.code-generators`): `CDMRosettaSetup` を含む、DSL から JSON Schema への具体的なマッピング・シリアライズロジックの実装。
+### 4.1 関連リポジトリの役割分担
+
+| リポジトリ名 | GitHub URL | 主要モジュール / 責務 |
+| :--- | :--- | :--- |
+| **`REGnosys/rosetta-code-generators`** | [rosetta-code-generators](https://github.com/REGnosys/rosetta-code-generators) | **JSON Schema 生成ロジック本体の実装**。<br>・`json-schema` モジュール（スキーマ生成エンジン）<br>・`default-cdm-generators` モジュール（`CDMRosettaSetup` 等のプロバイダ群） |
+| **`finos/rune-dsl`**<br>*(旧 REGnosys/rosetta-dsl)* | [rune-dsl](https://github.com/finos/rune-dsl) | **DSL 文法・コンパイラ・Maven プラグイン基盤**。<br>・`rune-maven-plugin`<br>・`rune-lang` / `rune-runtime` |
+| **`finos/common-domain-model`** | 本リポジトリ | **DSL 定義・ビルド構成・モデル配布**。<br>・`src/main/rosetta`（CDM ドメインモデル）<br>・Maven プロファイル設定 & 配布自動化 |
+
+### 4.2 `rosetta-code-generators` 内のソースコード構成
+
+`rosetta-code-generators` の `json-schema` モジュール（Maven 座標: `com.regnosys.rosetta.code-generators:json-schema`）配下に、以下の主要クラスが実装されています：
+
+- **`com.regnosys.rosetta.generator.jsonschema.JsonSchemaCodeGenerator` (Java)**:
+  - エントリポイントとなるジェネレータクラス（`AbstractExternalGenerator` を継承）。
+  - 後述のモデルフィルタリング（`isSupportedModel`）を行い、`typeSchemaGenerator`、`metaFieldGenerator`、`enumGenerator` を呼び出してスキーマ群を生成。
+- **`com.regnosys.rosetta.generator.jsonschema.JsonSchemaTypeGenerator` (Xtend)**:
+  - Rosetta の `type`（AST 上の `Data`）から JSON Schema の `object` 定義を生成。
+  - 各属性の型マッピング、多重度判定（`minItems`, `maxItems`）、必須属性（`required`）の抽出。
+  - Rosetta の `enum`（`RosettaEnumeration`）から JSON Schema の `string` + `enum` + `oneOf` 定義を生成。
+- **`com.regnosys.rosetta.generator.jsonschema.JsonSchemaMetaFieldGenerator` (Xtend)**:
+  - メタ属性（`[metadata reference]`, `[metadata key]`, `[metadata scheme]` 等）を持つプロパティ向けに `FieldWithMeta...` や `ReferenceWithMeta...`、`MetaFields`、`Key`、`Reference` のスキーマ定義を生成。
+- **`com.regnosys.rosetta.generator.jsonschema.JsonSchemaGeneratorHelper` (Xtend)**:
+  - 出力ファイル名規約（`{namespace.replace('.', '-')}-{typeName}.schema.json`）の生成ユーティリティ。
+- **`com.regnosys.rosetta.generator.jsonschema.JsonSchemaTranslator` (Xtend)**:
+  - Rosetta の基本データ型（`string`, `int`, `number`, `boolean`, `date`, `time`, `dateTime`, `zonedDateTime`, `calculation`）を JSON Schema 基本型（`string`, `integer`, `number`, `boolean`）にマッピング。
+
+また、`default-cdm-generators` モジュール（Maven 座標: `com.regnosys.rosetta.code-generators:default-cdm-generators`）には、`CDMRosettaSetup` および `DefaultExternalGeneratorsProvider` が含まれており、JSON Schema ジェネレータが他の言語ジェネレータ（TypeScript, C#, Python, Go, Kotlin 等）とともに登録されています。
 
 ---
 
-## 5. 実機検証エビデンス（動的実行結果）
+## 5. JSON Schema が生成されるスコープ（CDM DSL 全体のうちの対象範囲）
+
+JSON Schema 生成エンジンが処理する対象範囲は、**ネームスペース（パッケージ）単位のフィルタリング** と **DSL 構文要素別の取捨選択** の2段階によって厳密に制御されています。
+
+### 5.1 ネームスペース単位の生成スコープ
+
+ビルド設定およびジェネレータ内部コードにより、以下のスコープ判定が行われます：
+
+1. **`rune-config.yml` による対象ネームスペース宣言**:
+   ```yaml
+   generators:
+     namespaces:
+     - cdm.*
+     - com.rosetta.model
+   ```
+2. **`JsonSchemaCodeGenerator.java` による動的除外フィルタ (`isSupportedModel`)**:
+   ```java
+   private boolean isSupportedModel(RosettaModel model) {
+       DottedPath namespace = DottedPath.splitOnDots(model.getName());
+       boolean isFpmlModel = "fpml".equals(namespace.first());
+       boolean isIngestOrMappingModel = namespace.stream()
+           .anyMatch(element -> element.equals("ingest") || element.equals("mapping"));
+       return !isFpmlModel && !isIngestOrMappingModel;
+   }
+   ```
+
+この二重制御により、実際の生成対象は以下の通りとなります：
+
+| ネームスペース | 生成対象 | 判定理由・補足 |
+| :--- | :---: | :--- |
+| **`cdm.*` (中核ビジネスモデル)**<br>例: `cdm.base.*`, `cdm.product.*`, `cdm.event.*`, `cdm.observable.*`, `cdm.legal.*`, `cdm.regulation.*` | **対象 (〇)** | CDM の中核ドメインモデルであり、完全なスキーマ生成対象。 |
+| **`com.rosetta.model.*` (Rosetta 基盤モデル)**<br>例: `com.rosetta.model.metafields.*`, `com.rosetta.model.lib.meta.*` | **対象 (〇)** | メタデータやキー・リファレンス管理用の共通基盤データ型。 |
+| **`fpml.*` (FpML 外部モデル)** | **対象外 (×)** | `isFpmlModel` により明示的に除外（FpML は XML Schema が正本であり、CDM JSON Schema には含めない）。 |
+| **`*.ingest.*` (電文取込用モデル)**<br>例: `cdm.ingest.*` | **対象外 (×)** | `isIngestOrMappingModel` により除外（データ取込パイプライン固有の型）。 |
+| **`*.mapping.*` (マッピング定義)**<br>例: `cdm.mapping.*` | **対象外 (×)** | `isIngestOrMappingModel` により除外（変換・マッピング用DSL定義）。 |
+
+### 5.2 DSL 構文要素別の生成スコープ
+
+Rosetta DSL（`.rosetta`）にはデータ構造だけでなく計算関数やビジネスルールも定義されますが、JSON Schema は**純粋なデータ交換用バリデーションスキーマ**であるため、以下の通り構文要素ごとに生成可否が分かれます：
+
+| DSL 構文要素 | 生成対象 | 生成内容・スキーマ表現 |
+| :--- | :---: | :--- |
+| **`type` (データ型定義 / AST: `Data`)** | **対象 (〇)** | `type: "object"` スキーマとして出力。プロパティ一覧、多重度、`$ref` リンクを含む。 |
+| **`enum` (列挙型定義 / AST: `RosettaEnumeration`)** | **対象 (〇)** | `type: "string"` スキーマとして出力。`enum: [...]` および各値のドキュメントを含む `oneOf: [...]`。 |
+| **`[metadata ...]` (メタ型・参照型)** | **対象 (〇)** | `[metadata reference]` や `[metadata key]` 等が付与された属性について、`FieldWithMeta...` や `ReferenceWithMeta...` が自動合成されてスキーマ化。 |
+| **`func` (関数定義)** | **対象外 (×)** | CDM の計算ルーチンや判定関数（例: `Qualify_...`, `Create_...`）。JSON データ構造ではないためスキーマは生成されない。 |
+| **`rule` (マッピングルール)** | **対象外 (×)** | 外部電文（FpML等）からの属性マッピングルール。スキーマ生成対象外。 |
+| **`condition` (動的バリデーション式・事前/事後条件)** | **対象外 (×)** | 型定義内の `choice`、`condition` 式などのビジネス制約・検証ロジックは JSON Schema には変換されない（Java クラス等のバリデータが担当）。 |
+
+### 5.3 属性制約と多重度のスキーマ反映仕様
+
+`JsonSchemaTypeGenerator` において、属性の制約は以下の仕様で JSON Schema に落とし込まれます：
+
+- **必須判定 (`required`)**:
+  - Rosetta DSL 上で多重度が `(1..1)`（`inf == 1 && sup == 1`）と指定された属性のみが、オブジェクトの `required` 配列にリストされます。
+  - 多重度が `(0..1)`、`(0..*)`、`(1..*)` の場合は `required` には含まれません（※下限が 1 であっても配列型 `1..*` は配列自体が必須ではなく、`minItems: 1` で表現されます）。
+- **配列判定 (`type: "array"`)**:
+  - 多重度が複数（`0..*` または `1..*`）の場合、`"type": "array"` となり、要素定義が `"items"` に格納されます。
+  - 下限（`inf`）が `minItems`、上限（`sup > 1`）が `maxItems` として反映されます。
+- **スキーマ規格**:
+  - 生成される JSON Schema は **`http://json-schema.org/draft-04/schema#`** に準拠しています。
+
+---
+
+## 6. 実機検証エビデンス（動的実行結果）
 
 2026-09-24 に一次ソースの定義に基づき、実機環境において実際にコード生成コマンドを実行し、JSON Schema の生成を確認しました。
 
-### 5.1 実行環境 & 実行コマンド
+### 6.1 実行環境 & 実行コマンド
 - **実行環境**: JDK 21.0.11 (Eclipse Adoptium), Apache Maven 3.9.9 (Windows 11)
 - **カレントディレクトリ**: `common-domain-model/rosetta-source`
 - **実行コマンド**:
@@ -230,7 +313,7 @@ FINOS CDM の公式ビルド環境（Codefresh CI/CD）では、リリース時�
   mvn generate-sources -P json-schema
   ```
 
-### 5.2 実行結果サマリー
+### 6.2 実行結果サマリー
 - **ビルドステータス**: `BUILD SUCCESS`（実行所要時間: 2分05秒）
 - **出力先ディレクトリ**: [`src/generated/jsonschema/`](../../common-domain-model/rosetta-source/src/generated/jsonschema)
 - **生成ファイル数**: **1,142 件** の `.schema.json` ファイルを出力
@@ -240,7 +323,7 @@ FINOS CDM の公式ビルド環境（Codefresh CI/CD）では、リリース時�
   - `cdm-product-asset-InterestRatePayout.schema.json`
   - `cdm-product-template-TradableProduct.schema.json`
 
-### 5.3 生成スキーマの構造サンプル (`cdm-event-common-TradeState.schema.json`)
+### 6.3 生成スキーマの構造サンプル (`cdm-event-common-TradeState.schema.json`)
 ```json
 {
   "$schema": "http://json-schema.org/draft-04/schema#",
