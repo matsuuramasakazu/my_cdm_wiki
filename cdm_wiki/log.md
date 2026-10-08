@@ -235,8 +235,26 @@
   1. ネームスペーススコープ: `rune-config.yml`（`cdm.*`, `com.rosetta.model`）および `JsonSchemaCodeGenerator.java` の `isSupportedModel()` により制御。`cdm.*` の中核モデルおよび `com.rosetta.model` は生成対象。`fpml.*`（FpML外部モデル）、`*.ingest.*`（電文取込用型）、`*.mapping.*`（マッピング定義）は除外。
   2. DSL構文要素スコープ: `type`（データ型 / Data）、`enum`（列挙型 / RosettaEnumeration）、メタ属性付与に伴うメタ型・参照型（`FieldWithMeta...`, `ReferenceWithMeta...`, `MetaFields` 等）のみ生成。`func`（関数）、`rule`（マッピング）、`condition`/`choice`（動的制約）は対象外。
   3. 属性・多重度スコープ: 多重度 `1..1` のみ `required` 配列に反映。配列（複数多重度）は `minItems` / `maxItems` つき `array` 表現。生成スキーマ規格は Draft-04（`http://json-schema.org/draft-04/schema#`）。
-- `overview/json_schema_generation_and_packaging.md` を更新し、`index.md` および `log.md` を同期。
+## [2026-10-08] query | 通貨オプション単体およびシンセティックフォワード（複数受渡日）のCDM表現の調査と還元
+- 通貨オプション（FX Option）単体の CDM モデリング構造（`OptionPayout`, `OptionStrike`, `ExerciseTerms`, `SettlementTerms`, `Qualify_ForeignExchange_VanillaOption`）を一次ソースから特定。
+- ストリップ型シンセティックフォワード（複数確定受渡日）の 2 大表現アプローチ（単一 Trade 内複数 Payout 方式 vs TradePackage パッケージ取引方式）を比較整理。
+- フラットレート（単一ストライク）および期日別ストライク（マルチフォワード: スワップポイント加味）のデータ構造、純粋先渡ストリップ（`SettlementPayout` 複数配置）との対比を解明。
+- 3 段階の動的ライフサイクルイベント（`ExerciseInstruction` による権利行使、`TransferInstruction` による資金決済、`QuantityChange` による残高更新および TradeState 遷移）を体系化。
+- `concepts/fx_products_and_synthetic_forward.md` を作成・拡充し、実機サンプル JSON 群（`fx-ex09-euro-opt.json`, `fx-ex10-amer-opt.json`, `fx-ex11-non-deliverable-option.json`, `fx-ex08-fx-swap.json`, `fx-ex26-fxswap-multiple-USIs.json`, `msg-ex54-execution-advice-trade-partial-termination-C11-00.json`）による要素レベルの裏どりエビデンス（Section 4）を追記同期。
+- 為替スポット（FX Spot）および単体プレーン為替先渡（FX Forward）のモデリング仕様（`SettlementPayout` 統一構造、ISDA Taxonomy `ForeignExchange_Spot_Forward`、`Price.composite` による直物＋フォワードポイント合成、`fx-ex01-fx-spot.json` と `fx-ex03-fx-fwd.json` の実サンプル比較検証）を解明し、同ドキュメント（Section 1 & 5.1）に追記反映。
+- バリアオプション（Barrier Option）およびアベレージオプション（Asian Option）を考慮した動的ライフサイクルイベントの体系的拡張（全 8 大イベント: `Observation`, `Reset`, `Trigger / Knock`, `Exercise`, `Expiration`, `Transfer`, `QuantityChange`, `ValuationUpdate`）を解明。
+- Asian オプションにおける平均化確定（`ResetInstruction`, `TradeState.resetHistory`, `Create_Reset`, `Qualify_Reset`, `AsianOptionChoice` による `averagingFeature` と `averagingStrikeFeature` の排他制御）および実機サンプル（`fx-ex20-avg-rate-option-parametric.json`, `fx-ex22`）の要素対応を特定。
+- バリアオプションにおけるノックアウト消滅・リベート支払（`Barrier.knockOut`, `ClosedStateEnum -> Terminated`, `FeaturePayment` $\to$ `Transfer`）、ノックイン活性化（`Barrier.knockIn`）、および実機サンプル（`fx-ex13-fx-dbl-barrier-option.json`）の要素対応を特定。
+- `concepts/fx_products_and_synthetic_forward.md`（Section 4 & 5.6）に反映。
 
-
-
-
+## [2026-10-08] query | バリアタッチおよびアベレージレートFixingのイベント表現サンプルJSON調査と実態検証
+- バリアタッチ（Knock-In / Knock-Out）およびアベレージレートFixing（Observation / Reset）のイベント表現サンプルJSONの有無をリポジトリ全域（全3,686ファイル）から網羅的に調査。
+- 調査結果と不整合の実態解明：
+  1. イベント表現（`BusinessEvent` / `WorkflowStep`）のサンプルJSONの不存在: 為替におけるレートFixing（`Reset`）やバリア到達（ノックアウト・消滅・リベート支払）のライフサイクルイベント実行結果JSONはリポジトリ内に一切存在しない（0件）。
+  2. 契約定義（`TradeState`）の静的サンプルの実態:
+     - アベレージオプション: 実在ファイルは `fx-ex21-avg-rate-option-parametric-plus-rate-observation.json` であり、初期契約時の `OptionPayout.observationTerms`（観測スケジュール、情報源、観測時刻）を保持するが、期中観測値や平均確定イベントは未収録。
+     - バリアオプション: `fx-ex13-fx-dbl-barrier-option.json` 等は `incomplete-products` に分類されており、FpML Ingest 変換器の未対応により `OptionPayout.feature.barrier` は出力されず欠落（商品タクソノミ名 `DOUBLEBARRIER` のみ保持）。
+  3. Rosetta DSLイベントモデル設計の精査:
+     - `TradeState.observationHistory`（型: `ObservationEvent`）はクレジットイベント・コーポレートアクション専用であり、市場クォート観測値は `Reset.observations: Observation (1..*)` として保持され `TradeState.resetHistory` に蓄積される仕様を解明。
+     - `Trigger` は契約側の条件型でありイベントプリミティブではないこと、ノックアウト消滅は `QuantityChangeInstruction`（数量0・Terminated）および `TransferInstruction`（リベート）の複合イベント（認定: `Qualify_Termination`）として表現される仕様を解明。
+- `concepts/fx_products_and_synthetic_forward.md`（Section 4 & 5.6）および `index.md` を更新同期。
