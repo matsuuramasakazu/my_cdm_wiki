@@ -49,7 +49,7 @@
 - **[cva_calculation_data_modeling.md](concepts/cva_calculation_data_modeling.md)**: CVA（信用評価調整）計算に必要な4大データ要素（担保情報、契約情報、顧客・相手方情報、ネッティング情報）の Rosetta DSL 型定義、ISDA AET・CSA 構造、および CVA エンジン連携仕様。
 - **[extending_cdm_with_rune_dsl.md](concepts/extending_cdm_with_rune_dsl.md)**: Rune DSL（旧Rosetta DSL）を用いた独自の型・関数・列挙型追加によるCDM拡張ワークフロー（外部下流プロジェクトでの拡張 vs コミュニティ本体へのコントリビューション、rune-config.yml、Java版 rune-maven-plugin と Python版 rune-python-generator のコード生成分岐、型継承/合成仕様）。
 - **[reference_data_and_codelists.md](concepts/reference_data_and_codelists.md)**: 基準データとコード値体系（Index・通貨・都市・商品タクソノミー）の3層管理アーキテクチャ（DSL静的Enum、FpML動的コードリスト、商品Qualification自動判定）および情報源トレーサビリティ。
-- **[fx_products_and_synthetic_forward.md](concepts/fx_products_and_synthetic_forward.md)**: 為替プロダクト（スポット・フォワード・オプション・シンセティック・エキゾチック）のCDMモデリング仕様、共通SettlementPayout構造、フォワードポイント合成、複数受渡日設計、バリア・アベレージを含む全8大動的ライフサイクルイベント体系、および一次サンプルJSON提供実態・要素検証。
+- **[fx_products_and_synthetic_forward.md](concepts/fx_products_and_synthetic_forward.md)**: 為替プロダクト（スポット・フォワード・NDF・オプション・シンセティック・TARF・デジタル）のCDMモデリング仕様、共通SettlementPayout構造、NDF（直物差金決済先渡）の差金決済条件（CashSettlementTerms＋二重ネストfxFixingDate）とISDAタクソノミ自動判定、フォワードポイント合成、複数受渡日設計、FX TARFのモデリング限界とハルシネーション是正（一次ソース未定義・外部消滅駆動）、デジタル系オプション（European Binary・Touch・incomplete-products実態）、権利行使後ペイアウトの決定論的メカニズム（Physical Exercise による為替スポットSettlementPayout派生生成 vs Cash Settlement差金決済）、全8大動的ライフサイクルイベント体系、および実サンプルJSON/XML（fx-ex07、fx-ex14〜ex19等）要素検証。
 
 ---
 

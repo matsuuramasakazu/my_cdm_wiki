@@ -258,3 +258,49 @@
      - `TradeState.observationHistory`（型: `ObservationEvent`）はクレジットイベント・コーポレートアクション専用であり、市場クォート観測値は `Reset.observations: Observation (1..*)` として保持され `TradeState.resetHistory` に蓄積される仕様を解明。
      - `Trigger` は契約側の条件型でありイベントプリミティブではないこと、ノックアウト消滅は `QuantityChangeInstruction`（数量0・Terminated）および `TransferInstruction`（リベート）の複合イベント（認定: `Qualify_Termination`）として表現される仕様を解明。
 - `concepts/fx_products_and_synthetic_forward.md`（Section 4 & 5.6）および `index.md` を更新同期。
+ 
+## [2026-10-09] query | FX TARF、デジタル系オプションおよび行使後ペイアウト（現物スポット派生 vs 差金決済）のモデリング調査と還元
+- **FX TARF (Target Accrual Redemption Forward)** の金融工学構造および CDM モデリング手法を体系化：
+  - 各期日のレバレッジ構造（クライアント買Call $N$ ＋ クライアント売Put $L \times N$）の非対称 Payout ペア設計。
+  - 累積利益計算エンジンと CDM プロトコルの境界（連続的累積損益計算は外部エンジンに委譲、確定後の状態遷移を CDM イベントとして記録）。
+  - 目標到達時の早期消滅（Redemption）を `QuantityChangeInstruction`（将来期日数量の0化置換、`ClosedState = Terminated`、認定: `Qualify_Termination`）としてモデル化。
+  - 最終期の数量按分調整（Exact Accrual）における部分数量縮小（Downsize）と決済の連動。
+- **デジタル系通貨オプション (Digital / Binary Options)** の類型と CDM 表現・実態を解明：
+  - European Cash-or-Nothing / Asset-or-Nothing、American One-Touch / No-Touch、Double One/No-Touch のペイオフと判定条件を対比整理。
+  - CDM 正規表現: `OptionPayout` の `feature.barrier`（`knockIn` / `knockOut`）、`Trigger`（`PriceSchedule`, `triggerType`, `triggerTimeType`）、固定額受渡（`FeaturePayment` または `CashSettlementTerms.cashSettlementAmount`）。
+  - 一次ソース Ingest 実装の実態検証: `ingest-fpml-confirmation-product-fxdigitaloption-func.rosetta`（`MapFxDigitalOptionNonTransferableProduct`）がスケルトン実装（`underlier: empty`、トリガー欠落）であること、一次リポジトリのサンプル出力（`fx-ex14` 〜 `fx-ex19`）が `incomplete-products` に隔離されている要因をコード裏どり。
+  - タクソノミ認定関数（`Qualify_ForeignExchange_VanillaOption` / `NDO` のみ存在、Digital 用判定関数は未定義）の実態を解明。
+- **権利行使後のペイアウト（Payout after Exercise）の決定論的メカニズム** を完全解明：
+  - `event-common-func.rosetta` の `Create_Exercise`（L498-553）の厳密な仕様と 2 つの `TradeState`（原契約の減額・終了 ＋ 派生取引約定）返却仕様を解明。
+  - **現物受渡（Physical Exercise）**: 通貨アンダーライング（`Cash`）から `Create_NonTransferableProduct`（L568-578）が起動し、為替スポット取引の型である `SettlementPayout` を持つ新規プロダクトを自動合成、Put オプション時の方向反転（`Update_ProductDirection` L554-567）、および `replacementTradeIdentifier` による新規 UTI 付番から受渡日（Value Date）の `Transfer` 決済までのエンドツーエンドのフローを解明。
+  - **差金決済（Cash Settlement / NDO）**: 新規スポット契約を生成せず、`Reset` によるレート確定後、`ExerciseInstruction.exerciseQuantity` 内の `TransferInstruction` により差金決済額を送金し原契約を `Terminated` とするパスを対比整理。
+- `concepts/fx_products_and_synthetic_forward.md` を大幅拡充（タイトル更新、新第3.2節、新第4章、新第5章、新第7.7節・7.8節追加）、および `index.md` を更新同期。
+
+## [2026-10-09] query | NDF (Non-Deliverable Forward) の CDM モデリング調査と還元
+- 直物差金決済為替先渡（NDF: Non-Deliverable Forward）の金融工学背景（規制新興国通貨・資本規制・差金決済計算式 $\text{USD} = N_{USD} \times \frac{S - K}{S}$）と CDM モデリング仕様を解明。
+- CDM データ構造の決定論的特徴:
+  - ペイアウト基底型は Spot / Deliverable Forward と同一の `SettlementPayout`。
+  - 判別キーは `SettlementTerms.cashSettlementTerms`（存在する場合、ISDA タクソノミが `ForeignExchange_NDF` と自動判定。Spot/Forward は `cashSettlementTerms is absent`）。
+  - 通貨規制により新興国通貨（INR, KRW, BRL 等）の受渡は行われず、単一のハードカレンシー（通常 `USD`）が `settlementCurrency` として指定。
+  - 為替フィキシング日は `cashSettlementTerms.valuationDate.fxFixingDate` に保持され、決済期日（`settlementDate.valueDate`）とは明確に分離。
+- NDF のライフサイクル状態遷移（約定 $\to$ 市場観測 $\to$ フィキシング確定（`Reset`） $\to$ 差金決済送金（`Transfer`） $\to$ 契約消滅（`Terminated`））のシーケンスと NDS（Non-Deliverable Swap）・NDO（Non-Deliverable Option）との対比を整理。
+- 実機サンプル検証: FpML 入力 XML（`fx-ex07-non-deliverable-forward.xml`）および CDM 出力 JSON（`fx-ex07-non-deliverable-forward.json`）の全フィールド対比検証を実施。FpML 5-13 の旧 `<nonDeliverableSettlement>` が CDM では `CashSettlementTerms` 配下に統一正規化（Harmonization）されていること、およびタクソノミ `ForeignExchange_NDF` が `calculated: true` で自動推論される仕様を裏どり。
+- `concepts/fx_products_and_synthetic_forward.md`（新第2章、新第8.2節の追加、セクション番号繰り下げ、Frontmatter 更新）、`index.md`、および `log.md` を更新同期。
+
+## [2026-10-09] query | FX TARF、デジタルオプション、NDF の一次ソース整合性監査とハルシネーション是正
+- 一次ソース（`common-domain-model/rosetta-source/` の Rosetta DSL コードおよび `ingest/output/` の JSON サンプル）に照らし合わせ、`concepts/fx_products_and_synthetic_forward.md` の記載を厳密に監査し、以下のハルシネーション（過剰解釈・誤謬）およびパス不整合を洗い出して是正。
+- **1. FX TARF (Target Accrual Redemption Forward) のハルシネーション是正**:
+  - 一次ソース内に `tarf` や `TargetAccrual` といったキーワードや型定義、Qualification 関数は **完全皆無（0件）** である事実を明記。
+  - `EconomicTerms.earlyTerminationProvision` というパスは存在せず、正しくは `EconomicTerms.terminationProvision.earlyTerminationProvision`。
+  - `MandatoryEarlyTermination` は金利スワップ等の日付指定型・公正価値解約規定（ISDA ird-44）であり、累積利益（Target Cap）や超過利益処理（Full / Exact Accrual）を表現する属性は一切持たない誤用を是正。
+  - `Barrier.knockOut` も単一レート判定であり累積損益集計には使えない。TARF は CDM 上は非対称ストリップオプションとして保持し、消滅条件は CDM スキーマ外の非標準条項（`nonStandardisedTerms: true`）とし、外部のリスク管理エンジンが計算・判定して `QuantityChangeInstruction`（数量0置換）で終了させる運用限界を明記。
+- **2. デジタル系FXオプション (Digital / Binary Options) の是正**:
+  - `product-qualification-func.rosetta` にデジタルオプション用の自動判定関数（`Qualify_ForeignExchange_DigitalOption` 等）は **0件（非存在）** であり、実サンプルでも ISDA 分類ではなく `taxonomy.source = Other` として保持される事実を明記。
+  - `FeaturePayment` の必須属性 `payerReceiver PartyReferencePayerReceiver (1..1)` の記載漏れを修正。
+  - `CashSettlementTerms.cashSettlementAmount` による代替案はクレジットイベント用であり為替オプションには適用されない事実を明記。
+  - `output/` 配下の実在サンプル `fx-ex14` 〜 `fx-ex19`（`euro-range-digital`, `one-touch`, `no-touch`, `double-one-touch`, `double-no-touch`）の JSON リンクをすべて配備・引用し、マッピング関数未整備による属性欠落の実態を裏どり。
+- **3. NDF (Non-Deliverable Forward) の是正**:
+  - `ValuationDate.fxFixingDate`（型: `FxFixingDate`）内に属性 `fxFixingDate`（型: `AdjustableOrRelativeDate`）が存在する二重ネスト構造（`valuationDate.fxFixingDate.fxFixingDate...`）を実サンプル `fx-ex07.json` と照合して正確なパスに修正。
+  - CDM 内部の関数（`CalculateReset` 等）には NDF の差金決済額自動計算ロジックは存在せず、計算は外部システムが行い CDM は監査ログ（`ResetInstruction`, `TransferInstruction`）を記録する責務境界を明確化。
+- `concepts/fx_products_and_synthetic_forward.md`, `index.md`, `log.md` を更新同期。
+
