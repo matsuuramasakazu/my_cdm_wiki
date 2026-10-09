@@ -304,3 +304,25 @@
   - CDM 内部の関数（`CalculateReset` 等）には NDF の差金決済額自動計算ロジックは存在せず、計算は外部システムが行い CDM は監査ログ（`ResetInstruction`, `TransferInstruction`）を記録する責務境界を明確化。
 - `concepts/fx_products_and_synthetic_forward.md`, `index.md`, `log.md` を更新同期。
 
+## [2026-10-09] query | スポット・フォワード・通貨オプション・シンセティックフォワードのハルシネーション監査と是正
+- 一次ソース（Rosetta DSL コードベースおよび Ingest JSON/XML 成果物）に照らし合わせ、`concepts/fx_products_and_synthetic_forward.md` における主要為替プロダクトの記載を徹底監査し、以下のハルシネーション・不整合を是正。
+- **1. スポット（FX Spot）＆ プレーンフォワード（FX Forward）**:
+  - `settlementType: Physical` の未出力実態の反映: Rosetta DSL（`SettlementBase`）では必須 `(1..1)` だが、FpML Ingest 変換関数（`MapFxCashSettlementToSettlementTerms`）では現物受渡時に値がセットされず、実サンプル JSON（`fx-ex01`, `fx-ex03`）では未出力（省略）となる実態を注記。
+  - ISDA タクソノミ名の統一: プレーンフォワードは `Qualify_ForeignExchange_Spot_Forward` で判定されるため、実サンプル（`fx-ex03`）の出力値は `ForeignExchange_Spot_Forward` である事実を整合化。
+- **2. NDF (Non-Deliverable Forward)**:
+  - クラス図の型修正: `settlementCurrency` を `Unit` から正規の `string [metadata scheme]` に修正。
+  - 多重度修正: `cashSettlementTerms` を `(0..*)` リスト表記に修正。
+  - 情報源階層補正: `ValuationSource.informationSource` の型 `FxSpotRateSource` および内部の `primarySource InformationSource` の中抜きを是正。
+- **3. プレーンな通貨オプション (Vanilla FX Option)**:
+  - ストライク参照構造のハルシネーション是正: `strike.strikePrice` はインラインの直接 `Price` 型であり、外部への `@ref:scoped` アドレス参照属性は持たない事実を解明（実サンプル `fx-ex09`, `fx-ex10`, `fx-ex11` と整合化）。`tradeLot` 側には計算済名目額 `derivedQuantity` のみが入る仕様を明記。
+  - `ExerciseTerms` の必須属性 `expirationTimeType (1..1)` および `expirationDate (0..*)` を反映。
+  - バニラ適格性判定関数（`Qualify_ForeignExchange_VanillaOption`）において `averagingFeature only exists` が許容される一次ソース特有の包含関係を補足。
+  - 現物受渡オプション（`fx-ex09`, `fx-ex10`）における `settlementType` の未出力実態を明記。
+- **4. 複数受け渡し日をもつシンセティックフォワード（Strip of Synthetic Forwards）**:
+  - 架空の `TradePackage` 型を全廃し、一次ソースの正規表現である `ExecutionDetails.packageReference`（型: `IdentifiedList`）およびイベントレベルの `packageInformation`（型: `IdentifiedList`）に是正。
+  - 単一 Trade 複数 Payout 構造（アプローチ 1）の致命的制約（ISDA タクソノミ推論脱落、`Create_Exercise` の `tradeLot only-element` ハードコードによるライフサイクル処理破綻）を明記し、実務的には `IdentifiedList` によるマルチ Trade 構造（アプローチ 2）が事実上唯一の整合解である結論を提示。
+  - 一次ソースにシンセティックフォワードやオプション複数戦略の完全サンプルは存在せず、FpML `<strategy>`（`fx-ex23-straddle`, `fx-ex25`）は Ingest 未実装のため `incomplete-products` に隔離されている事実を裏どり。
+- **5. 権利行使後の派生生成（Physical Exercise によるスポット生成）**:
+  - `Create_NonTransferableProduct`（L568-578）が `underlier` と `payerReceiver` のみをセットし、受渡期日（`settlementTerms`）を設定しない不完全な実装にとどまっている一次ソースのコード制約を客観的に注記。
+- `concepts/fx_products_and_synthetic_forward.md`, `index.md`, `log.md` を更新同期。
+

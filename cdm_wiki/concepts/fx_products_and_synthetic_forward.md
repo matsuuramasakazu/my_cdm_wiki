@@ -35,8 +35,10 @@ sources:
   - "../../common-domain-model/rosetta-source/src/main/resources/ingest/input/fpml-5-13-incomplete-products-fx-derivatives/fx-ex17-no-touch-option.xml"
   - "../../common-domain-model/rosetta-source/src/main/resources/ingest/output/fpml-confirmation-to-trade-state/fpml-5-13-incomplete-products-fx-derivatives/fx-ex18-double-one-touch-option.json"
   - "../../common-domain-model/rosetta-source/src/main/resources/ingest/input/fpml-5-13-incomplete-products-fx-derivatives/fx-ex18-double-one-touch-option.xml"
-  - "../../common-domain-model/rosetta-source/src/main/resources/ingest/output/fpml-confirmation-to-trade-state/fpml-5-13-incomplete-products-fx-derivatives/fx-ex19-double-no-touch-option.json"
-  - "../../common-domain-model/rosetta-source/src/main/resources/ingest/input/fpml-5-13-incomplete-products-fx-derivatives/fx-ex19-double-no-touch-option.xml"
+  - "../../common-domain-model/rosetta-source/src/main/rosetta/base-staticdata-identifier-type.rosetta"
+  - "../../common-domain-model/rosetta-source/src/main/resources/ingest/input/fpml-5-13-incomplete-products-fx-derivatives/fx-ex23-straddle.xml"
+  - "../../common-domain-model/rosetta-source/src/main/resources/ingest/output/fpml-confirmation-to-trade-state/fpml-5-13-incomplete-products-fx-derivatives/fx-ex23-straddle.json"
+  - "../../common-domain-model/rosetta-source/src/main/resources/ingest/output/fpml-confirmation-to-trade-state/fpml-5-13-incomplete-products-fx-derivatives/fx-ex25-option-strategyComponentIdentifier.json"
 last_updated: "2026-10-09"
 tags: [cdm, fx, fx_spot, fx_forward, ndf, non_deliverable_forward, cash_settlement_terms, fx_fixing_date, fx_option, synthetic_forward, fx_tarf, digital_option, binary_option, exercise_payout, physical_exercise, cash_settlement, settlement_payout, option_payout, lifecycle, json_evidence]
 ---
@@ -95,7 +97,7 @@ classDiagram
     }
 
     Trade --> EconomicTerms : product.economicTerms
-    EconomicTerms --> SettlementPayout : payout (only-element)
+    EconomicTerms --> SettlementPayout : payout (choice Payout)
     SettlementPayout --> SettlementTerms : settlementTerms
     SettlementTerms --> SettlementDate : settlementDate
     Trade --> TradeLot : tradeLot
@@ -109,11 +111,17 @@ classDiagram
 
 | 構成要素 | 為替スポット (FX Spot) | プレーン為替先渡 (FX Forward) | 補足・CDM構造 |
 |---|---|---|---|
-| **Payout 型** | `SettlementPayout` (1..1) | `SettlementPayout` (1..1) | 同一の型を使用 |
-| **ISDA 分類** | `ForeignExchange_Spot_Forward` | `ForeignExchange_Spot_Forward` | `Qualify_ForeignExchange_Spot_Forward` で共通判定 |
+| **Payout 型** | `SettlementPayout` (1..1) | `SettlementPayout` (1..1) | 同一の型（`choice Payout` 内）を使用 |
+| **ISDA 分類** | `ForeignExchange_Spot_Forward` | `ForeignExchange_Spot_Forward` | `Qualify_ForeignExchange_Spot_Forward` で共通判定（※1） |
 | **受渡日 (`valueDate`)** | 約定日 $T$ から標準スポット日（例: $T+2$） | スポット日より先の特定将来期日 | `settlementTerms.settlementDate.valueDate` に設定 |
 | **為替レート構造** | 単一の直物レート（Spot Rate） | 先渡レート（Outright Forward Rate）または **直物＋スワップポイント合成** | [`Price`](../../common-domain-model/rosetta-source/src/main/rosetta/observable-asset-type.rosetta) の `composite` 属性 |
-| **受渡形態** | 現物受渡（`Physical`） | 現物受渡（`Physical`） | 差金決済（NDF）の場合は `cashSettlementTerms` を指定 |
+| **受渡形態** | 現物受渡（`Physical`） | 現物受渡（`Physical`） | 差金決済（NDF）の場合は `cashSettlementTerms` を指定（※2） |
+
+> **※1: ISDA タクソノミ名の統一性**:
+> CDM の自動商品分類関数 [`Qualify_ForeignExchange_Spot_Forward`](../../common-domain-model/rosetta-source/src/main/rosetta/product-qualification-func.rosetta) はスポットとフォワードを区別せず共通判定するため、実サンプル（`fx-ex01`, `fx-ex03`）で出力される ISDA タクソノミ名は一律 `ForeignExchange_Spot_Forward` となります。
+>
+> **※2: 実サンプルにおける `settlementType` の未出力実態**:
+> Rosetta DSL 型定義（[`SettlementBase`](../../common-domain-model/rosetta-source/src/main/rosetta/product-common-settlement-type.rosetta)）上は `settlementType SettlementTypeEnum (1..1)` と必須定義されていますが、FpML Ingest 変換関数（[`MapFxCashSettlementToSettlementTerms`](../../common-domain-model/rosetta-source/src/main/rosetta/ingest-fpml-confirmation-settlement-func.rosetta)）では `if fpmlFxCashSettlement exists then SettlementTypeEnum -> Cash` と実装されているため、現物受渡（Deliverable）の場合は値がセットされず、実サンプル JSON（`fx-ex01-fx-spot.json`, `fx-ex03-fx-fwd.json`）では `settlementType` キー自体が出力されません（省略されます）。
 
 ---
 
@@ -208,9 +216,9 @@ classDiagram
     }
     class SettlementTerms {
         +SettlementTypeEnum settlementType: Cash
-        +Unit settlementCurrency: USD
+        +string settlementCurrency: USD
         +SettlementDate settlementDate
-        +CashSettlementTerms cashSettlementTerms
+        +CashSettlementTerms cashSettlementTerms (0..*)
     }
     class CashSettlementTerms {
         +ValuationMethod valuationMethod
@@ -221,7 +229,14 @@ classDiagram
     }
     class ValuationSource {
         +QuotedCurrencyPair quotedCurrencyPair: USD/INR
-        +InformationSource informationSource: Reuters RBIB
+        +FxSpotRateSource informationSource
+    }
+    class FxSpotRateSource {
+        +InformationSource primarySource
+    }
+    class InformationSource {
+        +InformationProviderEnum sourceProvider: Reuters
+        +string sourcePage: RBIB
     }
     class ValuationDate {
         +FxFixingDate fxFixingDate
@@ -236,12 +251,14 @@ classDiagram
     }
 
     NonTransferableProduct --> EconomicTerms : economicTerms
-    EconomicTerms --> SettlementPayout : payout (only-element)
+    EconomicTerms --> SettlementPayout : payout (choice Payout)
     SettlementPayout --> SettlementTerms : settlementTerms
     SettlementTerms --> SettlementDate : settlementDate
-    SettlementTerms --> CashSettlementTerms : cashSettlementTerms (NDF 特有)
+    SettlementTerms --> CashSettlementTerms : cashSettlementTerms (0..*)
     CashSettlementTerms --> ValuationMethod : valuationMethod
     ValuationMethod --> ValuationSource : valuationSource
+    ValuationSource --> FxSpotRateSource : informationSource
+    FxSpotRateSource --> InformationSource : primarySource
     CashSettlementTerms --> ValuationDate : valuationDate
     ValuationDate --> FxFixingDate : fxFixingDate
 ```
@@ -271,12 +288,15 @@ func Qualify_ForeignExchange_NDF:
 | 構成要素 | プレーン為替先渡 (Outright Forward) | 直物差金決済先渡 (NDF) |
 |---|---|---|
 | **Payout 型** | `SettlementPayout` (1..1) | `SettlementPayout` (1..1) |
-| **ISDA タクソノミ** | `ForeignExchange_Forward` | `ForeignExchange_NDF` |
-| **決済種別 (`settlementType`)** | 通常 `Physical`（現物交換） | **`Cash`（差金決済）** |
-| **決済通貨 (`settlementCurrency`)** | 2通貨双方 | **単一の決済通貨（USD 等）** |
-| **差金決済条件 (`cashSettlementTerms`)** | **存在しない（`is absent`）** | **必須（`exists`）** |
+| **ISDA タクソノミ** | `ForeignExchange_Spot_Forward`（※1） | `ForeignExchange_NDF` |
+| **決済種別 (`settlementType`)** | 通常未出力（実サンプルでは省略/null） | **`Cash`（差金決済）** |
+| **決済通貨 (`settlementCurrency`)** | 2通貨双方 | **単一の決済通貨（USD 等、`string` 型）** |
+| **差金決済条件 (`cashSettlementTerms`)** | **存在しない（`is absent`）** | **必須（`exists`、多重度 `0..*`）** |
 | **評価日 (`valuationDate`)** | なし | **`fxFixingDate`（通常決済日の2営業日前）** |
 | **為替参照レート源** | なし（約定レートで現物決済） | **中央銀行・公表レート源（Reuters, BFIX 等）** |
+
+> **※1: タクソノミ判定関数名との整合性**:
+> 先述の通り、プレーン為替先渡は [`Qualify_ForeignExchange_Spot_Forward`](../../common-domain-model/rosetta-source/src/main/rosetta/product-qualification-func.rosetta) によって認定されるため、実サンプル JSON（`fx-ex03-fx-fwd.json`）における推論値は `ForeignExchange_Spot_Forward` となります（独立した `Qualify_ForeignExchange_Forward` 関数は存在しません）。
 
 ---
 
@@ -380,16 +400,17 @@ classDiagram
     }
     class ExerciseTerms {
         +OptionExerciseStyleEnum style
-        +AdjustableOrRelativeDate expirationDate
+        +ExpirationTimeTypeEnum expirationTimeType: SpecificTime (必須 1..1)
+        +AdjustableOrRelativeDate expirationDate (0..*)
         +AdjustableOrRelativeDates relevantUnderlyingDate
     }
     class SettlementTerms {
         +SettlementTypeEnum settlementType
         +SettlementDate settlementDate
-        +CashSettlementTerms cashSettlementTerms
+        +CashSettlementTerms cashSettlementTerms (0..*)
     }
     Trade --> EconomicTerms : product.economicTerms
-    EconomicTerms --> OptionPayout : payout
+    EconomicTerms --> OptionPayout : payout (choice Payout)
     OptionPayout --> Underlier : underlier
     OptionPayout --> OptionStrike : strike
     OptionPayout --> ExerciseTerms : exerciseTerms
@@ -404,18 +425,19 @@ classDiagram
 | `optionType` | `OptionTypeEnum` | `Call` または `Put`。 |
 | `buyerSeller` | `BuyerSeller` | オプションの買い手（Buyer）と売り手（Seller）。 |
 | `payerReceiver` | `PayerReceiver` | 権利行使時の資金受渡における支払側と受取側。 |
-| `strike` | `OptionStrike` | 行使価格（為替レート [`Price`](../../common-domain-model/rosetta-source/src/main/rosetta/observable-asset-type.rosetta)）。`priceType = ExchangeRate`、単位通貨と基準通貨を指定。 |
-| `exerciseTerms` | `ExerciseTerms` | 権利行使条件。<br>- `style`: ヨーロピアン (`European`) または アメリカン (`American`)<br>- `expirationDate`: オプション満期日・行使期限<br>- `relevantUnderlyingDate`: 行使に伴う受渡日（Value Date） |
-| `settlementTerms` | `SettlementTerms` | 決済方法および期日。<br>- `settlementType`: 現物受渡 (`Physical`) または 差金決済 (`Cash`)<br>- `settlementDate`: 受渡日（`valueDate`）<br>- `cashSettlementTerms`: NDO（Non-Deliverable Option）の場合のフィキシングソース・評価日 |
+| `strike` | `OptionStrike` | 行使価格。内部の **`strikePrice`（型: `Price`）にインラインで直接構造化**（`priceType = ExchangeRate`、`value`、単位通貨と基準通貨を指定）。外部への `@ref:scoped` アドレス参照属性は持ちません。 |
+| `exerciseTerms` | `ExerciseTerms` | 権利行使条件。<br>- `style`: ヨーロピアン (`European`) または アメリカン (`American`)<br>- **`expirationTimeType`**: 行使時刻タイプ（**必須 `1..1`**、例: `SpecificTime`）<br>- `expirationDate`: オプション満期日・行使期限（多重度 `0..*`）<br>- `relevantUnderlyingDate`: 行使に伴う受渡日（Value Date） |
+| `settlementTerms` | `SettlementTerms` | 決済方法および期日。<br>- `settlementType`: 現物受渡（実サンプルでは未出力/省略）または 差金決済 (`Cash`)<br>- `settlementDate`: 受渡日（`valueDate`）<br>- `cashSettlementTerms`: NDO（Non-Deliverable Option）の場合のフィキシングソース・評価日（多重度 `0..*`） |
 | `feature` | `OptionFeature` | バリア（`barrier`）、平均レート型（`averagingFeature`）などのエキゾチック条項（任意）。 |
 
 ### 自動商品分類（Product Qualification）
 [`product-qualification-func.rosetta`](../../common-domain-model/rosetta-source/src/main/rosetta/product-qualification-func.rosetta) の `Qualify_ForeignExchange_VanillaOption` では、以下の条件がすべて満たされた場合にバニラ通貨オプションとして認定されます：
 1. アセットクラスが `ForeignExchange` であること
-2. `payout` が単一の `OptionPayout` であること
-3. 行使スタイルが `Bermuda` ではないこと（European または American）
-4. エキゾチック機能がないこと（または平均レートのみ）
-5. `cashSettlementTerms` が非存在（差金決済の場合は `Qualify_ForeignExchange_NDO` と判定）
+2. `payout` が単一の `OptionPayout` であること（`economicTerms -> payout only-element as OptionPayout exists`）
+3. 行使スタイルが `Bermuda` ではないこと（`style <> Bermuda`、すなわち European または American）
+4. エキゾチック機能がないこと、または平均レートのみであること（`optionPayout -> feature is absent or optionPayout -> feature -> averagingFeature only exists`）
+   > **※注記**: ISDA タクソノミ規則に基づき、CDM のバニラオプション適格性判定コードでは平均レート型（Asian）が一部許容されていますが、独立した `Qualify_ForeignExchange_AsianOption` は存在せず、バニラ枠組みの中で `averagingFeature` を持つか否かで区別されます。
+5. `cashSettlementTerms` が非存在（差金決済の場合はヨーロピアン型に限り `Qualify_ForeignExchange_NDO` と判定）
 
 ---
 
@@ -447,39 +469,59 @@ graph TD
 ```
 
 ##### ストライク表現の2つのバリエーション
+> **一次ソース上の重要仕様（インライン直接指定）**:
+> [`OptionStrike.strikePrice`](../../common-domain-model/rosetta-source/src/main/rosetta/product-template-type.rosetta) はインラインの直接 `Price` 型であり、外部への `@ref:scoped` 参照属性を持ちません（実機サンプル `fx-ex09-euro-opt.json` 等でも行使レートは Payout 内部に直接埋め込まれ、`tradeLot.priceQuantity.price` には計算後名目額 `derivedQuantity` のみが入ります）。
+
 1. **フラットレート型（単一行使価格 $K$）**:
    - すべての期日 $T_i$ で同一の為替レート（例: 150.00 JPY/USD）が適用される。
-   - `TradeLot.priceQuantity` に単一の `Price` が定義され、すべての `OptionPayout` の `strike.strikePrice` が同一のグローバルキー／アドレス（`@ref:scoped`）を参照。
+   - すべての `OptionPayout` の `strike.strikePrice.value` に同一の行使価格 $K$ を直接定義します。
 2. **期日別レート型（マルチフォワード: スワップポイント加味 $K_i$）**:
    - 各受渡日 $T_i$ までの金利差（フォワードスプレッド）を反映し、期日ごとに異なる行使価格 $K_1, K_2, \dots, K_n$ を設定する。
-   - `TradeLot.priceQuantity` に期日分の `Price`（$K_1 \dots K_n$）を定義し、各期日の Call/Put ペアが対応する $K_i$ を個別に参照します（実サンプル `fx-ex08-fx-swap.json` と同一の構造）。
+   - 各期日 $T_i$ の Call/Put ペアの `strike.strikePrice.value` に対応する $K_i$ を直接定義します。
+   - ※現物為替スワップ（`fx-ex08-fx-swap.json`）では `SettlementPayout.priceQuantity.priceSchedule` が `TradeLot` の `price` を `@ref:scoped` で参照する構造が取られますが、オプション（`OptionPayout`）ではストライク自体がインライン保持されるという構造的相違があります。
 
 ##### 純粋先渡（Non-synthetic Strip of Forwards）との対比
 シンセティックではなく通常の先渡ストリップの場合、CDM では [`SettlementPayout`](../../common-domain-model/rosetta-source/src/main/rosetta/product-template-type.rosetta) を期日分（$n$ 個）並べる構造となります（FX Swap の `nearLeg` / `farLeg` 構造の多期間拡張）。
 
 ---
 
-#### アプローチ 2: マルチ Trade パッケージ構造（TradePackage / Multi-Trade）
+#### アプローチ 2: マルチ Trade パッケージ構造（`IdentifiedList` / Multi-Trade）
 
-各受渡期日 $T_i$ の Call / Put（または期日ごとの合成先渡ペア）をそれぞれ独立した [`TradeState`](../../common-domain-model/rosetta-source/src/main/rosetta/event-common-type.rosetta) として生成し、[`executionDetails.packageInformation`](../../common-domain-model/rosetta-source/src/main/rosetta/event-common-type.rosetta)（`TradePackage`）で共通のパッケージ識別子を付与して束ねる構造です。
+各受渡期日 $T_i$ の Call / Put（または期日ごとの合成先渡ペア）をそれぞれ独立した [`TradeState`](../../common-domain-model/rosetta-source/src/main/rosetta/event-common-type.rosetta) として生成し、[`executionDetails.packageReference`](../../common-domain-model/rosetta-source/src/main/rosetta/event-common-type.rosetta)（型: [`IdentifiedList`](../../common-domain-model/rosetta-source/src/main/rosetta/base-staticdata-identifier-type.rosetta)）およびイベントレベルの [`packageInformation`](../../common-domain-model/rosetta-source/src/main/rosetta/event-common-type.rosetta)（型: `IdentifiedList`）で共通のパッケージ識別子を付与して束ねる構造です。
+
+> **Rosetta DSL における正規仕様注釈 (`base-staticdata-identifier-type.rosetta` L28)**:
+> *"Attaches an identifier to a collection of objects, when those objects themselves can each be represented by an identifier. One use case is the representation of package transactions, where each component is a separate trade with its own identifier, and those trades are linked together as a package with its own identifier. **The data type has been named generically rather than referring to 'packages' as it may have a number of other uses.**"*
+> （※CDM には `TradePackage` という型は存在せず、汎用型 `IdentifiedList` を用いてパッケージ化を表現します。）
 
 ```mermaid
 graph TD
-    Pkg["TradePackage (packageIdentifier: PKG-12345)"]
+    Pkg["packageInformation: IdentifiedList (id: PKG-12345)"]
     Pkg --> TS1["TradeState 1: T1 Call Option (UTI: T1-CALL)"]
     Pkg --> TS2["TradeState 2: T1 Put Option (UTI: T1-PUT)"]
     Pkg --> TS3["TradeState 3: T2 Call Option (UTI: T2-CALL)"]
     Pkg --> TS4["TradeState 4: T2 Put Option (UTI: T2-PUT)"]
+    
+    TS1 -.->|"executionDetails.packageReference"| Pkg
+    TS2 -.->|"executionDetails.packageReference"| Pkg
+    TS3 -.->|"executionDetails.packageReference"| Pkg
+    TS4 -.->|"executionDetails.packageReference"| Pkg
 ```
 
-#### 2つのアプローチの比較評価
+#### 2つのアプローチの比較評価と一次ソースの制約
 
-| 評価軸 | アプローチ 1: 単一 Trade（Multi-Payout） | アプローチ 2: マルチ Trade（TradePackage） |
+| 評価軸 | アプローチ 1: 単一 Trade（Multi-Payout） | アプローチ 2: マルチ Trade（`IdentifiedList`） |
 |---|---|---|
 | **契約のアトミック性** | 高（1つの TradeState で全期日・全レグを包括） | 低（各レグが独立した TradeState） |
+| **ISDA 商品判定 (Qualification)** | **脱落（ISDA タクソノミが付与されない）**<br>`Qualify_ForeignExchange_VanillaOption` は `only-element` を要求するため | **完全対応**<br>各 TradeState が単一 Payout であるため個別にバニラオプション認定 |
+| **CDM ライフサイクル関数 (`Create_Exercise`)** | **実行不可（破綻）**<br>一次ソース `Create_Exercise`（L533）で `tradeLot only-element` がハードコードされているため | **正常実行可能**<br>各期日・各レグの TradeState に対し独立して権利行使関数を適用可能 |
 | **規制報告（EMIR / CFTC）** | 複合取引としての単一 UTI 付番またはカスタム報告 | 各レグ個別に店頭オプションとしての UTI 付番・報告が容易 |
 | **清算機関（CCP）登録** | 単一プロダクトとして取り扱いにくい場合がある | オプションレグ単位でそのまま登録可能 |
-| **CDM ライフサイクル管理** | 1つの TradeState に対し複数 Payout の部分変更を管理 | 各期日の TradeState を独立して終了（Terminated）可能 |
+
+> [!IMPORTANT]
+> **CDM 実装における結論**:
+> 単一 Trade 複数 Payout 構造（アプローチ 1）は、静的なデータ構造としては定義可能ですが、CDM の自動商品分類（Qualification）から脱落し、かつ標準の権利行使関数（`Create_Exercise`）で `tradeLot only-element` 制約によりライフサイクル処理が破綻します。
+> したがって、CDM において期日ごとの権利行使や消滅を自律処理・監査追跡する実務設計としては、**アプローチ 2（独立した TradeState 群を `IdentifiedList` でパッケージ化）が事実上唯一の整合解**となります。
+> なお、一次ソースリポジトリにはオプション複合戦略（FpML `<strategy>`）の完全なサンプル JSON は存在せず（変換未実装のため `incomplete-products` に隔離）、実在する複数レグサンプルは `SettlementPayout` による現物為替スワップ（`fx-ex08-fx-swap.json` 等）のみです。
 
 ---
 
@@ -803,6 +845,11 @@ func Create_NonTransferableProduct:
 
 > **決定的ポイント**:
 > `Create_NonTransferableProduct` は、アンダーライング（通貨資産）と権利行使時の支払受取方向を取り込み、**第1章で詳述した為替スポットの標準データ構造である [`SettlementPayout`](../../common-domain-model/rosetta-source/src/main/rosetta/product-template-type.rosetta) を持つ新規プロダクトを動的に合成**します。
+>
+> > [!NOTE]
+> > **一次ソースコードにおける実装制約（受渡期日の欠落）**:
+> > Rosetta DSL の実装コード（`event-common-func.rosetta` L568-578）を確認すると、`Create_NonTransferableProduct` は `underlier` と `payerReceiver` のみを設定し、**`settlementTerms`（受渡期日 `settlementDate.valueDate` 等）は設定しません**。
+> > さらに、呼出元の `Create_Exercise`（L538）でも `executionDetails: empty` とされており、DSL 関数が自律生成する派生スポット契約は期日情報を持たないスケルトンにとどまります。実務運用では、行使指示（`ExerciseInstruction`）や外部オーケストレーションにより受渡期日を補完設定する必要があります。
 
 #### 2. Put オプションにおける受渡方向の自動反転 ([`Update_ProductDirection`](../../common-domain-model/rosetta-source/src/main/rosetta/event-common-func.rosetta) L554-567)
 Call オプションと Put オプションでは、原資産の受渡方向（買い／売り）が逆転します。CDM では、オプション種別が `Put` の場合に支払側と受取側（Payer と Receiver）を自動的にスワップ（反転）させます：
@@ -816,7 +863,7 @@ else resultProduct
 #### 3. 新規約定（Execution）の組成と受渡決済（Transfer）
 - 合成された `SettlementPayout` に対し、`Create_Execution` が実行されます。
 - 行使指示書に指定された `replacementTradeIdentifier` が付番され、独立した新たな **FX Spot 取引（`TradeState`）** として台帳に登録されます。
-- この FX Spot 取引は、約定日を行使日、決済期日を受渡日（Value Date）として持ち、期日到来時に通常のスポット取引と全く同様に [`Create_Transfer`](../../common-domain-model/rosetta-source/src/main/rosetta/event-common-func.rosetta) によって 2 通貨の現物送金（`Transfer`）が実行されます。
+- この FX Spot 取引は、約定日を行使日として組成され、受渡期日到来時に通常のスポット取引と同様に [`Create_Transfer`](../../common-domain-model/rosetta-source/src/main/rosetta/event-common-func.rosetta) によって 2 通貨の現物送金（`Transfer`）が実行されます。
 
 ```mermaid
 sequenceDiagram
@@ -1015,18 +1062,23 @@ CDM 一次リポジトリ（`rosetta-source/src/main/resources/ingest/`）配下
 | ペイアウト型 | `trade.product.economicTerms.payout[0]` | `@type: "cdm.product.template.OptionPayout"` |
 | 買手・売手 | `payout[0].buyerSeller` | `buyer: "Party1"`, `seller: "Party2"` |
 | オプション種別 | `payout[0].optionType` | `"Put"`（または `"Call"`） |
-| 行使価格 | `payout[0].strike.strikePrice` | `value: 0.4920`, `unit.currency: "USD"`, `perUnitOf.currency: "AUD"`, `priceType: "ExchangeRate"` |
-| 権利行使条件 | `payout[0].exerciseTerms` | `style: "European"`, `expirationDate[0].adjustableDate.adjustedDate: "2002-06-04"` |
-| 受渡期日 | `payout[0].settlementTerms.settlementDate` | `valueDate: "2002-06-06"` |
+| 行使価格 | `payout[0].strike.strikePrice` | `value: 0.4920`, `unit.currency: "USD"`, `perUnitOf.currency: "AUD"`, `priceType: "ExchangeRate"`<br>※**Payout 内にインラインで直接格納**（外部参照なし） |
+| 権利行使条件 | `payout[0].exerciseTerms` | `style: "European"`, `expirationDate[0].adjustableDate.adjustedDate: "2002-06-04"`, `expirationTimeType: "SpecificTime"` |
+| 受渡期日 | `payout[0].settlementTerms.settlementDate` | `valueDate: "2002-06-06"`（※`settlementType` は未出力/省略） |
 | アンダーライング | `payout[0].underlier` | `@type: "cdm.observable.asset.Observable"`, `@ref:scoped: "observable-1"`（`Cash: AUD`） |
-| 元本・数量 | `trade.tradeLot[0].priceQuantity[0]` | `quantity.value: 75000000 AUD`, `price[0].derivedQuantity.value: 36900000 USD` |
+| 元本・数量 | `trade.tradeLot[0].priceQuantity[0]` | `quantity.value: 75000000 AUD`, `price[0].derivedQuantity.value: 36900000 USD`<br>※`price` 側にはレート値は入らず、計算済名目金額のみ格納 |
+
+> **検証の知見**:
+> 1. **ストライクのインライン保持**: オプションでは為替レート（行使価格）は `OptionPayout.strike.strikePrice` 内に直接インラインで構造化され、`tradeLot` の `price` からのスコープ参照（`@ref:scoped`）は行われません。`tradeLot` 側には行使レートに基づく計算結果数量（`derivedQuantity`）のみが保持されます。
+> 2. **`settlementType` の出力挙動**: 現物受渡のオプション（`fx-ex09`, `fx-ex10`）では `settlementType` は出力されず、差金決済（NDO: `fx-ex11`）においてのみ `"settlementType": "Cash"` が出力されます。
 
 ---
 
 ### 8.4 複数受渡日・期日別ストライク（マルチフォワード）の要素対応
 - **検証ファイル**: [`fx-ex08-fx-swap.json`](../../common-domain-model/rosetta-source/src/main/resources/ingest/output/fpml-confirmation-to-trade-state/fpml-5-13-products-fx-derivatives/fx-ex08-fx-swap.json)
-  - `payout` 配列内に複数要素が並び、各要素が独立した `settlementDate.valueDate`（`2002-01-25`, `2002-02-25`）を持つ。
+  - `payout` 配列内に複数要素（ニアレグ＋ファーレグ）が並び、各要素が独立した `settlementDate.valueDate`（`2002-01-25`, `2002-02-25`）を持つ。
   - `tradeLot.priceQuantity` 配列内に期日別の `price-1`（1.48）、`price-2`（1.50）が定義され、各 Payout からスコープ参照（`@ref:scoped`）される。
+  - > **注記**: 本サンプルは **2つの `SettlementPayout` を持つ現物為替スワップ（FX Swap）** の実機エビデンスです。`OptionPayout` を複数並べるシンセティックフォワード（オプションストリップ）の完全サンプルはリポジトリ内に未収録（後述 8.8 の通り Incomplete 隔離）であり、構造参照元としての引用となります。
 
 ---
 
@@ -1099,6 +1151,16 @@ CDM 一次リポジトリにおけるエキゾチックオプション（アベ�
 > CDM コードベース上、デジタル系オプションの FpML Ingest（[`ingest-fpml-confirmation-product-fxdigitaloption-func.rosetta`](../../common-domain-model/rosetta-source/src/main/rosetta/ingest-fpml-confirmation-product-fxdigitaloption-func.rosetta)）は開発途上のスケルトン実装（Incomplete）にとどまっています。
 > 契約の基本枠組み（当事者、プレミアム、満期期日、アメリカン／ヨーロピアン行使スタイル）はパースされますが、トリガー条件および固定ペイアウト額を `OptionPayout.feature.barrier.featurePayment` へ橋渡しするマッピングが存在せず、全サンプルで欠落することが実証されました。
 
+#### 複数オプション戦略（ストラドル・スプレッド等）の Ingest 実態
+- **検証ファイル**:
+  - FpML 入力 XML: [`fx-ex23-straddle.xml`](../../common-domain-model/rosetta-source/src/main/resources/ingest/input/fpml-5-13-incomplete-products-fx-derivatives/fx-ex23-straddle.xml)
+  - CDM 出力 JSON: [`fx-ex23-straddle.json`](../../common-domain-model/rosetta-source/src/main/resources/ingest/output/fpml-confirmation-to-trade-state/fpml-5-13-incomplete-products-fx-derivatives/fx-ex23-straddle.json)
+  - 戦略識別子サンプル: [`fx-ex25-option-strategyComponentIdentifier.json`](../../common-domain-model/rosetta-source/src/main/resources/ingest/output/fpml-confirmation-to-trade-state/fpml-5-13-incomplete-products-fx-derivatives/fx-ex25-option-strategyComponentIdentifier.json)
+- **実態と要因分析**:
+  - FpML における `<strategy>` 構造（複数の `<fxOption>` を束ねる構造）は、CDM 側の Ingest マッピングが未実装です。
+  - 出力された JSON（`fx-ex23`）では、当事者や取引IDのみが出力され、`trade.product` そのものが欠落して `incomplete-products` 配下に隔離されています。
+  - したがって、複数レグを持つオプション戦略やシンセティックフォワードを単一 Trade として Ingest 変換した完全サンプルは、CDM のテストデータセットには存在しません（第4章で論じた通り、各レグを独立した TradeState とし、`IdentifiedList` でパッケージ化する構造が現実的な解となります）。
+
 ---
 
 ### 8.9 権利行使後の派生生成（Physical vs Cash）のコード裏どり
@@ -1113,6 +1175,7 @@ CDM Rosetta DSL における権利行使後のペイアウト生成メカニズ�
      set newProduct -> economicTerms -> payout -> SettlementPayout -> underlier: underlier
      set newProduct -> economicTerms -> payout -> SettlementPayout -> payerReceiver: payerReceiver
      ```
+   - ※**実装上の制約注記**: 上記の通り、一次ソースの DSL コードは `underlier` と `payerReceiver` のみをセットし、受渡期日（`settlementTerms.settlementDate`）を設定しません。そのため、DSL レベルで自律生成される派生スポット契約は期日未設定のスケルトンにとどまる点に注意が必要です。
 3. **`Update_ProductDirection` ([`event-common-func.rosetta`](../../common-domain-model/rosetta-source/src/main/rosetta/event-common-func.rosetta) L554-567)**:
    - `optionType = Put` の場合、Payer と Receiver のロールを自動反転させてスポット取引を生成する。
 4. **`replacementTradeIdentifier` ([`event-common-type.rosetta`](../../common-domain-model/rosetta-source/src/main/rosetta/event-common-type.rosetta) L136)**:
