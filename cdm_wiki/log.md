@@ -326,3 +326,12 @@
   - `Create_NonTransferableProduct`（L568-578）が `underlier` と `payerReceiver` のみをセットし、受渡期日（`settlementTerms`）を設定しない不完全な実装にとどまっている一次ソースのコード制約を客観的に注記。
 - `concepts/fx_products_and_synthetic_forward.md`, `index.md`, `log.md` を更新同期。
 
+## [2026-10-10] query | Ingest テストパックにおける incomplete フォルダと通常フォルダの差異解明および為替デリバティブ全16サンプルの不完全要因一覧化
+- 一次情報（`common-domain-model/rosetta-source/src/main/resources/ingest/` のディレクトリ構成、`config/*.json`、`RELEASE.md`、git コミット履歴 PR #1626 / PR #2397 / PR #2797 / PR #4340）を調査・分析。
+- `ingest/input/` および `output/` における `incomplete` フォルダ（`incomplete-products-*`, `incomplete-processes-*`）と通常フォルダ（`products-*`, `processes-*`）の明確な差異（FpML から CDM へのマッピングカバレッジの完了・公式サポート済み vs 未完了・開発途上/バックログ隔離）を解明。
+- CI/CD におけるベースライン管理（`modelValidationFailures` アサーション）と、マッピング開発進行に伴う通常フォルダへの昇格運用プロセスを体系化。
+- `fpml-5-13-incomplete-products-fx-derivatives` 配下の全16サンプルについて、入力 XML と出力 JSON を精密突合し、各サンプルの具体的な欠落・未実装要因（`<strategy>`・`<termDeposit>`・`<fxFlexibleForward>` の完全未対応、`<settlementInformation>`・`<splitSettlement>` 決済指示の脱落、バリア条項の未マッピングとバニラ縮退、デジタルオプションのトリガー＆固定ペイアウト金額の完全消失、ボラティリティ取引条項の欠落等）を体系的に一覧化。
+- `concepts/fpml_ingestion.md` に「7. Ingestion テストパック構成と incomplete フォルダの位置づけ」および「7.4 実例分析: FpML 5.13 為替デリバティブ全16サンプルの不完全要因一覧」を追記し、`index.md` および `log.md` を更新同期。
+
+
+

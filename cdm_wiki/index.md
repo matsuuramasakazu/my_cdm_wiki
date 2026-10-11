@@ -37,7 +37,7 @@
 
 - **[product_modeling.md](concepts/product_modeling.md)**: 金利スワップ(IRS)、CDS、株式/オプション、コモディティ、スケジュール、決済条件、商品自動分類(Qualification)。
 - **[event_lifecycle.md](concepts/event_lifecycle.md)**: 取引ライフサイクルイベント（BusinessEvent、13の不可分操作PrimitiveInstruction、リセット処理のInstruction Composition機構、Before/After状態遷移モデル等）。
-- **[fpml_ingestion.md](concepts/fpml_ingestion.md)**: FpML XML メッセージと CDM オブジェクトの相互変換・マッピング構造、executionNotification取込、IRS TradeState 対応表、および PartyReference (xsd:IDREF) 参照解決。
+- **[fpml_ingestion.md](concepts/fpml_ingestion.md)**: FpML XML メッセージと CDM オブジェクトの相互変換・マッピング構造、Ingestion テストパック構成（`input/`, `output/`, `config/`）とマッピングカバレッジによる `incomplete` フォルダ（未完了/開発途上）と通常フォルダの役割・昇格運用、FpML 5.13 為替デリバティブ incomplete 全16サンプルの具体的な欠落・不完全要因一覧、executionNotification取込、IRS TradeState 対応表、および PartyReference (xsd:IDREF) 参照解決。
 - **[legal_and_margin.md](concepts/legal_and_margin.md)**: ISDA/ICMA/ISLA マスターアグリーメント、CSA (担保契約)、Initial/Variation Margin 計算規則。
 - **[observables_and_rates.md](concepts/observables_and_rates.md)**: 参照金利(FRO: SOFR, EURIBOR, TONA)、観測種別判定(DetermineObservationType)、複利計算、日数計算(Day Count)。
 - **[front_office_pricing_bounded_context.md](concepts/front_office_pricing_bounded_context.md)**: CDMをリファレンスとするフロントオフィス・プライシング業務の5つのBounded Context分割およびマイクロサービスアーキテクチャ設計。
