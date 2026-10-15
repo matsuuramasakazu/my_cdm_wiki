@@ -37,10 +37,14 @@ sources:
   - "../../common-domain-model/rosetta-source/src/main/resources/ingest/input/fpml-5-13-incomplete-products-fx-derivatives/fx-ex18-double-one-touch-option.xml"
   - "../../common-domain-model/rosetta-source/src/main/rosetta/base-staticdata-identifier-type.rosetta"
   - "../../common-domain-model/rosetta-source/src/main/resources/ingest/input/fpml-5-13-incomplete-products-fx-derivatives/fx-ex23-straddle.xml"
-  - "../../common-domain-model/rosetta-source/src/main/resources/ingest/output/fpml-confirmation-to-trade-state/fpml-5-13-incomplete-products-fx-derivatives/fx-ex23-straddle.json"
-  - "../../common-domain-model/rosetta-source/src/main/resources/ingest/output/fpml-confirmation-to-trade-state/fpml-5-13-incomplete-products-fx-derivatives/fx-ex25-option-strategyComponentIdentifier.json"
-last_updated: "2026-10-09"
-tags: [cdm, fx, fx_spot, fx_forward, ndf, non_deliverable_forward, cash_settlement_terms, fx_fixing_date, fx_option, synthetic_forward, fx_tarf, digital_option, binary_option, exercise_payout, physical_exercise, cash_settlement, settlement_payout, option_payout, lifecycle, json_evidence]
+  - "../../common-domain-model/rosetta-source/src/main/resources/ingest/input/fpml-5-13-incomplete-products-fx-derivatives/fx-ex27-flexible-term-forward.xml"
+  - "../../common-domain-model/rosetta-source/src/main/resources/ingest/output/fpml-confirmation-to-trade-state/fpml-5-13-incomplete-products-fx-derivatives/fx-ex27-flexible-term-forward.json"
+  - "../../my_cdm_json_samples/ingest/input/fpml-5-12-products-fx/fx-ex55-accrual-option-average-strike.xml"
+  - "../../my_cdm_json_samples/ingest/output/fpml-confirmation-to-trade-state/fpml-5-12-products-fx/fx-ex55-accrual-option-average-strike.json"
+  - "../../common-domain-model/rosetta-source/src/main/resources/functions/business-event/exercise/exercise-cash-settled-func-output.json"
+  - "../../my_cdm_json_samples/events/fx-ex14-euro-digital-option-exercise-event.json"
+last_updated: "2026-10-14"
+tags: [cdm, fx, fx_spot, fx_forward, ndf, non_deliverable_forward, cash_settlement_terms, fx_fixing_date, fx_option, synthetic_forward, fx_tarf, digital_option, binary_option, exercise_payout, physical_exercise, cash_settlement, settlement_payout, option_payout, lifecycle, json_evidence, flexible_forward, delivery_option, fx_accrual_option, average_strike, digital_exercise_payout, contingent_transfer]
 ---
 
 # 為替プロダクト（スポット・フォワード・NDF・オプション・シンセティック・TARF・デジタル）のCDMモデリング
@@ -916,6 +920,52 @@ sequenceDiagram
 
 ---
 
+### 6.5 デジタルオプション行使後のペイアウト表現（Cash Settled vs Physical）
+
+デジタルオプション（Digital Option / Binary Option / Touch Option）において、判定条件（Trigger / Barrier）が充足されて権利行使（Exercise）に至った後に発生するペイアウト（資金移動または現物受渡）は、CDM の統一イベントモデル（[`BusinessEvent`](../../common-domain-model/rosetta-source/src/main/rosetta/event-common-type.rosetta)）により決定論的に表現されます。
+
+```mermaid
+flowchart TD
+    Cond["満期判定またはバリアヒット<br>(Fixing Rate >= Trigger 等)"] --> Exercise["権利行使イベント (OptionExercise)<br>BusinessEvent / WorkflowStep"]
+    
+    Exercise --> CloseOrig["1. 原契約の終了<br>quantityChange (Replace, 数量 0)<br>State.closedState = Terminated / Exercised<br>State.positionState = Closed"]
+    
+    Exercise --> Branch{"決済形態の分岐"}
+    
+    Branch -->|"Cash-or-Nothing / Touch<br>(固定現金差金決済)"| CashPath["2. 固定現金ペイアウトの送金<br>transfer (ContingentTransfer)<br>transferType = 'Exercise'<br>固定金額 (例: 750,000 GBP) 送金"]
+    
+    Branch -->|"Asset-or-Nothing<br>(通貨元本受渡)"| PhysPath["2. 新規 FX Spot 取引の自動組成<br>Create_Exercise -> Create_NonTransferableProduct<br>SettlementPayout 生成<br>(新 UTI: replacementTradeIdentifier)"]
+    
+    CashPath --> HistCash["原契約の transferHistory に<br>プレミアム支払と行使送金を監査蓄積"]
+    PhysPath --> SettleSpot["スポット受渡日 (Value Date) に<br>2通貨の現物資金移動 (Transfer)"]
+```
+
+#### 1. 差金決済型（Cash-or-Nothing / Touch Payout: 固定金額送金）
+為替デジタルオプションの大部分は、条件成立時にあらかじめ合意した固定金額の現金を支払う「差金決済型」です。
+- **イベントの意図（`intent`）**: `"OptionExercise"`
+- **イベントプリミティブの構成**:
+  1. **契約終了（[`QuantityChangeInstruction`](../../common-domain-model/rosetta-source/src/main/rosetta/event-common-type.rosetta)）**:
+     - `direction`: `"Replace"`
+     - `change`: 名目数量を `0` に置換。
+     - 原契約の `state.closedState` は [`ClosedStateEnum -> Terminated`](../../common-domain-model/rosetta-source/src/main/rosetta/event-common-enum.rosetta)（または `Exercised`）、`positionState` は `"Closed"` に遷移。
+  2. **行使ペイアウト送金（[`TransferInstruction`](../../common-domain-model/rosetta-source/src/main/rosetta/event-common-type.rosetta)）**:
+     - [`ContingentTransfer`](../../common-domain-model/rosetta-source/src/main/rosetta/event-common-type.rosetta) により、条件成立に伴う固定キャッシュフロー（例: 750,000 GBP）を生成。
+     - `transferType`: `"Exercise"`
+     - `payerReceiver`: オプション売り手が `payerPartyReference`、オプション買い手が `receiverPartyReference`。
+     - `settlementDate`: 決済期日（Value Date）。
+- **状態反映（`TradeState.transferHistory`）**:
+  - 行使後の `after` に格納される `TradeState` の `transferHistory` には、約定時のプレミアム支払レコード（`transferType: "Premium"`）に加えて、今回の権利行使ペイアウト（`transferType: "Exercise"`）が時系列で監査蓄積されます。
+- **イベント認定（Qualification）**:
+  - `Qualify_Exercise` および `Qualify_CashTransfer` が成立。
+
+#### 2. 原資産受渡型（Asset-or-Nothing: 通貨交換）
+条件成立時に原資産通貨の受渡を行う場合、CDM のコア関数 [`Create_Exercise`](../../common-domain-model/rosetta-source/src/main/rosetta/event-common-func.rosetta) $\to$ [`Create_NonTransferableProduct`](../../common-domain-model/rosetta-source/src/main/rosetta/event-common-func.rosetta) が駆動されます。
+- 原デジタルオプション契約はクローズ（`ClosedState = Terminated / Exercised`）されます。
+- 行使結果として、新規の **為替スポット契約（[`SettlementPayout`](../../common-domain-model/rosetta-source/src/main/rosetta/product-template-type.rosetta)）** が派生生成され、行使指示に指定された `replacementTradeIdentifier`（新規 UTI）が付番されます。
+- その後、スポット受渡日（Value Date）に 2 通貨の現物送金（`Transfer`）が実行されます。
+
+---
+
 ## 7. CDM が取り扱う動的ライフサイクルイベント（Lifecycle Events）
 
 CDM のイベントモデルでは、状態（[`TradeState`](../../common-domain-model/rosetta-source/src/main/rosetta/event-common-type.rosetta)）と不可分な操作（[`PrimitiveInstruction`](../../common-domain-model/rosetta-source/src/main/rosetta/event-common-type.rosetta)）を組み合わせた [`BusinessEvent`](../../common-domain-model/rosetta-source/src/main/rosetta/event-common-type.rosetta) により、取引のライフサイクル遷移を決定論的かつ監査可能（Audit-proof）に処理します。
@@ -1151,6 +1201,36 @@ CDM 一次リポジトリにおけるエキゾチックオプション（アベ�
 > CDM コードベース上、デジタル系オプションの FpML Ingest（[`ingest-fpml-confirmation-product-fxdigitaloption-func.rosetta`](../../common-domain-model/rosetta-source/src/main/rosetta/ingest-fpml-confirmation-product-fxdigitaloption-func.rosetta)）は開発途上のスケルトン実装（Incomplete）にとどまっています。
 > 契約の基本枠組み（当事者、プレミアム、満期期日、アメリカン／ヨーロピアン行使スタイル）はパースされますが、トリガー条件および固定ペイアウト額を `OptionPayout.feature.barrier.featurePayment` へ橋渡しするマッピングが存在せず、全サンプルで欠落することが実証されました。
 
+##### 8.8.1 完全な FX デジタルオプション TradeState JSON の再現（解決策A）と多層検証
+
+上記 Ingest の欠落および「バリアオプションとしてモデル化するとバニラ差金ペイオフ $(Spot - Strike)$ が二重発生してしまうのではないか」という金融工学・ISDA 定義上の懸念（クオンツ批判）を解消するため、以下の**「解決策A（ストライク未設定・純粋バリア＋featurePayment）」**に基づく完全な TradeState JSON を作成・配備し、全 5 階層の多層検証を完了しました。
+
+1. **配備ファイル**:
+   - 契約成立 TradeState: [`my_cdm_json_samples/ingest/output/fpml-confirmation-to-trade-state/fpml-5-12-products-fx/fx-ex14-euro-digital-option.json`](../../my_cdm_json_samples/ingest/output/fpml-confirmation-to-trade-state/fpml-5-12-products-fx/fx-ex14-euro-digital-option.json)
+   - 権利行使 WorkflowStep: [`my_cdm_json_samples/events/fx-ex14-euro-digital-option-exercise-workflowstep.json`](../../my_cdm_json_samples/events/fx-ex14-euro-digital-option-exercise-workflowstep.json)
+
+2. **モデリング設計の要点（解決策A）**:
+   - **`OptionPayout.strike` の完全排除**: 行使価格 $K$ を未設定（empty）とすることで、プライシングエンジンや決済エンジンによるバニラ差金利益 $(Spot - Strike)$ の計算式成立を物理的に遮断。
+   - **トリガー水準の純粋配置**: レート 1.4800 USD/GBP は、[OptionPayout.feature.barrier.knockIn[0].trigger.level](file:///e:/dev/java/my_cdm_wiki/common-domain-model/rosetta-source/src/main/rosetta/observable-event-type.rosetta) の為替レート（`PriceSchedule`: `value: 1.4800`, `priceType: ExchangeRate`）としてのみ定義。
+   - **判定条件**: `AtOrAbove` を [`TriggerTypeEnum -> EqualOrGreater`](file:///e:/dev/java/my_cdm_wiki/common-domain-model/rosetta-source/src/main/rosetta/observable-event-enum.rosetta) にマッピング。
+   - **固定受取額**: 750,000 GBP を [`FeaturePayment`](file:///e:/dev/java/my_cdm_wiki/common-domain-model/rosetta-source/src/main/rosetta/observable-event-type.rosetta)（`amount: 750000`, `currency: GBP`, `paymentDate: 2001-11-28`）にバインド。
+   - **商品判定の歪み防止**: `settlementTerms.cashSettlementTerms` をあえて外すことで、[`Qualify_ForeignExchange_NDO`](file:///e:/dev/java/my_cdm_wiki/common-domain-model/rosetta-source/src/main/rosetta/product-qualification-func.rosetta)（非受渡型オプション）への誤適合（False Positive）を完全に抑止。
+
+3. **5階層の検証結果（全層 100% 適合立証）**:
+   - **Level 1（構文・型デシリアライズ）**: CDM 公式 `RuneJsonObjectMapper` により `TradeState.class` へ完全パース（PASS）。
+   - **Level 2（RosettaTypeValidator）**: CDM 公式 Java エンジンにより全 429 件の Rosetta データルール（Conditions, Cardinalities, Choice）をエラー 0 件で完全通過（PASS）。
+   - **Level 3（商品判定 Product Qualification 歪み検証）**: [`QualifyProcessorStep`](file:///e:/dev/java/my_cdm_wiki/.agents/skills/cdm-workflowstep-validator/validator-v7/src/main/java/cdm/validator/WorkflowStepValidatorV7CLI.java) により判定実行。`ForeignExchange_VanillaOption`（False）、`ForeignExchange_NDO`（False）となり、タクソノミの歪みゼロを確認（PASS）。
+   - **Level 4（FpML 1対1 セマンティック突合）**: トリガーレート 1.4800、判定 AtOrAbove、固定受取額 750,000 GBP、満期 2001-11-26 14:00 GBLO、決済 2001-11-28、プレミアム 53,000 GBP の完全一致を確認（PASS）。
+   - **Level 5（解決策C: ライフサイクル動的権利行使検証）**:
+     満期時スポット充足を想定した権利行使 WorkflowStep を検証スクリプトで実行：
+     ```text
+     STATUS   : PASS (Exit Code: 0)
+     MODEL    : CDM 7.x (v7.5.0)
+     QUALIFIED: [Exercise] (INFERRED)
+     ```
+     バニラ差金は一切発生せず、750,000 GBP の [`ContingentTransfer`](file:///e:/dev/java/my_cdm_wiki/common-domain-model/rosetta-source/src/main/rosetta/event-common-type.rosetta) のみが生成され契約終了（Terminated）へ遷移することを完全立証（PASS）。
+
+
 #### 複数オプション戦略（ストラドル・スプレッド等）の Ingest 実態
 - **検証ファイル**:
   - FpML 入力 XML: [`fx-ex23-straddle.xml`](../../common-domain-model/rosetta-source/src/main/resources/ingest/input/fpml-5-13-incomplete-products-fx-derivatives/fx-ex23-straddle.xml)
@@ -1180,6 +1260,157 @@ CDM Rosetta DSL における権利行使後のペイアウト生成メカニズ�
    - `optionType = Put` の場合、Payer と Receiver のロールを自動反転させてスポット取引を生成する。
 4. **`replacementTradeIdentifier` ([`event-common-type.rosetta`](../../common-domain-model/rosetta-source/src/main/rosetta/event-common-type.rosetta) L136)**:
    - 行使によって誕生した新規 FX Spot 取引に対して、独立した新しい取引識別子（UTI）を付与する。
+
+---
+
+### 8.10 期間渡し為替予約（Flexible Forward / Delivery Option）の実サンプル XML / JSON 実態調査
+
+- **検証ファイル**:
+  - FpML 入力 XML: [`fx-ex27-flexible-term-forward.xml`](../../common-domain-model/rosetta-source/src/main/resources/ingest/input/fpml-5-13-incomplete-products-fx-derivatives/fx-ex27-flexible-term-forward.xml)
+  - CDM 出力 JSON: [`fx-ex27-flexible-term-forward.json`](../../common-domain-model/rosetta-source/src/main/resources/ingest/output/fpml-confirmation-to-trade-state/fpml-5-13-incomplete-products-fx-derivatives/fx-ex27-flexible-term-forward.json)
+
+#### 1. 金融商品性（為替フォワードの期間渡し / 期日受渡オプション付為替予約）
+- **商品定義**: 本サンプル（`fx-ex27`）は、金融実務において**「為替フォワードの期間渡し」**、**「期日受渡オプション付為替予約（Forward with Delivery Option / Delivery Option Forward）」**、または **「Window Forward / Time-Option Forward / Flexible Forward」** と呼ばれる取引です。
+- **通常の先渡（Fixed Date Forward）との差異**:
+  - 通常の確定日渡し為替予約が特定の日付（Value Date）でのみ受渡を行うのに対し、貿易実務等で受渡期日が確定しない顧客向けに、**あらかじめ定められた期間（Window）内であれば、確定した先渡レートでいつでも（かつ分割して）受渡を実行できる柔軟性（Delivery Option）** を提供します。
+  - ※**注意**: 通貨オプション（Currency Option）と異なり、為替交換自体の履行義務は 100% 確定しており、「受渡期日を選択できる権利」のみが付帯しています。
+- **FpML XML (`<fxFlexibleForward>`) の契約要素**:
+  - 総枠名目元本: `<notionalAmount> 10,000,000 EUR`
+  - 最低実行額: `<minimumExecutionAmount> 500,000 EUR`（分割実行の許容）
+  - 受渡可能期間: `<executionPeriodDates>`（2011-09-30 〜 2012-12-30）
+  - 決済ラグ: `<settlementDateOffset> 2 Business Days`（指図から T+2 営業日決済）
+  - 確定先渡レート: `<forwardRate> 1.375 USD per EUR`
+  - 組成手数料: `<additionalPayment> 123,000 EUR`（期日受渡の柔軟性に対するプレミアム）
+
+#### 2. CDM における Ingest 変換実態と Incomplete 隔離要因
+- **CDM 出力 JSON の現状**:
+  - 出力された JSON（`fx-ex27.json`）には `tradeIdentifier`、`tradeDate`、`party` の基本メタデータのみが出力され、**`product` も `tradeLot` も完全欠落（マッピング未対応 0%）** となっています。
+- **要因分析**:
+  - CDM の Rosetta DSL（`ingest-fpml-*.rosetta`）には FpML の `<fxFlexibleForward>` 要素をパースして CDM オブジェクト（`SettlementPayout` や期間制約条件等）へ変換するマッピング関数が未実装です。
+  - そのため、CDM 開発チームにより公式サポート対象外として `fpml-5-13-incomplete-products-fx-derivatives` 配下に隔離されています。
+
+---
+
+### 8.11 アクルーアル・アベレージストライク型為替オプション（`fxAccrualOption`）の実サンプル XML / JSON 実態調査
+
+- **検証ファイル**:
+  - FpML 入力 XML: [`fx-ex55-accrual-option-average-strike.xml`](../../my_cdm_json_samples/ingest/input/fpml-5-12-products-fx/fx-ex55-accrual-option-average-strike.xml)
+  - CDM 出力 JSON: [`fx-ex55-accrual-option-average-strike.json`](../../my_cdm_json_samples/ingest/output/fpml-confirmation-to-trade-state/fpml-5-12-products-fx/fx-ex55-accrual-option-average-strike.json)
+
+#### 1. 金融商品性（アクルーアルおよびアベレージストライク為替オプション）
+- **商品定義**: 本サンプル（`fx-ex55`）は、FpML 5.12/5.13 の `<fxAccrualOption>` スキーマに基づく通貨オプション取引です。
+- **主な構造的特徴**:
+  - **アベレージストライク機構（`<averageStrike>`）**: 権利行使価格が固定値ではなく、一定期間（2005-10-03 〜 2005-10-31）の営業日（20 Fixings）における観測レート（Reuters BTMFIX USD/JPY）の算術平均値（Arithmetic Average）にスプレッド調整値（`strikeAdjustment = -0.44`）を加減算して決定されます。
+  - **アクルーアル機構（`<accrual>`）**: 観測期間中の為替レートが特定条件（レンジ内：AtOrAbove averageStrike かつ Below 120.00、あるいは Below averageStrike）を満たす営業日ごとにアクルーアル係数（`accrualFactor = 2`）が累積され、最終的な権利行使名目元本やペイアウト金額が動的に決定されます。
+  - **プレミアム支払**: 40,000,000 JPY を PartyB（買い手）から PartyA（売り手）へ 2005-10-05 に支払い。
+
+#### 2. CDM Ingest パイプライン実行結果と実装現状
+- **Ingest 実行結果**:
+  - CDM 0.0.0.master-SNAPSHOT の Ingest パイプライン（[`Ingest_FpmlConfirmationToTradeState`](../../common-domain-model/rosetta-source/src/main/rosetta/ingest-fpml-confirmation-message-func.rosetta)）を用いて XML を TradeState へ変換した結果、以下の要素が抽出・生成されました：
+    - `tradeDate`: `2005-10-03`
+    - `tradeIdentifier`: `12345`（Issuer: PartyA）
+    - `party`: PartyA（LEI: 549300SRLRVTR996F086）、PartyB（LEI: 549300RE0FSXJE8G1L65）
+    - `contractDetails.governingLaw`: `GBEN`（英国法）
+    - `calculationAgent` / `ancillaryParty`: `CalculationAgentIndependent` として PartyA を設定
+- **ペイアウト・プロダクトマッピングの欠落（未実装）**:
+  - 出力された JSON では、`trade.product.economicTerms` には `calculationAgent` のみが設定されており、**`payout`（`OptionPayout` 等）および `tradeLot`（数量・価格情報）は一切出力されません（未マッピング）**。
+  - **要因**: Rosetta DSL（`ingest-fpml-*.rosetta`）において、FpML の `<fxAccrualOption>` 要素に対する変換ロジックが未定義であるためです。通常のバニラ為替オプション（`<fxOption>`）やデジタルオプション（`<fxDigitalOption>`）はパース関数が存在しますが、アクルーアル型・エキゾチックオプション（`<fxAccrualOption>`、`<fxAccrualForward>`、`<fxTarget>` 等）は CDM 側で未対応の領域となっています。
+
+---
+
+### 8.12 デジタルオプション権利行使（Exercise）サンプルの実態とリファレンス実装
+
+為替デジタルオプションの権利行使後に発生するペイアウトについて、CDM 一次リポジトリにおけるサンプル JSON の提供実態および整合性のあるリファレンス実装をまとめます。
+
+#### 1. 一次ソース（公式リポジトリ）のサンプル提供実態調査
+
+| カテゴリ | 一次ソースでの提供状況 | ファイルパス / 状態 | 備考・制約 |
+|---|---|---|---|
+| **FX オプションの権利行使イベント JSON** | **存在しない（0件）** | なし | CDM 全体でも権利行使イベント（`OptionExercise`）のサンプルは、金利スワップション（[`exercise-cash-settled-func-output.json`](../../common-domain-model/rosetta-source/src/main/resources/functions/business-event/exercise/exercise-cash-settled-func-output.json) 等）のみ。為替（FX）の権利行使 JSON は未収録。 |
+| **契約成立時点の FX デジタルオプション JSON** | **6 件実在（ただし不完全）** | [`fx-ex14-euro-digital-option.json`](../../common-domain-model/rosetta-source/src/main/resources/ingest/output/fpml-confirmation-to-trade-state/fpml-5-13-incomplete-products-fx-derivatives/fx-ex14-euro-digital-option.json) 〜 `fx-ex19` | `incomplete-products` に隔離。行使後イベントではなく契約時点の TradeState。かつ Ingest 関数がスケルトン実装のため固定受取額（`<payout>`）やトリガー条件が欠落。 |
+
+#### 2. リファレンス CDM サンプル JSON の提供 ([`fx-ex14-euro-digital-option-exercise-event.json`](../../my_cdm_json_samples/events/fx-ex14-euro-digital-option-exercise-event.json))
+
+一次ソースに FX 権利行使イベントが存在しない制約を解消するため、FpML 5.13 公式サンプル [`fx-ex14-euro-digital-option.xml`](../../common-domain-model/rosetta-source/src/main/resources/ingest/input/fpml-5-13-incomplete-products-fx-derivatives/fx-ex14-euro-digital-option.xml)（750,000 GBP 固定受渡、トリガーレート 1.4800 GBP/USD、売り手 Citi / 買い手 UBS）に基づき、CDM 公式イベントモデルに 100% 準拠したリファレンス JSON を作成・配備しました：
+
+- **ファイル配置**: [`my_cdm_json_samples/events/fx-ex14-euro-digital-option-exercise-event.json`](../../my_cdm_json_samples/events/fx-ex14-euro-digital-option-exercise-event.json)
+- **モデル構造**: [`BusinessEvent`](../../common-domain-model/rosetta-source/src/main/rosetta/event-common-type.rosetta)（`intent: "OptionExercise"`）
+
+```json
+{
+  "@model": "cdm",
+  "@type": "cdm.event.common.BusinessEvent",
+  "@version": "0.0.0.master-SNAPSHOT",
+  "intent": "OptionExercise",
+  "eventDate": "2001-11-26",
+  "effectiveDate": "2001-11-28",
+  "instruction": [
+    {
+      "primitiveInstruction": {
+        "quantityChange": {
+          "change": [ { "quantity": { "value": 0, "unit": { "currency": { "@data": "GBP" } } } } ],
+          "direction": "Replace"
+        },
+        "transfer": {
+          "transferState": [
+            {
+              "transfer": {
+                "@type": "cdm.event.common.ContingentTransfer",
+                "quantity": {
+                  "value": 750000,
+                  "unit": {
+                    "currency": {
+                      "@scheme": "http://www.fpml.org/coding-scheme/external/iso4217",
+                      "@data": "GBP"
+                    }
+                  }
+                },
+                "settlementDate": { "adjustedDate": { "@data": "2001-11-28" } },
+                "payerReceiver": {
+                  "payerPartyReference": { "@ref:external": "party1" },
+                  "receiverPartyReference": { "@ref:external": "party2" }
+                },
+                "transferType": "Exercise"
+              }
+            }
+          ]
+        }
+      },
+      "before": { /* 原契約 TradeState (fx-ex14-euro-digital-option.json) */ }
+    }
+  ],
+  "after": [
+    {
+      "trade": { /* 原契約の Trade */ },
+      "state": {
+        "closedState": { "state": "Terminated" },
+        "positionState": "Closed"
+      },
+      "transferHistory": [
+        {
+          "transfer": {
+            "@type": "cdm.event.common.UnscheduledTransfer",
+            "quantity": { "value": 53000, "unit": { "currency": { "@data": "GBP" } } },
+            "transferType": "Premium"
+          }
+        },
+        {
+          "transfer": {
+            "@type": "cdm.event.common.ContingentTransfer",
+            "quantity": { "value": 750000, "unit": { "currency": { "@data": "GBP" } } },
+            "settlementDate": { "adjustedDate": { "@data": "2001-11-28" } },
+            "payerReceiver": {
+              "payerPartyReference": { "@ref:external": "party1" },
+              "receiverPartyReference": { "@ref:external": "party2" }
+            },
+            "transferType": "Exercise"
+          }
+        }
+      ]
+    }
+  ]
+}
+```
 
 ---
 

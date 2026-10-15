@@ -333,5 +333,55 @@
 - `fpml-5-13-incomplete-products-fx-derivatives` 配下の全16サンプルについて、入力 XML と出力 JSON を精密突合し、各サンプルの具体的な欠落・未実装要因（`<strategy>`・`<termDeposit>`・`<fxFlexibleForward>` の完全未対応、`<settlementInformation>`・`<splitSettlement>` 決済指示の脱落、バリア条項の未マッピングとバニラ縮退、デジタルオプションのトリガー＆固定ペイアウト金額の完全消失、ボラティリティ取引条項の欠落等）を体系的に一覧化。
 - `concepts/fpml_ingestion.md` に「7. Ingestion テストパック構成と incomplete フォルダの位置づけ」および「7.4 実例分析: FpML 5.13 為替デリバティブ全16サンプルの不完全要因一覧」を追記し、`index.md` および `log.md` を更新同期。
 
+## [2026-10-14] query | FpML 5.12 (products-fx) と FpML 5.13 (incomplete-products) のバリアオプション TradeState JSON 比較調査
+- 通常フォルダ `fpml-5-12-products-fx` と incomplete フォルダ `fpml-5-13-incomplete-products-fx-derivatives` にあるバリアオプション（`fx-ex12-fx-barrier-option.json`）の TradeState JSON を比較検証。
+- **JSON 本文の完全一致**: 両ファイルの SHA-256 ハッシュ値（`cadddb857410...`）およびサイズ（5,530 バイト）がバイト単位で 100% 一致しており、「incomplete」に分類されているかどうかの違いは JSON 内部（スキーマ・値・メタ情報）には一切反映されていない事実を特定。
+- **フォルダ分類の相違原因**: FpML 側の仕様変更ではなく、CDM 開発チームによるテストスイート整備（PR #2797 / STORY-3208、コミット `26ae072bc`）に起因。FpML 5.12 導入時（PR #1034 / PR #1201）はバリア機能未実装のまま通常フォルダに配置されていたが、FpML 5.13 導入時に CDM で完全マッピングできない製品群（バリアオプション、デジタル、戦略等）を CDM 側で `Separate incomplete products` コミットにより明示的に `incomplete-products` フォルダへ分離した事実を特定。
+- **両バージョン共通の実態的不完全性**: XML に定義されたバリア条項（`<features><barrier>`: Knockin, Up, 0.8975）が CDM Ingest 関数（`MapFxOptionFeaturesToObservationTerms` が `asian` のみ対応）で未実装のため完全脱落し、`OptionPayout -> feature` 欠落により `ForeignExchange_VanillaOption`（バニラオプション）へ誤分類され、テストパックで `modelValidationFailures: 6` が記録されている実態を解明。
+- `concepts/fpml_ingestion.md` に「7.5 バージョン間比較検証」を追記（ハルシネーション是正・一次エビデンス整合化）し、`index.md` および `log.md` を更新同期。
+
+## [2026-10-14] query | 為替フォワード期間渡し（Delivery Option / fxFlexibleForward）の解釈妥当性検証および CDM Ingest 実態の還元
+- サンプル `fx-ex27-flexible-term-forward`（FpML `<fxFlexibleForward>`）が、邦銀実務でいう「期間渡し為替予約」「期日受渡オプション付為替予約（Forward with Delivery Option / Window Forward）」である解釈の正当性を金融実務・FpML スキーマ仕様に基づき検証・確認。
+- 総枠名目額（1,000万EUR）、最低実行額（50万EUR）、受渡可能期間（2011-09-30〜2012-12-30）、T+2決済オフセット、固定先渡レート（1.375）、組成手数料（12.3万EUR）の契約要素を整理。
+- CDM 側の出力 JSON（`fx-ex27.json`）では `<fxFlexibleForward>` に対する Ingest パース関数が未実装であり、ヘッダーのみ出力（`product` / `tradeLot` 欠落・未対応0%）の不完全な状態で `incomplete-products` に隔離されている実態を特定。
+- `concepts/fx_products_and_synthetic_forward.md`（8.10節）、`index.md`、`log.md` を更新同期。
+
+## [2026-10-14] ingest | fx-ex55-accrual-option-average-strike.xml の Ingest 実行と CDM TradeState JSON 生成
+- 入力ファイル `my_cdm_json_samples/ingest/input/fpml-5-12-products-fx/fx-ex55-accrual-option-average-strike.xml` に対し、CDM 公式 Ingest パイプライン（`Ingest_FpmlConfirmationToTradeState` / `CdmRuntimeModule`）を実行。
+- 出力 JSON ファイル `my_cdm_json_samples/ingest/output/fpml-confirmation-to-trade-state/fpml-5-12-products-fx/fx-ex55-accrual-option-average-strike.json` を正常生成。
+- **変換結果の分析**:
+  - `tradeHeader`、`tradeIdentifier`（12345）、`tradeDate`（2005-10-03）、`party`（LEI 付き PartyA / PartyB）、`contractDetails.governingLaw`（GBEN）、`calculationAgent`（PartyA）の共通取引メタデータは正常抽出・マッピング。
+  - FpML の `<fxAccrualOption>`（アクルーアルおよびアベレージストライク型通貨オプション）に対応する Rosetta Ingest 関数が未実装のため、`product` には `payout`（`OptionPayout` 等）や `tradeLot` が生成されず未マッピング（不完全抽出）となる実態を実証。
+- `concepts/fx_products_and_synthetic_forward.md`（8.11節）、`index.md`、`log.md` を更新同期。
+
+## [2026-10-14] query | 為替デジタルオプション行使後ペイアウト（Exercise Payout）の CDM 表現仕様およびサンプル JSON 実態調査
+- ユーザーからの「fx-derivativeのDigitalOption行使後に発生するPayoutをCDMで表現できるか、サンプルJSONはあるか」という照会に対し、CDM イベントモデル（`BusinessEvent` / `WorkflowStep`）および一次リポジトリの全サンプルを調査。
+- **1. CDM での表現可否**: 完全に表現可能。
+  - 差金決済型（Cash-or-Nothing / Touch Payout 等）: `QuantityChangeInstruction`（数量0置換、原契約クローズ `Terminated`/`Exercised`）と `TransferInstruction`（固定金額の `ContingentTransfer`, `transferType: "Exercise"`）により、固定ペイアウトの送金および契約終了をアトミックに表現。
+  - 現物受渡型（Asset-or-Nothing 等）: コア関数 `Create_Exercise` -> `Create_NonTransferableProduct` により、原契約をクローズしつつ新規 FX Spot 取引（`SettlementPayout`, `replacementTradeIdentifier` 付与）を派生生成。
+- **2. サンプル JSON の提供実態**:
+  - 公式リポジトリ内に「為替オプションの権利行使イベント」のサンプル JSON は 0 件（存在しない）。権利行使（`OptionExercise`）の公式サンプルは金利スワップション（`exercise-cash-settled-func-output.json` 等）のみ。
+  - 契約成立時点のデジタルオプションサンプル（`fx-ex14` 〜 `fx-ex19`）は `incomplete-products` に隔離され、FpML Ingest 関数（`MapFxDigitalOptionNonTransferableProduct`）のスケルトン実装により `<payout>`（固定受取額）やトリガー条件が欠落している実態を再確認。
+- **3. リファレンス CDM サンプル JSON の作成・配備**:
+  - FpML 5.13 公式サンプル `fx-ex14-euro-digital-option.xml`（固定受渡額 750,000 GBP、トリガーレート 1.4800 GBP/USD、Citi/UBS）をベースに、CDM 公式イベント仕様に完全準拠した権利行使ペイアウト JSON `my_cdm_json_samples/events/fx-ex14-euro-digital-option-exercise-event.json` を作成・配備。
+- `concepts/fx_products_and_synthetic_forward.md`（6.5節、8.12節）、`index.md`、`log.md` を更新同期。
+
+## [2026-10-15] query | FpML 欧州型 FX デジタルオプション（fx-ex14）の完全 TradeState JSON 再現（解決策A）と多層検証（解決策C）の完遂
+- FpML 5.12 サンプル `my_cdm_json_samples/ingest/input/fpml-5-12-products-fx/fx-ex14-euro-digital-option.xml` の経済効果（トリガー 1.4800 AtOrAbove、固定受取 750,000 GBP、プレミアム 53,000 GBP、Citi/UBS）を完全再現する CDM TradeState JSON を作成。
+- **バニラペイオフ二重発生リスク（クオンツ批判）の解消**:
+  - `OptionPayout.strike` を未設定（empty）とすることで、$(Spot - Strike)$ のバニラ差金計算式の成立余地を物理的に排除（解決策A）。
+  - トリガー水準 1.4800 は `OptionPayout.feature.barrier.knockIn[0].trigger.level[0]`（`priceType: ExchangeRate`）として純粋配置。
+  - トリガー条件 `AtOrAbove` は `EqualOrGreater`、受取額 750,000 GBP は `FeaturePayment` に定義。
+  - `settlementTerms.cashSettlementTerms` を除外することで、`Qualify_ForeignExchange_NDO`（非受渡型オプション）への誤適合（歪み）を完全防止。
+- **全5階層の多層検証の完遂**:
+  1. Level 1: Jackson RuneJsonObjectMapper によるデシリアライズ完全成功。
+  2. Level 2: CDM 公式 Java エンジンによる RosettaTypeValidator 実行（429 件の全データルール・多重度・条件制約をエラー 0 件で完全 PASS）。
+  3. Level 3: QualifyProcessorStep による商品判定歪み検証（`ForeignExchange_VanillaOption`、`ForeignExchange_NDO` ともに False、誤認定ゼロを立証）。
+  4. Level 4: FpML XML の全契約ノードと CDM JSON フィールドの 1対1 セマンティック完全一致を確認。
+  5. Level 5（解決策C）: 満期時権利行使イベント（`fx-ex14-euro-digital-option-exercise-workflowstep.json`）を公式バリデータで実行し、`Qualify_Exercise` 認定合格、バニラ差金ゼロ、750,000 GBP の `ContingentTransfer` 1本のみ生成を立証。
+- **生成ファイル配備**:
+  - `my_cdm_json_samples/ingest/output/fpml-confirmation-to-trade-state/fpml-5-12-products-fx/fx-ex14-euro-digital-option.json`
+  - `my_cdm_json_samples/events/fx-ex14-euro-digital-option-exercise-workflowstep.json`
+- `concepts/fx_products_and_synthetic_forward.md`（8.8.1節）、`index.md`、`log.md` を更新同期。
 
 

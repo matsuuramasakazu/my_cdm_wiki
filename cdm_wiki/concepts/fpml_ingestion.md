@@ -3,7 +3,7 @@ title: "FpML メッセージ取り込み & マッピングアーキテクチャ"
 category: "concepts"
 sources:
   - "../CDM_INDEX.md"
-last_updated: "2026-10-10"
+last_updated: "2026-10-14"
 tags: [fpml, xml, ingestion, mapping, confirmation, swap, tradestate, partyreference, idref, execution_notification, test_pack, incomplete]
 ---
 
@@ -124,6 +124,23 @@ CDM リポジトリの [common-domain-model/rosetta-source/src/main/resources/in
 | 15 | `fx-ex27-flexible-term-forward` | `<fxFlexibleForward>` | 任意期日為替先渡（受渡可能期間、最低行使額、先渡レート） | `product` なし<br>(ヘッダーのみ) | **フレキシブル先渡の完全未対応 (0%)**。<br>`fxFlexibleForward` のパースロジックがなく、受渡期間やレートが全損。 | 3 |
 | 16 | `fx-ex32-forward-volatility-agreement` | `<fxForwardVolatilityAgreement>` | フォワード・ボラティリティ合意（将来のボラティリティ取引） | `calculationAgent` のみ<br>`payout: []` | **ボラティリティ取引条項の欠落**。<br>ボラティリティストライク（`forwardVolatilityStrikePrice`）、通貨ペア、プレミアムが脱落。 | 3 |
 
+### 7.5 バージョン間比較検証: FpML 5.12 (`products-fx`) vs 5.13 (`incomplete-products`) のバリアオプション (`fx-ex12`)
+
+同一のバリアオプションサンプル `fx-ex12-fx-barrier-option` について、通常フォルダに属する FpML 5.12 版（[fpml-5-12-products-fx](../../common-domain-model/rosetta-source/src/main/resources/ingest/output/fpml-confirmation-to-trade-state/fpml-5-12-products-fx/fx-ex12-fx-barrier-option.json)）と、`incomplete` フォルダに属する FpML 5.13 版（[fpml-5-13-incomplete-products-fx-derivatives](../../common-domain-model/rosetta-source/src/main/resources/ingest/output/fpml-confirmation-to-trade-state/fpml-5-13-incomplete-products-fx-derivatives/fx-ex12-fx-barrier-option.json)）を対比検証した結果は以下の通りです：
+
+1. **TradeState JSON 本文の完全一致（差分ゼロ）**:
+   - 2 つの JSON ファイルは、**SHA-256 ハッシュ値（`cadddb857410...`）およびファイルサイズ（5,530 バイト）がバイト単位で 100% 一致**しています。
+   - すなわち、**「incomplete」に分類されているかどうかの違いは、生成される TradeState JSON の内部構造・値・メタプロパティには一切反映されていません**（CDM の JSON 内に `incomplete` フラグや隔離ステータス等は埋め込まれない）。
+2. **フォルダ分類の相違の真因（CDM 開発チームによるマッピング未完了サンプルの隔離・整理）**:
+   - `incomplete-products` という分類は FpML 標準側の仕様ではなく、**FINOS CDM 開発チーム（Hugo Hills 氏ら）が CDM のテストスイートにおいて「CDM 側でのモデル化・マッピングが未完成なサンプル」を通常サポート対象から隔離・管理するために設けた CDM 独自のテスト分類体系**です。
+   - **FpML 5.12 導入時（PR #1034 / PR #1201）**: 2020年〜2021年の導入当初は `fx-ex01` 〜 `ex12` 等のサンプルが一括して `products/fx/`（通常フォルダ）に投入されており、バリアオプション（`fx-ex12`）もバリア条項未実装（バニラ縮退）のまま通常フォルダに配置されていました。
+   - **FpML 5.13 導入時（PR #2797 / STORY-3208）**: 2024年3月に CDM 開発チームが FpML 5.13 テストパックを取り込んだ際、コミット `26ae072bc` の履歴（`* Separate incomplete products`）が示す通り、CDM 側で完全なマッピングが実現できていない製品群（バリアオプション `fx-ex12`、デジタルオプション `fx-ex14`〜`ex19`、マルチレグ戦略 `fx-ex23` 等）を通常フォルダから `incomplete-products` フォルダへ明示的に分離（Separate）しました。
+3. **実態としての不完全性（両バージョン共通のマッピング脱落）**:
+   - 2 つの JSON が同一である理由は、**どちらも FpML のバリア条項がマッピングされず、同じように不完全な状態で縮退出力されているため**です：
+     - **バリア条項（`<features><barrier>`）の完全欠落**: FpML XML に定義された `Knockin`, `Up`, トリガーレート `0.8975`、監視期間が、CDM Ingestion 関数（[ingest-fpml-confirmation-product-fxoption-func.rosetta](../../common-domain-model/rosetta-source/src/main/rosetta/ingest-fpml-confirmation-product-fxoption-func.rosetta) の `MapFxOptionFeaturesToObservationTerms`）において未実装（`asian` のみ対応）のため消失。
+     - **商品自動判定の誤分類**: `OptionPayout -> feature` が空（absent）となるため、[product-qualification-func.rosetta](../../common-domain-model/rosetta-source/src/main/rosetta/product-qualification-func.rosetta) の `Qualify_ForeignExchange_VanillaOption` に合致し、バリアオプションであるにもかかわらず **`ForeignExchange_VanillaOption`（プレーンバニラ）** として出力。
+     - **バリデーション失敗**: 5-12、5-13 ともにテストパックのアサーションで `modelValidationFailures: 6` が記録。
+
 ---
 
 ## 8. 関連ドキュメント
@@ -132,3 +149,4 @@ CDM リポジトリの [common-domain-model/rosetta-source/src/main/resources/in
 - [contract_dates_modeling.md](contract_dates_modeling.md): FpML Ingestion におけるレグ・商品日付の振り分け
 - [vanilla_irs_trade_structure.md](vanilla_irs_trade_structure.md): TradeState 構造解説
 - [ingest-fpml-confirmation-party-func.rosetta](../../common-domain-model/rosetta-source/src/main/rosetta/ingest-fpml-confirmation-party-func.rosetta): 当事者マッピング関数定義
+- [ingest-fpml-confirmation-product-fxoption-func.rosetta](../../common-domain-model/rosetta-source/src/main/rosetta/ingest-fpml-confirmation-product-fxoption-func.rosetta): 為替オプションの FpML マッピング関数定義

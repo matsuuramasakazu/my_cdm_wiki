@@ -1,0 +1,65 @@
+{
+  "trade" : {
+    "product" : {
+      "economicTerms" : {
+        "calculationAgent" : {
+          "calculationAgentParty" : "CalculationAgentIndependent"
+        }
+      }
+    },
+    "ancillaryParty" : [ {
+      "role" : "CalculationAgentIndependent",
+      "partyReference" : [ {
+        "externalReference" : "partyA"
+      } ]
+    } ],
+    "tradeIdentifier" : [ {
+      "issuerReference" : {
+        "externalReference" : "partyA"
+      },
+      "assignedIdentifier" : [ {
+        "identifier" : {
+          "value" : "12345",
+          "meta" : {
+            "scheme" : "#partyA"
+          }
+        }
+      } ]
+    } ],
+    "tradeDate" : {
+      "value" : "2005-10-03"
+    },
+    "party" : [ {
+      "partyId" : [ {
+        "identifier" : {
+          "value" : "549300SRLRVTR996F086",
+          "meta" : {
+            "scheme" : "http://www.fpml.org/coding-scheme/external/iso17442"
+          }
+        },
+        "identifierType" : "LEI"
+      } ],
+      "meta" : {
+        "externalKey" : "partyA"
+      }
+    }, {
+      "partyId" : [ {
+        "identifier" : {
+          "value" : "549300RE0FSXJE8G1L65",
+          "meta" : {
+            "scheme" : "http://www.fpml.org/coding-scheme/external/iso17442"
+          }
+        },
+        "identifierType" : "LEI"
+      } ],
+      "meta" : {
+        "externalKey" : "partyB"
+      }
+    } ],
+    "contractDetails" : {
+      "governingLaw" : {
+        "value" : "GBEN"
+      }
+    }
+  }
+}
