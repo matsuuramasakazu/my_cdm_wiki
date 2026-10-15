@@ -92,6 +92,16 @@ class WikiValidator:
                     self.checked_external_urls[url] = res
                     return res
         except urllib.error.HTTPError as e:
+            if e.code == 429:
+                import time
+                time.sleep(3)
+                try:
+                    with urllib.request.urlopen(req, timeout=60, context=ctx) as resp:
+                        if resp.status in (200, 301, 302, 307, 308):
+                            self.checked_external_urls[url] = (True, f"HTTP {resp.status}")
+                            return (True, f"HTTP {resp.status}")
+                except Exception:
+                    pass
             res = (False, f"HTTPError {e.code}: {e.reason}")
             self.checked_external_urls[url] = res
             return res

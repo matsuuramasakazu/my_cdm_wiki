@@ -12,7 +12,6 @@ import com.regnosys.rosetta.common.serialisation.RosettaObjectMapper;
 import com.regnosys.rosetta.common.validation.RosettaTypeValidator;
 import com.regnosys.rosetta.common.validation.ValidationReport;
 import com.rosetta.model.lib.RosettaModelObject;
-import com.rosetta.model.lib.qualify.QualifyResult;
 import com.rosetta.model.lib.validation.ValidationResult;
 import org.finos.cdm.CdmRuntimeModule;
 import org.finos.cdm.reference.CdmReferenceConfig;
@@ -24,18 +23,22 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 
-public class WorkflowStepValidatorCLI {
+public class WorkflowStepValidatorV7CLI {
 
     public static void main(String[] args) {
         if (args.length < 1) {
-            System.err.println("Usage: java -jar cdm-workflowstep-validator.jar <path-to-workflowstep.json>");
+            System.err.println("Usage: java -jar cdm-validator-v7.jar <path-to-workflowstep.json>");
             System.exit(1);
         }
 
         String jsonPath = args[0];
         File file = Paths.get(jsonPath).toFile();
         if (!file.exists()) {
-            System.err.println("[ERROR] File not found: " + jsonPath);
+            System.out.println("STATUS   : FAIL (Exit Code: 1)");
+            System.out.println("TARGET   : CDM 7.x (v7.5.0)");
+            System.out.println("FAILURES :");
+            System.out.println("[1] Type  : FILE_NOT_FOUND");
+            System.out.println("    Reason: File not found: " + jsonPath);
             System.exit(1);
         }
 
@@ -44,26 +47,22 @@ public class WorkflowStepValidatorCLI {
     }
 
     public static int validate(File file) {
-        System.out.println("======================================================================");
-        System.out.println("                  CDM WORKFLOWSTEP VALIDATION REPORT                  ");
-        System.out.println("======================================================================");
-        System.out.println("Target File : " + file.getPath());
-
-        // 1. Guice インジェクター初期化 (公式 CDM ランタイムモジュール)
         Injector injector;
         try {
             injector = Guice.createInjector(new CdmRuntimeModule());
         } catch (Exception e) {
-            System.err.println("[FATAL] Failed to initialize CDM Guice Injector: " + e.getMessage());
+            System.out.println("STATUS   : FAIL (Exit Code: 1)");
+            System.out.println("TARGET   : CDM 7.x (v7.5.0)");
+            System.out.println("FAILURES :");
+            System.out.println("[1] Type  : INJECTOR_INIT_ERROR");
+            System.out.println("    Reason: Failed to initialize CDM Guice Injector: " + e.getMessage());
             return 1;
         }
 
         RosettaTypeValidator typeValidator = injector.getInstance(RosettaTypeValidator.class);
         QualifyProcessorStep qualifyProcessor = injector.getInstance(QualifyProcessorStep.class);
 
-        // 2. Layer 1 & 2: JSON デシリアライズ (CDM v7 Rune JSON または Legacy Rosetta JSON)
         WorkflowStep step = null;
-        String detectedFormat = "Unknown";
         Exception deserializationError = null;
 
         try {
@@ -71,10 +70,8 @@ public class WorkflowStepValidatorCLI {
             ObjectMapper mapper;
             if (content.contains("\"@type\"") || content.contains("\"@model\"")) {
                 mapper = new RuneJsonObjectMapper();
-                detectedFormat = "Rune JSON (CDM v7+)";
             } else {
                 mapper = RosettaObjectMapper.getNewRosettaObjectMapper();
-                detectedFormat = "Legacy Rosetta JSON";
             }
 
             step = mapper.readValue(file, WorkflowStep.class);
@@ -83,45 +80,40 @@ public class WorkflowStepValidatorCLI {
         }
 
         if (deserializationError != null || step == null) {
-            System.out.println("Overall     : FAIL (Exit Code: 1)");
-            System.out.println("Failure Type: JSON Deserialization / Unknown Property / Type Mismatch");
-            System.out.println("Error Detail: " + (deserializationError != null ? deserializationError.getMessage() : "Deserialized WorkflowStep is null"));
-            System.out.println("======================================================================");
+            System.out.println("STATUS   : FAIL (Exit Code: 1)");
+            System.out.println("TARGET   : CDM 7.x (v7.5.0)");
+            System.out.println("FAILURES :");
+            System.out.println("[1] Type  : DESERIALIZATION_ERROR");
+            System.out.println("    Reason: " + (deserializationError != null ? deserializationError.getMessage() : "Deserialized WorkflowStep is null"));
             return 1;
         }
 
-        System.out.println("JSON Format : " + detectedFormat);
-
-        // 3. Layer 3: 内部参照解決 (ReferenceResolverProcessStep)
         WorkflowStep resolvedStep;
         try {
             RosettaModelObject builder = step.toBuilder();
             new ReferenceResolverProcessStep(CdmReferenceConfig.get()).runProcessStep(builder.getType(), builder);
             resolvedStep = (WorkflowStep) builder.build();
         } catch (Exception e) {
-            System.out.println("Overall     : FAIL (Exit Code: 1)");
-            System.out.println("Failure Type: Reference Resolution Error (meta.globalKey / reference broken)");
-            System.out.println("Error Detail: " + e.getMessage());
-            System.out.println("======================================================================");
+            System.out.println("STATUS   : FAIL (Exit Code: 1)");
+            System.out.println("TARGET   : CDM 7.x (v7.5.0)");
+            System.out.println("FAILURES :");
+            System.out.println("[1] Type  : REFERENCE_RESOLUTION_ERROR");
+            System.out.println("    Reason: Broken globalKey/reference: " + e.getMessage());
             return 1;
         }
 
-        // 4. Layer 4: Rosetta DSL データルール・条件制約検証 (RosettaTypeValidator)
         ValidationReport validationReport = typeValidator.runProcessStep(WorkflowStep.class, resolvedStep);
         List<ValidationResult<?>> results = validationReport.getValidationResults();
 
         List<ValidationResult<?>> failures = new ArrayList<>();
-        int totalRules = results.size();
         for (ValidationResult<?> r : results) {
             if (!r.isSuccess()) {
                 failures.add(r);
             }
         }
 
-        // 5. Layer 5: イベント適格性認定 (QualifyProcessorStep) & 自動突合
         BusinessEvent businessEvent = resolvedStep.getBusinessEvent();
         String declaredQualifier = (businessEvent != null) ? businessEvent.getEventQualifier() : null;
-        String intent = (businessEvent != null && businessEvent.getIntent() != null) ? businessEvent.getIntent().name() : null;
 
         List<String> qualifiedEventNames = new ArrayList<>();
         boolean qualificationExecuted = false;
@@ -136,56 +128,52 @@ public class WorkflowStepValidatorCLI {
                         res.getUniqueSuccessQualifyResult().ifPresent(qr -> qualifiedEventNames.add(qr.getName()));
                     }
                 });
-            } catch (Exception e) {
-                System.out.println("[WARN] Qualification processing encountered an error: " + e.getMessage());
+            } catch (Exception ignored) {
             }
         }
 
-        // 突合評価
         boolean eventMatched = true;
-        String matchStatus = "N/A";
+        String qualSummary = "None";
         if (declaredQualifier != null) {
-            // 例: declaredQualifier が "Reset" の場合、Qualify_Reset が含まれるか
             boolean found = qualifiedEventNames.stream().anyMatch(q -> q.toLowerCase().contains(declaredQualifier.toLowerCase()));
             if (found) {
-                matchStatus = "MATCH (Declared '" + declaredQualifier + "' matched qualified events)";
+                qualSummary = declaredQualifier + " (MATCH)";
             } else {
                 eventMatched = false;
-                matchStatus = "MISMATCH (Declared '" + declaredQualifier + "' but qualified as " + qualifiedEventNames + ")";
+                qualSummary = declaredQualifier + " (MISMATCH: qualified as " + qualifiedEventNames + ")";
             }
         } else if (qualificationExecuted) {
             if (!qualifiedEventNames.isEmpty()) {
-                matchStatus = "INFERRED (Inferred as " + qualifiedEventNames + ")";
+                qualSummary = qualifiedEventNames.toString() + " (INFERRED)";
             } else {
-                matchStatus = "UNQUALIFIED (Warning: No standard CDM qualification matched)";
+                qualSummary = "UNQUALIFIED";
             }
+        } else {
+            qualSummary = "N/A (Step: " + (resolvedStep.getProposedEvent() != null ? "Proposed" : "Accepted") + ")";
         }
 
-        // 6. サマリー出力
         boolean isOverallSuccess = failures.isEmpty() && eventMatched;
-        System.out.println("Overall     : " + (isOverallSuccess ? "PASS (Exit Code: 0)" : "FAIL (Exit Code: 1)"));
-        System.out.println("Step Status : " + (businessEvent != null ? "Accepted (BusinessEvent present)" : (resolvedStep.getProposedEvent() != null ? "Proposed" : "Unknown")));
-        System.out.println("Total Rules : " + totalRules + " | Success: " + (totalRules - failures.size()) + " | Failures: " + failures.size());
-        if (declaredQualifier != null) System.out.println("Declared Evt: " + declaredQualifier + (intent != null ? " (Intent: " + intent + ")" : ""));
-        System.out.println("Qualified   : " + qualifiedEventNames);
-        System.out.println("Event Match : " + matchStatus);
-        System.out.println("======================================================================");
 
-        // 7. 失敗詳細の出力 (JSON Path, ルール名, failureReason)
-        if (!failures.isEmpty()) {
-            System.out.println("--- [RULE FAILURES] ---");
+        if (isOverallSuccess) {
+            System.out.println("STATUS   : PASS (Exit Code: 0)");
+            System.out.println("MODEL    : CDM 7.x (v7.5.0)");
+            System.out.println("QUALIFIED: " + qualSummary);
+            return 0;
+        } else {
+            System.out.println("STATUS   : FAIL (Exit Code: 1)");
+            System.out.println("TARGET   : CDM 7.x (v7.5.0)");
+            System.out.println("FAILURES :");
             int idx = 1;
-            for (ValidationResult<?> f : failures) {
-                System.out.println("[" + (idx++) + "] Type  : " + f.getValidationType());
-                System.out.println("    Name  : " + f.getName());
-                System.out.println("    Model : " + f.getModelObjectName());
-                System.out.println("    Path  : " + f.getPath());
-                System.out.println("    Reason: " + f.getFailureReason().orElse("None"));
-                System.out.println();
+            if (!eventMatched) {
+                System.out.println("[" + (idx++) + "] Type  : EVENT_QUALIFICATION_MISMATCH");
+                System.out.println("    Reason: Declared '" + declaredQualifier + "' but qualified as " + qualifiedEventNames);
             }
-            System.out.println("======================================================================");
+            for (ValidationResult<?> f : failures) {
+                System.out.println("[" + (idx++) + "] Path  : " + f.getPath());
+                System.out.println("    Rule  : " + f.getName() + " (" + f.getValidationType() + ")");
+                System.out.println("    Reason: " + f.getFailureReason().orElse("Condition or cardinality requirement unsatisfied"));
+            }
+            return 1;
         }
-
-        return isOverallSuccess ? 0 : 1;
     }
 }
