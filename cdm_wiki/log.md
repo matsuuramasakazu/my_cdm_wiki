@@ -384,4 +384,12 @@
   - `my_cdm_json_samples/events/fx-ex14-euro-digital-option-exercise-workflowstep.json`
 - `concepts/fx_products_and_synthetic_forward.md`（8.8.1節）、`index.md`、`log.md` を更新同期。
 
+## [2026-10-15] doc | 解決策A採用時における3大構造的注意点・実務リスクのナレッジ反映
+- 解決策A（ストライク未設定・純粋バリア＋featurePayment）に基づく TradeState モデル化において、現行 CDM（7.x）の型構造上の制約に起因する以下の 3 つの注意点・実務リスクをナレッジベースおよび計画書アーティファクトに明文化：
+  1. **ワンタッチオプションとの区別不能性**: 満期時判定（European Binary）であるにもかかわらず、CDM の `feature.barrier.knockIn` は継続的観測（アメリカン・ワンタッチ）と共通のバリア構造を使用するため構文上区別がつかない点。
+  2. **二重ペイアウト発生の潜在リスク**: `tradeLot[0].priceQuantity[0].quantity`（750,000 GBP）と `featurePayment.amount`（750,000 GBP）が同額設定されるため、外部のキャッシュフロー・決済エンジンが元本決済と一時金を二重集計し 1,500,000 GBP の支払義務を誤発生させるリスク。
+  3. **バニラペイオフ消滅の非確定性と行使価格未定解釈可能性**: `strike` 未設定がバニラペイオフ消滅を論理的に強制するものではなく、「行使価格未定オプション（Floating Strike等）」や「行使価格ゼロの原資産受渡契約」と解釈される余地が残るトレードオフ。
+- `concepts/fx_products_and_synthetic_forward.md`（8.8.2節）、`index.md`、`log.md`、および実装計画書アーティファクト `fx_digital_option_tradestate_implementation_plan.md` を更新同期。
+
+
 

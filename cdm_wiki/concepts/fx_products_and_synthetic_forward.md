@@ -43,7 +43,9 @@ sources:
   - "../../my_cdm_json_samples/ingest/output/fpml-confirmation-to-trade-state/fpml-5-12-products-fx/fx-ex55-accrual-option-average-strike.json"
   - "../../common-domain-model/rosetta-source/src/main/resources/functions/business-event/exercise/exercise-cash-settled-func-output.json"
   - "../../my_cdm_json_samples/events/fx-ex14-euro-digital-option-exercise-event.json"
-last_updated: "2026-10-14"
+  - "../../my_cdm_json_samples/ingest/output/fpml-confirmation-to-trade-state/fpml-5-12-products-fx/fx-ex14-euro-digital-option.json"
+  - "../../my_cdm_json_samples/events/fx-ex14-euro-digital-option-exercise-workflowstep.json"
+last_updated: "2026-10-15"
 tags: [cdm, fx, fx_spot, fx_forward, ndf, non_deliverable_forward, cash_settlement_terms, fx_fixing_date, fx_option, synthetic_forward, fx_tarf, digital_option, binary_option, exercise_payout, physical_exercise, cash_settlement, settlement_payout, option_payout, lifecycle, json_evidence, flexible_forward, delivery_option, fx_accrual_option, average_strike, digital_exercise_payout, contingent_transfer]
 ---
 
@@ -1229,6 +1231,28 @@ CDM 一次リポジトリにおけるエキゾチックオプション（アベ�
      QUALIFIED: [Exercise] (INFERRED)
      ```
      バニラ差金は一切発生せず、750,000 GBP の [`ContingentTransfer`](file:///e:/dev/java/my_cdm_wiki/common-domain-model/rosetta-source/src/main/rosetta/event-common-type.rosetta) のみが生成され契約終了（Terminated）へ遷移することを完全立証（PASS）。
+
+##### 8.8.2 解決策A採用時における構造的注意点と実務上のリスク（解釈・実装上の課題）
+
+解決策Aは CDM 公式エンジンにおいて文法・データルール（Exit Code 0）および適格性判定（Qualify_Exercise）を通過する有効なモデル化手法ですが、現行 CDM（7.x）に「純粋なデジタルオプション専用 Payout」が存在しないことに起因する以下の**重大な構造的注意点・潜在的リスク**を内包しており、実務実装や外部エンジン連携時には厳重な留意が必要です。
+
+1. **ワンタッチオプション（One-Touch Option）との区別不能性**:
+   - 本サンプル（`fx-ex14`）の原契約は「満期時点（At Expiry）でのみトリガー判定を行う」欧州型バイナリ（European Binary Option）です。
+   - しかし、CDM の `feature.barrier.knockIn` は本来、契約期間中の任意のタイミングでのバリア到達（タッチ）を捕捉する枠組みとして設計されています。
+   - そのため、できあがった JSON 構造は**「アメリカン型のワンタッチオプション（One-Touch / Touch Option）のノックイン構造」と構文上区別がつかない**状態となっており、観測が満期時点限定であるという決定論的制約をバリア条項単独から読み取ることは困難です（`exerciseTerms` の欧州型指定との組み合わせ解釈に依存）。
+
+2. **`tradeLot` 数量と `featurePayment` の同額設定による「二重ペイアウト発生」の実務リスク**:
+   - 本設計では、CDM のロット規則・名目整合性を保つために `tradeLot[0].priceQuantity[0].quantity` に 750,000 GBP を設定し、同時にトリガー成立時の支払額として `feature.barrier.knockIn[0].featurePayment.amount` にも同額の 750,000 GBP を設定しています。
+   - このため、外部のキャッシュフロー生成エンジン、決済・清算システム、または評価エンジンが、
+     1. 「権利行使に伴う契約名目元本の受渡・決済（750,000 GBP）」
+     2. 「バリアノックイン条項に基づくリベート／一時金支払（750,000 GBP）」
+     の両方を個別の支払義務として二重集計（Double Counting）してしまい、**行使後の TradeState から合計 1,500,000 GBP（2倍の支払額）のペイアウトを誤発生させる重大な実務リスク**を抱えています。
+
+3. **バニラペイオフ消滅の非確定性と「行使価格未定オプション」との解釈可能性**:
+   - `OptionPayout.strike` を未設定（empty）にしたからといって、システムや評価モデルに対して「バニラペイオフが恒久的に消滅した」ことが確定的に伝達されるとは限りません。
+   - 金融契約・システム解釈上、`strike` が空のオプションは「行使価格が定められていないオプション」「行使価格が事後決定されるオプション（Floating Strike / Averaging Strike）」、あるいは「行使価格ゼロ（Zero Strike / Deep ITM）の原資産受渡契約」と解釈される余地が残ります。
+   - 評価エンジンによっては「ストライク未定のバニラ・コールとして原資産（750,000 GBP）の現物/差金決済を試みる」挙動を引き起こす可能性があり、これは専用のデジタル型を持たずバニラ用の `OptionPayout` を流用している現行 CDM のモデリング的トレードオフ（限界）です。
+
 
 
 #### 複数オプション戦略（ストラドル・スプレッド等）の Ingest 実態
