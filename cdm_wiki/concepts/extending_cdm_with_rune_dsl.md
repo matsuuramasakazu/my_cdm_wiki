@@ -29,14 +29,17 @@ CDM の拡張には、利用目的やガバナンスに応じて 2 つの異な�
 
 ```mermaid
 graph TD
-    subgraph Approach A: 外部下流プロジェクト (In-house / Downstream)
+    subgraph "Approach A: 外部下流プロジェクト (In-house / Downstream)"
         ExtA[自社固有の独自システム・業務要件] --> A1[独自 Maven/Gradle プロジェクト作成]
         A1 --> A2[CDM をライブラリ依存として import]
         A2 --> A3[独自名前空間で type extends / composition]
         A3 --> A4[rune-maven-plugin で Java/Python コード生成]
     end
+```
 
-    subgraph Approach B: CDM コミュニティ標準化 (Upstream Contribution)
+```mermaid
+graph TD
+    subgraph "Approach B: CDM コミュニティ標準化 (Upstream Contribution)"
         ExtB[業界共通の新規商品・イベント・規制対応] --> B1[FINOS CDM Working Group での議論]
         B1 --> B2[common-domain-model リポジトリの rosetta-source を編集]
         B2 --> B3[設計原則 & テストパック検証]

@@ -384,12 +384,34 @@
   - `my_cdm_json_samples/events/fx-ex14-euro-digital-option-exercise-workflowstep.json`
 - `concepts/fx_products_and_synthetic_forward.md`（8.8.1節）、`index.md`、`log.md` を更新同期。
 
-## [2026-10-15] doc | 解決策A採用時における3大構造的注意点・実務リスクのナレッジ反映
+## [2026-10-15] update | 解決策A採用時における3大構造的注意点・実務リスクのナレッジ反映
 - 解決策A（ストライク未設定・純粋バリア＋featurePayment）に基づく TradeState モデル化において、現行 CDM（7.x）の型構造上の制約に起因する以下の 3 つの注意点・実務リスクをナレッジベースおよび計画書アーティファクトに明文化：
   1. **ワンタッチオプションとの区別不能性**: 満期時判定（European Binary）であるにもかかわらず、CDM の `feature.barrier.knockIn` は継続的観測（アメリカン・ワンタッチ）と共通のバリア構造を使用するため構文上区別がつかない点。
   2. **二重ペイアウト発生の潜在リスク**: `tradeLot[0].priceQuantity[0].quantity`（750,000 GBP）と `featurePayment.amount`（750,000 GBP）が同額設定されるため、外部のキャッシュフロー・決済エンジンが元本決済と一時金を二重集計し 1,500,000 GBP の支払義務を誤発生させるリスク。
   3. **バニラペイオフ消滅の非確定性と行使価格未定解釈可能性**: `strike` 未設定がバニラペイオフ消滅を論理的に強制するものではなく、「行使価格未定オプション（Floating Strike等）」や「行使価格ゼロの原資産受渡契約」と解釈される余地が残るトレードオフ。
 - `concepts/fx_products_and_synthetic_forward.md`（8.8.2節）、`index.md`、`log.md`、および実装計画書アーティファクト `fx_digital_option_tradestate_implementation_plan.md` を更新同期。
+
+## [2026-10-17] query | ストリップ型シンセティックフォワード（アプローチ2: IdentifiedList / Multi-Trade）の完全 JSON 作成と CDM 7.x 公式実機検証
+- `concepts/fx_products_and_synthetic_forward.md` §4.1 アプローチ2（マルチ Trade パッケージ構造）に基づく、省略無しの完全なシンセティックフォワードストリップの WorkflowStep JSON を新規作成。
+- **取引パラメータ & パッケージ設計**:
+  - 通貨ペア: USD/JPY（名目元本 10,000,000 USD / 期）
+  - 2 期間ストリップ:
+    - 第 1 期 ($T_1$): 満期 2026-11-16 / 受渡 2026-11-18 / 行使価格 150.00 JPY/USD（円貨 15億円）
+      - レグ 1A: USD Call / JPY Put（Party1 買 / Party2 売、UTI: `UTI-SYNTH-T1-CALL-001`）
+      - レグ 1B: USD Put / JPY Call（Party1 売 / Party2 買、UTI: `UTI-SYNTH-T1-PUT-001`）
+    - 第 2 期 ($T_2$): 満期 2026-12-16 / 受渡 2026-12-18 / 行使価格 149.00 JPY/USD（スワップポイント反映、円貨 14.9億円）
+      - レグ 2A: USD Call / JPY Put（Party1 買 / Party2 売、UTI: `UTI-SYNTH-T2-CALL-001`）
+      - レグ 2B: USD Put / JPY Call（Party1 売 / Party2 買、UTI: `UTI-SYNTH-T2-PUT-001`）
+  - パッケージ化: `WorkflowStep.businessEvent.packageInformation` に `IdentifiedList`（`listId: PKG-SYNTH-FWD-2026-001`, `componentId: 4レグのUTI`）を定義し、各 `TradeState.trade.executionDetails.packageReference` と相互連動。
+- **CDM 7.x (v7.5.0) 公式 Java エンジンによる厳格検証**:
+  - `cdm-workflowstep-validator` スキルを活用し、自律修正ループを実行。
+  - `ExecutionTypeEnum`（`OffFacility`）、`TradePackageTrade` データルール（`componentId contains tradeIdentifier` の完全一致）、`PriceSchedule` の必須属性（`priceType: ExchangeRate`, `unit: JPY`, `perUnitOf: USD`, `value`, `derivedQuantity`）、および `SettlementTerms.settlementType: Physical` を完全充足。
+  - `STATUS: PASS (Exit Code: 0)` を達成。各レグが個別に `Qualify_ForeignExchange_VanillaOption` の条件を満たすことを確認。
+- **生成ファイル配備**:
+  - `my_cdm_json_samples/events/fx-synthetic-forward-strip-package-workflowstep.json`
+  - `my_cdm_json_samples/fx-synthetic-forward-strip-package-workflowstep.json`
+- `concepts/fx_products_and_synthetic_forward.md`（4.1.1節、8.13節）、`index.md`、`log.md` を更新同期。
+
 
 
 

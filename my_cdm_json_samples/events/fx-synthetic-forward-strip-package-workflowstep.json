@@ -1,0 +1,1203 @@
+{
+  "@model": "cdm",
+  "@type": "cdm.event.workflow.WorkflowStep",
+  "@version": "0.0.0.master-SNAPSHOT",
+  "action": "New",
+  "timestamp": [
+    {
+      "dateTime": "2026-10-15T09:00:00Z",
+      "qualification": "eventCreationDateTime"
+    }
+  ],
+  "eventIdentifier": [
+    {
+      "issuer": {
+        "@data": "Party1"
+      },
+      "assignedIdentifier": [
+        {
+          "identifier": {
+            "@data": "EV-PKG-SYNTH-FWD-2026-001"
+          },
+          "version": 1
+        }
+      ]
+    }
+  ],
+  "businessEvent": {
+    "eventDate": "2026-10-15",
+    "effectiveDate": "2026-10-15",
+    "packageInformation": {
+      "@type": "cdm.base.staticdata.identifier.IdentifiedList",
+      "listId": {
+        "issuer": {
+          "@data": "Party1"
+        },
+        "assignedIdentifier": [
+          {
+            "identifier": {
+              "@data": "PKG-SYNTH-FWD-2026-001"
+            },
+            "version": 1
+          }
+        ]
+      },
+      "componentId": [
+        {
+          "issuer": {
+            "@data": "Party1"
+          },
+          "assignedIdentifier": [
+            {
+              "identifier": {
+                "@data": "UTI-SYNTH-T1-CALL-001"
+              },
+              "version": 1
+            }
+          ]
+        },
+        {
+          "issuer": {
+            "@data": "Party1"
+          },
+          "assignedIdentifier": [
+            {
+              "identifier": {
+                "@data": "UTI-SYNTH-T1-PUT-001"
+              },
+              "version": 1
+            }
+          ]
+        },
+        {
+          "issuer": {
+            "@data": "Party1"
+          },
+          "assignedIdentifier": [
+            {
+              "identifier": {
+                "@data": "UTI-SYNTH-T2-CALL-001"
+              },
+              "version": 1
+            }
+          ]
+        },
+        {
+          "issuer": {
+            "@data": "Party1"
+          },
+          "assignedIdentifier": [
+            {
+              "identifier": {
+                "@data": "UTI-SYNTH-T2-PUT-001"
+              },
+              "version": 1
+            }
+          ]
+        }
+      ]
+    },
+    "after": [
+      {
+        "trade": {
+          "product": {
+            "taxonomy": [
+              {
+                "source": "ISDA",
+                "value": {
+                  "name": {
+                    "@data": "ForeignExchange_VanillaOption"
+                  }
+                },
+                "calculated": true
+              }
+            ],
+            "economicTerms": {
+              "payout": [
+                {
+                  "@type": "cdm.product.template.OptionPayout",
+                  "payerReceiver": {
+                    "payer": "Party2",
+                    "receiver": "Party1"
+                  },
+                  "buyerSeller": {
+                    "buyer": "Party1",
+                    "seller": "Party2"
+                  },
+                  "optionType": "Call",
+                  "underlier": {
+                    "@type": "cdm.observable.asset.Observable",
+                    "@ref:scoped": "observable-1"
+                  },
+                  "strike": {
+                    "strikePrice": {
+                      "value": 150.0,
+                      "unit": {
+                        "currency": {
+                          "@data": "JPY"
+                        }
+                      },
+                      "perUnitOf": {
+                        "currency": {
+                          "@data": "USD"
+                        }
+                      },
+                      "priceType": "ExchangeRate"
+                    }
+                  },
+                  "exerciseTerms": {
+                    "style": "European",
+                    "expirationDate": [
+                      {
+                        "adjustableDate": {
+                          "adjustedDate": {
+                            "@data": "2026-11-16"
+                          }
+                        }
+                      }
+                    ],
+                    "expirationTime": {
+                      "hourMinuteTime": "15:00:00",
+                      "businessCenter": {
+                        "@data": "JPTO"
+                      }
+                    },
+                    "expirationTimeType": "SpecificTime"
+                  },
+                  "settlementTerms": {
+                    "settlementType": "Physical",
+                    "settlementDate": {
+                      "valueDate": "2026-11-18"
+                    }
+                  },
+                  "priceQuantity": {
+                    "quantitySchedule": {
+                      "@ref:scoped": "quantity-1"
+                    }
+                  }
+                }
+              ]
+            }
+          },
+          "tradeLot": [
+            {
+              "priceQuantity": [
+                {
+                  "price": [
+                    {
+                      "value": 150.0,
+                      "unit": {
+                        "currency": {
+                          "@data": "JPY"
+                        }
+                      },
+                      "perUnitOf": {
+                        "currency": {
+                          "@data": "USD"
+                        }
+                      },
+                      "priceType": "ExchangeRate",
+                      "derivedQuantity": {
+                        "value": 1500000000,
+                        "unit": {
+                          "currency": {
+                            "@data": "JPY"
+                          }
+                        }
+                      }
+                    }
+                  ],
+                  "quantity": {
+                    "@key:scoped": "quantity-1",
+                    "value": 10000000,
+                    "unit": {
+                      "currency": {
+                        "@data": "USD"
+                      }
+                    }
+                  },
+                  "observable": {
+                    "@key:scoped": "observable-1",
+                    "@data": {
+                      "@type": "cdm.base.staticdata.asset.common.Cash",
+                      "identifier": [
+                        {
+                          "identifier": {
+                            "@data": "USD"
+                          },
+                          "identifierType": "CurrencyCode"
+                        }
+                      ],
+                      "assetType": "Cash"
+                    }
+                  }
+                }
+              ]
+            }
+          ],
+          "counterparty": [
+            {
+              "role": "Party1",
+              "partyReference": {
+                "@ref:external": "party1"
+              }
+            },
+            {
+              "role": "Party2",
+              "partyReference": {
+                "@ref:external": "party2"
+              }
+            }
+          ],
+          "tradeIdentifier": [
+            {
+              "issuerReference": {
+                "@ref:external": "party1"
+              },
+              "assignedIdentifier": [
+                {
+                  "identifier": {
+                    "@data": "UTI-SYNTH-T1-CALL-001"
+                  },
+                  "version": 1
+                }
+              ]
+            }
+          ],
+          "tradeDate": {
+            "@data": "2026-10-15"
+          },
+          "executionDetails": {
+            "executionType": "OffFacility",
+            "packageReference": {
+              "listId": {
+                "issuer": {
+                  "@data": "Party1"
+                },
+                "assignedIdentifier": [
+                  {
+                    "identifier": {
+                      "@data": "PKG-SYNTH-FWD-2026-001"
+                    },
+                    "version": 1
+                  }
+                ]
+              },
+              "componentId": [
+                {
+                  "issuer": {
+                    "@data": "Party1"
+                  },
+                  "assignedIdentifier": [
+                    {
+                      "identifier": {
+                        "@data": "UTI-SYNTH-T1-CALL-001"
+                      },
+                      "version": 1
+                    }
+                  ]
+                },
+                {
+                  "issuer": {
+                    "@data": "Party1"
+                  },
+                  "assignedIdentifier": [
+                    {
+                      "identifier": {
+                        "@data": "UTI-SYNTH-T1-PUT-001"
+                      },
+                      "version": 1
+                    }
+                  ]
+                },
+                {
+                  "issuer": {
+                    "@data": "Party1"
+                  },
+                  "assignedIdentifier": [
+                    {
+                      "identifier": {
+                        "@data": "UTI-SYNTH-T2-CALL-001"
+                      },
+                      "version": 1
+                    }
+                  ]
+                },
+                {
+                  "issuer": {
+                    "@data": "Party1"
+                  },
+                  "assignedIdentifier": [
+                    {
+                      "identifier": {
+                        "@data": "UTI-SYNTH-T2-PUT-001"
+                      },
+                      "version": 1
+                    }
+                  ]
+                }
+              ]
+            }
+          },
+          "party": [
+            {
+              "@key:external": "party1",
+              "partyId": [
+                {
+                  "identifier": {
+                    "@scheme": "http://www.fpml.org/coding-scheme/external/iso17442",
+                    "@data": "549300VBWWV6BYQOWM67"
+                  },
+                  "identifierType": "LEI"
+                }
+              ],
+              "name": {
+                "@data": "ABC Investment Management Corp"
+              }
+            },
+            {
+              "@key:external": "party2",
+              "partyId": [
+                {
+                  "identifier": {
+                    "@scheme": "http://www.fpml.org/coding-scheme/external/iso17442",
+                    "@data": "BFXS5XCH7N0Y05NIXW11"
+                  },
+                  "identifierType": "LEI"
+                }
+              ],
+              "name": {
+                "@data": "Tokyo Global Markets Bank"
+              }
+            }
+          ]
+        }
+      },
+      {
+        "trade": {
+          "product": {
+            "taxonomy": [
+              {
+                "source": "ISDA",
+                "value": {
+                  "name": {
+                    "@data": "ForeignExchange_VanillaOption"
+                  }
+                },
+                "calculated": true
+              }
+            ],
+            "economicTerms": {
+              "payout": [
+                {
+                  "@type": "cdm.product.template.OptionPayout",
+                  "payerReceiver": {
+                    "payer": "Party1",
+                    "receiver": "Party2"
+                  },
+                  "buyerSeller": {
+                    "buyer": "Party2",
+                    "seller": "Party1"
+                  },
+                  "optionType": "Put",
+                  "underlier": {
+                    "@type": "cdm.observable.asset.Observable",
+                    "@ref:scoped": "observable-1"
+                  },
+                  "strike": {
+                    "strikePrice": {
+                      "value": 150.0,
+                      "unit": {
+                        "currency": {
+                          "@data": "JPY"
+                        }
+                      },
+                      "perUnitOf": {
+                        "currency": {
+                          "@data": "USD"
+                        }
+                      },
+                      "priceType": "ExchangeRate"
+                    }
+                  },
+                  "exerciseTerms": {
+                    "style": "European",
+                    "expirationDate": [
+                      {
+                        "adjustableDate": {
+                          "adjustedDate": {
+                            "@data": "2026-11-16"
+                          }
+                        }
+                      }
+                    ],
+                    "expirationTime": {
+                      "hourMinuteTime": "15:00:00",
+                      "businessCenter": {
+                        "@data": "JPTO"
+                      }
+                    },
+                    "expirationTimeType": "SpecificTime"
+                  },
+                  "settlementTerms": {
+                    "settlementType": "Physical",
+                    "settlementDate": {
+                      "valueDate": "2026-11-18"
+                    }
+                  },
+                  "priceQuantity": {
+                    "quantitySchedule": {
+                      "@ref:scoped": "quantity-1"
+                    }
+                  }
+                }
+              ]
+            }
+          },
+          "tradeLot": [
+            {
+              "priceQuantity": [
+                {
+                  "price": [
+                    {
+                      "value": 150.0,
+                      "unit": {
+                        "currency": {
+                          "@data": "JPY"
+                        }
+                      },
+                      "perUnitOf": {
+                        "currency": {
+                          "@data": "USD"
+                        }
+                      },
+                      "priceType": "ExchangeRate",
+                      "derivedQuantity": {
+                        "value": 1500000000,
+                        "unit": {
+                          "currency": {
+                            "@data": "JPY"
+                          }
+                        }
+                      }
+                    }
+                  ],
+                  "quantity": {
+                    "@key:scoped": "quantity-1",
+                    "value": 10000000,
+                    "unit": {
+                      "currency": {
+                        "@data": "USD"
+                      }
+                    }
+                  },
+                  "observable": {
+                    "@key:scoped": "observable-1",
+                    "@data": {
+                      "@type": "cdm.base.staticdata.asset.common.Cash",
+                      "identifier": [
+                        {
+                          "identifier": {
+                            "@data": "USD"
+                          },
+                          "identifierType": "CurrencyCode"
+                        }
+                      ],
+                      "assetType": "Cash"
+                    }
+                  }
+                }
+              ]
+            }
+          ],
+          "counterparty": [
+            {
+              "role": "Party1",
+              "partyReference": {
+                "@ref:external": "party1"
+              }
+            },
+            {
+              "role": "Party2",
+              "partyReference": {
+                "@ref:external": "party2"
+              }
+            }
+          ],
+          "tradeIdentifier": [
+            {
+              "issuerReference": {
+                "@ref:external": "party1"
+              },
+              "assignedIdentifier": [
+                {
+                  "identifier": {
+                    "@data": "UTI-SYNTH-T1-PUT-001"
+                  },
+                  "version": 1
+                }
+              ]
+            }
+          ],
+          "tradeDate": {
+            "@data": "2026-10-15"
+          },
+          "executionDetails": {
+            "executionType": "OffFacility",
+            "packageReference": {
+              "listId": {
+                "issuer": {
+                  "@data": "Party1"
+                },
+                "assignedIdentifier": [
+                  {
+                    "identifier": {
+                      "@data": "PKG-SYNTH-FWD-2026-001"
+                    },
+                    "version": 1
+                  }
+                ]
+              },
+              "componentId": [
+                {
+                  "issuer": {
+                    "@data": "Party1"
+                  },
+                  "assignedIdentifier": [
+                    {
+                      "identifier": {
+                        "@data": "UTI-SYNTH-T1-CALL-001"
+                      },
+                      "version": 1
+                    }
+                  ]
+                },
+                {
+                  "issuer": {
+                    "@data": "Party1"
+                  },
+                  "assignedIdentifier": [
+                    {
+                      "identifier": {
+                        "@data": "UTI-SYNTH-T1-PUT-001"
+                      },
+                      "version": 1
+                    }
+                  ]
+                },
+                {
+                  "issuer": {
+                    "@data": "Party1"
+                  },
+                  "assignedIdentifier": [
+                    {
+                      "identifier": {
+                        "@data": "UTI-SYNTH-T2-CALL-001"
+                      },
+                      "version": 1
+                    }
+                  ]
+                },
+                {
+                  "issuer": {
+                    "@data": "Party1"
+                  },
+                  "assignedIdentifier": [
+                    {
+                      "identifier": {
+                        "@data": "UTI-SYNTH-T2-PUT-001"
+                      },
+                      "version": 1
+                    }
+                  ]
+                }
+              ]
+            }
+          },
+          "party": [
+            {
+              "@key:external": "party1",
+              "partyId": [
+                {
+                  "identifier": {
+                    "@scheme": "http://www.fpml.org/coding-scheme/external/iso17442",
+                    "@data": "549300VBWWV6BYQOWM67"
+                  },
+                  "identifierType": "LEI"
+                }
+              ],
+              "name": {
+                "@data": "ABC Investment Management Corp"
+              }
+            },
+            {
+              "@key:external": "party2",
+              "partyId": [
+                {
+                  "identifier": {
+                    "@scheme": "http://www.fpml.org/coding-scheme/external/iso17442",
+                    "@data": "BFXS5XCH7N0Y05NIXW11"
+                  },
+                  "identifierType": "LEI"
+                }
+              ],
+              "name": {
+                "@data": "Tokyo Global Markets Bank"
+              }
+            }
+          ]
+        }
+      },
+      {
+        "trade": {
+          "product": {
+            "taxonomy": [
+              {
+                "source": "ISDA",
+                "value": {
+                  "name": {
+                    "@data": "ForeignExchange_VanillaOption"
+                  }
+                },
+                "calculated": true
+              }
+            ],
+            "economicTerms": {
+              "payout": [
+                {
+                  "@type": "cdm.product.template.OptionPayout",
+                  "payerReceiver": {
+                    "payer": "Party2",
+                    "receiver": "Party1"
+                  },
+                  "buyerSeller": {
+                    "buyer": "Party1",
+                    "seller": "Party2"
+                  },
+                  "optionType": "Call",
+                  "underlier": {
+                    "@type": "cdm.observable.asset.Observable",
+                    "@ref:scoped": "observable-1"
+                  },
+                  "strike": {
+                    "strikePrice": {
+                      "value": 149.0,
+                      "unit": {
+                        "currency": {
+                          "@data": "JPY"
+                        }
+                      },
+                      "perUnitOf": {
+                        "currency": {
+                          "@data": "USD"
+                        }
+                      },
+                      "priceType": "ExchangeRate"
+                    }
+                  },
+                  "exerciseTerms": {
+                    "style": "European",
+                    "expirationDate": [
+                      {
+                        "adjustableDate": {
+                          "adjustedDate": {
+                            "@data": "2026-12-16"
+                          }
+                        }
+                      }
+                    ],
+                    "expirationTime": {
+                      "hourMinuteTime": "15:00:00",
+                      "businessCenter": {
+                        "@data": "JPTO"
+                      }
+                    },
+                    "expirationTimeType": "SpecificTime"
+                  },
+                  "settlementTerms": {
+                    "settlementType": "Physical",
+                    "settlementDate": {
+                      "valueDate": "2026-12-18"
+                    }
+                  },
+                  "priceQuantity": {
+                    "quantitySchedule": {
+                      "@ref:scoped": "quantity-1"
+                    }
+                  }
+                }
+              ]
+            }
+          },
+          "tradeLot": [
+            {
+              "priceQuantity": [
+                {
+                  "price": [
+                    {
+                      "value": 149.0,
+                      "unit": {
+                        "currency": {
+                          "@data": "JPY"
+                        }
+                      },
+                      "perUnitOf": {
+                        "currency": {
+                          "@data": "USD"
+                        }
+                      },
+                      "priceType": "ExchangeRate",
+                      "derivedQuantity": {
+                        "value": 1490000000,
+                        "unit": {
+                          "currency": {
+                            "@data": "JPY"
+                          }
+                        }
+                      }
+                    }
+                  ],
+                  "quantity": {
+                    "@key:scoped": "quantity-1",
+                    "value": 10000000,
+                    "unit": {
+                      "currency": {
+                        "@data": "USD"
+                      }
+                    }
+                  },
+                  "observable": {
+                    "@key:scoped": "observable-1",
+                    "@data": {
+                      "@type": "cdm.base.staticdata.asset.common.Cash",
+                      "identifier": [
+                        {
+                          "identifier": {
+                            "@data": "USD"
+                          },
+                          "identifierType": "CurrencyCode"
+                        }
+                      ],
+                      "assetType": "Cash"
+                    }
+                  }
+                }
+              ]
+            }
+          ],
+          "counterparty": [
+            {
+              "role": "Party1",
+              "partyReference": {
+                "@ref:external": "party1"
+              }
+            },
+            {
+              "role": "Party2",
+              "partyReference": {
+                "@ref:external": "party2"
+              }
+            }
+          ],
+          "tradeIdentifier": [
+            {
+              "issuerReference": {
+                "@ref:external": "party1"
+              },
+              "assignedIdentifier": [
+                {
+                  "identifier": {
+                    "@data": "UTI-SYNTH-T2-CALL-001"
+                  },
+                  "version": 1
+                }
+              ]
+            }
+          ],
+          "tradeDate": {
+            "@data": "2026-10-15"
+          },
+          "executionDetails": {
+            "executionType": "OffFacility",
+            "packageReference": {
+              "listId": {
+                "issuer": {
+                  "@data": "Party1"
+                },
+                "assignedIdentifier": [
+                  {
+                    "identifier": {
+                      "@data": "PKG-SYNTH-FWD-2026-001"
+                    },
+                    "version": 1
+                  }
+                ]
+              },
+              "componentId": [
+                {
+                  "issuer": {
+                    "@data": "Party1"
+                  },
+                  "assignedIdentifier": [
+                    {
+                      "identifier": {
+                        "@data": "UTI-SYNTH-T1-CALL-001"
+                      },
+                      "version": 1
+                    }
+                  ]
+                },
+                {
+                  "issuer": {
+                    "@data": "Party1"
+                  },
+                  "assignedIdentifier": [
+                    {
+                      "identifier": {
+                        "@data": "UTI-SYNTH-T1-PUT-001"
+                      },
+                      "version": 1
+                    }
+                  ]
+                },
+                {
+                  "issuer": {
+                    "@data": "Party1"
+                  },
+                  "assignedIdentifier": [
+                    {
+                      "identifier": {
+                        "@data": "UTI-SYNTH-T2-CALL-001"
+                      },
+                      "version": 1
+                    }
+                  ]
+                },
+                {
+                  "issuer": {
+                    "@data": "Party1"
+                  },
+                  "assignedIdentifier": [
+                    {
+                      "identifier": {
+                        "@data": "UTI-SYNTH-T2-PUT-001"
+                      },
+                      "version": 1
+                    }
+                  ]
+                }
+              ]
+            }
+          },
+          "party": [
+            {
+              "@key:external": "party1",
+              "partyId": [
+                {
+                  "identifier": {
+                    "@scheme": "http://www.fpml.org/coding-scheme/external/iso17442",
+                    "@data": "549300VBWWV6BYQOWM67"
+                  },
+                  "identifierType": "LEI"
+                }
+              ],
+              "name": {
+                "@data": "ABC Investment Management Corp"
+              }
+            },
+            {
+              "@key:external": "party2",
+              "partyId": [
+                {
+                  "identifier": {
+                    "@scheme": "http://www.fpml.org/coding-scheme/external/iso17442",
+                    "@data": "BFXS5XCH7N0Y05NIXW11"
+                  },
+                  "identifierType": "LEI"
+                }
+              ],
+              "name": {
+                "@data": "Tokyo Global Markets Bank"
+              }
+            }
+          ]
+        }
+      },
+      {
+        "trade": {
+          "product": {
+            "taxonomy": [
+              {
+                "source": "ISDA",
+                "value": {
+                  "name": {
+                    "@data": "ForeignExchange_VanillaOption"
+                  }
+                },
+                "calculated": true
+              }
+            ],
+            "economicTerms": {
+              "payout": [
+                {
+                  "@type": "cdm.product.template.OptionPayout",
+                  "payerReceiver": {
+                    "payer": "Party1",
+                    "receiver": "Party2"
+                  },
+                  "buyerSeller": {
+                    "buyer": "Party2",
+                    "seller": "Party1"
+                  },
+                  "optionType": "Put",
+                  "underlier": {
+                    "@type": "cdm.observable.asset.Observable",
+                    "@ref:scoped": "observable-1"
+                  },
+                  "strike": {
+                    "strikePrice": {
+                      "value": 149.0,
+                      "unit": {
+                        "currency": {
+                          "@data": "JPY"
+                        }
+                      },
+                      "perUnitOf": {
+                        "currency": {
+                          "@data": "USD"
+                        }
+                      },
+                      "priceType": "ExchangeRate"
+                    }
+                  },
+                  "exerciseTerms": {
+                    "style": "European",
+                    "expirationDate": [
+                      {
+                        "adjustableDate": {
+                          "adjustedDate": {
+                            "@data": "2026-12-16"
+                          }
+                        }
+                      }
+                    ],
+                    "expirationTime": {
+                      "hourMinuteTime": "15:00:00",
+                      "businessCenter": {
+                        "@data": "JPTO"
+                      }
+                    },
+                    "expirationTimeType": "SpecificTime"
+                  },
+                  "settlementTerms": {
+                    "settlementType": "Physical",
+                    "settlementDate": {
+                      "valueDate": "2026-12-18"
+                    }
+                  },
+                  "priceQuantity": {
+                    "quantitySchedule": {
+                      "@ref:scoped": "quantity-1"
+                    }
+                  }
+                }
+              ]
+            }
+          },
+          "tradeLot": [
+            {
+              "priceQuantity": [
+                {
+                  "price": [
+                    {
+                      "value": 149.0,
+                      "unit": {
+                        "currency": {
+                          "@data": "JPY"
+                        }
+                      },
+                      "perUnitOf": {
+                        "currency": {
+                          "@data": "USD"
+                        }
+                      },
+                      "priceType": "ExchangeRate",
+                      "derivedQuantity": {
+                        "value": 1490000000,
+                        "unit": {
+                          "currency": {
+                            "@data": "JPY"
+                          }
+                        }
+                      }
+                    }
+                  ],
+                  "quantity": {
+                    "@key:scoped": "quantity-1",
+                    "value": 10000000,
+                    "unit": {
+                      "currency": {
+                        "@data": "USD"
+                      }
+                    }
+                  },
+                  "observable": {
+                    "@key:scoped": "observable-1",
+                    "@data": {
+                      "@type": "cdm.base.staticdata.asset.common.Cash",
+                      "identifier": [
+                        {
+                          "identifier": {
+                            "@data": "USD"
+                          },
+                          "identifierType": "CurrencyCode"
+                        }
+                      ],
+                      "assetType": "Cash"
+                    }
+                  }
+                }
+              ]
+            }
+          ],
+          "counterparty": [
+            {
+              "role": "Party1",
+              "partyReference": {
+                "@ref:external": "party1"
+              }
+            },
+            {
+              "role": "Party2",
+              "partyReference": {
+                "@ref:external": "party2"
+              }
+            }
+          ],
+          "tradeIdentifier": [
+            {
+              "issuerReference": {
+                "@ref:external": "party1"
+              },
+              "assignedIdentifier": [
+                {
+                  "identifier": {
+                    "@data": "UTI-SYNTH-T2-PUT-001"
+                  },
+                  "version": 1
+                }
+              ]
+            }
+          ],
+          "tradeDate": {
+            "@data": "2026-10-15"
+          },
+          "executionDetails": {
+            "executionType": "OffFacility",
+            "packageReference": {
+              "listId": {
+                "issuer": {
+                  "@data": "Party1"
+                },
+                "assignedIdentifier": [
+                  {
+                    "identifier": {
+                      "@data": "PKG-SYNTH-FWD-2026-001"
+                    },
+                    "version": 1
+                  }
+                ]
+              },
+              "componentId": [
+                {
+                  "issuer": {
+                    "@data": "Party1"
+                  },
+                  "assignedIdentifier": [
+                    {
+                      "identifier": {
+                        "@data": "UTI-SYNTH-T1-CALL-001"
+                      },
+                      "version": 1
+                    }
+                  ]
+                },
+                {
+                  "issuer": {
+                    "@data": "Party1"
+                  },
+                  "assignedIdentifier": [
+                    {
+                      "identifier": {
+                        "@data": "UTI-SYNTH-T1-PUT-001"
+                      },
+                      "version": 1
+                    }
+                  ]
+                },
+                {
+                  "issuer": {
+                    "@data": "Party1"
+                  },
+                  "assignedIdentifier": [
+                    {
+                      "identifier": {
+                        "@data": "UTI-SYNTH-T2-CALL-001"
+                      },
+                      "version": 1
+                    }
+                  ]
+                },
+                {
+                  "issuer": {
+                    "@data": "Party1"
+                  },
+                  "assignedIdentifier": [
+                    {
+                      "identifier": {
+                        "@data": "UTI-SYNTH-T2-PUT-001"
+                      },
+                      "version": 1
+                    }
+                  ]
+                }
+              ]
+            }
+          },
+          "party": [
+            {
+              "@key:external": "party1",
+              "partyId": [
+                {
+                  "identifier": {
+                    "@scheme": "http://www.fpml.org/coding-scheme/external/iso17442",
+                    "@data": "549300VBWWV6BYQOWM67"
+                  },
+                  "identifierType": "LEI"
+                }
+              ],
+              "name": {
+                "@data": "ABC Investment Management Corp"
+              }
+            },
+            {
+              "@key:external": "party2",
+              "partyId": [
+                {
+                  "identifier": {
+                    "@scheme": "http://www.fpml.org/coding-scheme/external/iso17442",
+                    "@data": "BFXS5XCH7N0Y05NIXW11"
+                  },
+                  "identifierType": "LEI"
+                }
+              ],
+              "name": {
+                "@data": "Tokyo Global Markets Bank"
+              }
+            }
+          ]
+        }
+      }
+    ]
+  }
+}

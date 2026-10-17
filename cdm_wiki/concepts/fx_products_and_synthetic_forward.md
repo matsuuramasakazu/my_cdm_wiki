@@ -45,8 +45,9 @@ sources:
   - "../../my_cdm_json_samples/events/fx-ex14-euro-digital-option-exercise-event.json"
   - "../../my_cdm_json_samples/ingest/output/fpml-confirmation-to-trade-state/fpml-5-12-products-fx/fx-ex14-euro-digital-option.json"
   - "../../my_cdm_json_samples/events/fx-ex14-euro-digital-option-exercise-workflowstep.json"
-last_updated: "2026-10-15"
-tags: [cdm, fx, fx_spot, fx_forward, ndf, non_deliverable_forward, cash_settlement_terms, fx_fixing_date, fx_option, synthetic_forward, fx_tarf, digital_option, binary_option, exercise_payout, physical_exercise, cash_settlement, settlement_payout, option_payout, lifecycle, json_evidence, flexible_forward, delivery_option, fx_accrual_option, average_strike, digital_exercise_payout, contingent_transfer]
+  - "../../my_cdm_json_samples/events/fx-synthetic-forward-strip-package-workflowstep.json"
+last_updated: "2026-10-17"
+tags: [cdm, fx, fx_spot, fx_forward, ndf, non_deliverable_forward, cash_settlement_terms, fx_fixing_date, fx_option, synthetic_forward, fx_tarf, digital_option, binary_option, exercise_payout, physical_exercise, cash_settlement, settlement_payout, option_payout, lifecycle, json_evidence, flexible_forward, delivery_option, fx_accrual_option, average_strike, digital_exercise_payout, contingent_transfer, identified_list, package_transaction]
 ---
 
 # 為替プロダクト（スポット・フォワード・NDF・オプション・シンセティック・TARF・デジタル）のCDMモデリング
@@ -515,19 +516,44 @@ graph TD
 
 #### 2つのアプローチの比較評価と一次ソースの制約
 
-| 評価軸 | アプローチ 1: 単一 Trade（Multi-Payout） | アプローチ 2: マルチ Trade（`IdentifiedList`） |
-|---|---|---|
-| **契約のアトミック性** | 高（1つの TradeState で全期日・全レグを包括） | 低（各レグが独立した TradeState） |
-| **ISDA 商品判定 (Qualification)** | **脱落（ISDA タクソノミが付与されない）**<br>`Qualify_ForeignExchange_VanillaOption` は `only-element` を要求するため | **完全対応**<br>各 TradeState が単一 Payout であるため個別にバニラオプション認定 |
-| **CDM ライフサイクル関数 (`Create_Exercise`)** | **実行不可（破綻）**<br>一次ソース `Create_Exercise`（L533）で `tradeLot only-element` がハードコードされているため | **正常実行可能**<br>各期日・各レグの TradeState に対し独立して権利行使関数を適用可能 |
-| **規制報告（EMIR / CFTC）** | 複合取引としての単一 UTI 付番またはカスタム報告 | 各レグ個別に店頭オプションとしての UTI 付番・報告が容易 |
-| **清算機関（CCP）登録** | 単一プロダクトとして取り扱いにくい場合がある | オプションレグ単位でそのまま登録可能 |
+| 評価軸                                   | アプローチ 1: 単一 Trade（Multi-Payout）                                                               | アプローチ 2: マルチ Trade（`IdentifiedList`）                   |
+| ------------------------------------- | --------------------------------------------------------------------------------------------- | ------------------------------------------------------ |
+| **契約のアトミック性**                         | 高（1つの TradeState で全期日・全レグを包括）                                                                 | 低（各レグが独立した TradeState）                                 |
+| **ISDA 商品判定 (Qualification)**         | **脱落（ISDA タクソノミが付与されない）**<br>`Qualify_ForeignExchange_VanillaOption` は `only-element` を要求するため | **完全対応**<br>各 TradeState が単一 Payout であるため個別にバニラオプション認定 |
+| **CDM ライフサイクル関数 (`Create_Exercise`)** | **実行不可（破綻）**<br>一次ソース `Create_Exercise`（L533）で `tradeLot only-element` がハードコードされているため         | **正常実行可能**<br>各期日・各レグの TradeState に対し独立して権利行使関数を適用可能   |
+| **規制報告（EMIR / CFTC）**                 | 複合取引としての単一 UTI 付番またはカスタム報告                                                                    | 各レグ個別に店頭オプションとしての UTI 付番・報告が容易                         |
+| **清算機関（CCP）登録**                       | 単一プロダクトとして取り扱いにくい場合がある                                                                        | オプションレグ単位でそのまま登録可能                                     |
 
 > [!IMPORTANT]
 > **CDM 実装における結論**:
 > 単一 Trade 複数 Payout 構造（アプローチ 1）は、静的なデータ構造としては定義可能ですが、CDM の自動商品分類（Qualification）から脱落し、かつ標準の権利行使関数（`Create_Exercise`）で `tradeLot only-element` 制約によりライフサイクル処理が破綻します。
 > したがって、CDM において期日ごとの権利行使や消滅を自律処理・監査追跡する実務設計としては、**アプローチ 2（独立した TradeState 群を `IdentifiedList` でパッケージ化）が事実上唯一の整合解**となります。
 > なお、一次ソースリポジトリにはオプション複合戦略（FpML `<strategy>`）の完全なサンプル JSON は存在せず（変換未実装のため `incomplete-products` に隔離）、実在する複数レグサンプルは `SettlementPayout` による現物為替スワップ（`fx-ex08-fx-swap.json` 等）のみです。
+
+##### 4.1.1 アプローチ2に基づく完全なリファレンス JSON 実装と構造仕様
+
+一次ソースリポジトリにおけるオプション複合戦略サンプルの欠落を解消するため、アプローチ 2 に完全準拠した 2 期間ストリップ型シンセティックフォワード（USD/JPY、計 4 レグのバニラオプション）の正規 CDM JSON ファイルを作成・配備しました：
+
+- **配備ファイル**: [`my_cdm_json_samples/events/fx-synthetic-forward-strip-package-workflowstep.json`](file:///e:/dev/java/my_cdm_wiki/my_cdm_json_samples/events/fx-synthetic-forward-strip-package-workflowstep.json)
+- **ルート型**: [`WorkflowStep`](file:///e:/dev/java/my_cdm_wiki/common-domain-model/rosetta-source/src/main/rosetta/event-workflow-type.rosetta)（`action: "New"`）
+- **取引パラメータ設計**:
+  - **通貨ペア**: USD/JPY（原資産通貨: USD、相手通貨: JPY）
+  - **名目元本**: 各レグ 10,000,000 USD
+  - **当事者**: Party 1（ABC Investment Management Corp / 買手）、Party 2（Tokyo Global Markets Bank / 売手・マーケットメーカー）
+  - **第 1 期 ($T_1$)**:
+    - 満期日: `2026-11-16` / 受渡日: `2026-11-18`
+    - 行使価格: **150.00 JPY per USD**（円貨相当額: 1,500,000,000 JPY）
+    - レグ 1A: USD Call / JPY Put（Party 1 買 / Party 2 売、UTI: `UTI-SYNTH-T1-CALL-001`）
+    - レグ 1B: USD Put / JPY Call（Party 1 売 / Party 2 買、UTI: `UTI-SYNTH-T1-PUT-001`）
+  - **第 2 期 ($T_2$)**:
+    - 満期日: `2026-12-16` / 受渡日: `2026-12-18`
+    - 行使価格: **149.00 JPY per USD**（スワップポイント反映、円貨相当額: 1,490,000,000 JPY）
+    - レグ 2A: USD Call / JPY Put（Party 1 買 / Party 2 売、UTI: `UTI-SYNTH-T2-CALL-001`）
+    - レグ 2B: USD Put / JPY Call（Party 1 売 / Party 2 買、UTI: `UTI-SYNTH-T2-PUT-001`）
+- **パッケージ化と参照整合性**:
+  - `WorkflowStep.businessEvent.packageInformation`: [`IdentifiedList`](file:///e:/dev/java/my_cdm_wiki/common-domain-model/rosetta-source/src/main/rosetta/base-staticdata-identifier-type.rosetta)（`listId: PKG-SYNTH-FWD-2026-001`、`componentId`: 4 レグの各 UTI）
+  - 各 `TradeState.trade.executionDetails.packageReference`: 同一の `IdentifiedList` を保持し、`TradePackageTrade` データルール（`componentId contains tradeIdentifier`）に完全適合。
+  - 各 `TradeState` は単一の `OptionPayout` を持つため、ISDA タクソノミ [`Qualify_ForeignExchange_VanillaOption`](file:///e:/dev/java/my_cdm_wiki/common-domain-model/rosetta-source/src/main/rosetta/product-qualification-func.rosetta) の認定条件を満たします。
 
 ---
 
@@ -1435,6 +1461,34 @@ CDM Rosetta DSL における権利行使後のペイアウト生成メカニズ�
   ]
 }
 ```
+
+---
+
+### 8.13 マルチ Trade パッケージ型シンセティックフォワード（`IdentifiedList`）の実機検証エビデンス
+
+第 4 章 §4.1 アプローチ 2 で論じた「独立した TradeState 群を `IdentifiedList` でパッケージ化するストリップ型シンセティックフォワード」について、CDM 公式 Java エンジン（CDM 7.x: v7.5.0）を用いて完全検証を実施した結果です。
+
+- **検証対象ファイル**: [`my_cdm_json_samples/events/fx-synthetic-forward-strip-package-workflowstep.json`](file:///e:/dev/java/my_cdm_wiki/my_cdm_json_samples/events/fx-synthetic-forward-strip-package-workflowstep.json)
+- **モデル構造**: [`WorkflowStep`](file:///e:/dev/java/my_cdm_wiki/common-domain-model/rosetta-source/src/main/rosetta/event-workflow-type.rosetta) $\to$ [`BusinessEvent`](file:///e:/dev/java/my_cdm_wiki/common-domain-model/rosetta-source/src/main/rosetta/event-common-type.rosetta) $\to$ `after: [TradeState (4)]`
+
+#### 1. 検証結果サマリ（Layer 1〜5 完全適合）
+
+```text
+STATUS   : PASS (Exit Code: 0)
+MODEL    : CDM 7.x (v7.5.0)
+QUALIFIED: UNQUALIFIED
+```
+
+#### 2. 要素レベルの適合検証とモデリング詳細
+
+| 検証項目 / ルール名 | CDM 7.x 判定 | 検証内容と解決した構造仕様 |
+|---|---|---|
+| **デシリアライズ構文 (Layer 1)** | **PASS** | `RuneJsonObjectMapper` により `WorkflowStep.class` へ完全マッピング。`ExecutionTypeEnum` は店頭OTCを表す `OffFacility` を採用。 |
+| **参照整合性 (Layer 2 & 3)** | **PASS** | 各 `TradeState` 内部の `observable-1`、`quantity-1` スコープ参照、および当事者 `party1` / `party2` 外部参照が 100% 解決。 |
+| **パッケージ包含制約 (`TradePackageTrade`)** | **PASS** | 各 `TradeState.trade.executionDetails.packageReference.componentId` に含まれる `AssignedIdentifier`（UTI）と、各トレードの `tradeIdentifier.assignedIdentifier` が完全一致（`contains` 充足）。 |
+| **価格・レート制約 (`PriceSchedule`)** | **PASS** | `tradeLot.priceQuantity.price` に `value: 150.0 / 149.0`, `unit: JPY`, `perUnitOf: USD`, `priceType: ExchangeRate`, `derivedQuantity` を完全設定し、`ScheduleValueExists`、`PriceScheduleUnitOfAmountExists`、`PositiveAssetPrice` に全適合。 |
+| **決済条件制約 (`SettlementTerms`)** | **PASS** | `settlementTerms` に必須の `settlementType: "Physical"` を付与し、受渡日 `settlementDate.valueDate` を期日ごとに設定。 |
+| **商品判定 (Layer 5: Product Qualification)** | **PASS** | 4 つの `TradeState` はすべて単一の `OptionPayout` を持ち、`cashSettlementTerms` を持たないヨーロピアンオプションであるため、個別に [`Qualify_ForeignExchange_VanillaOption`](file:///e:/dev/java/my_cdm_wiki/common-domain-model/rosetta-source/src/main/rosetta/product-qualification-func.rosetta) の判定条件を完全に満たす。 |
 
 ---
 
