@@ -429,3 +429,23 @@
      - `fx-ex14`〜`fx-ex19` で `MapPriceQuantityList` に `fpml.FxDigitalOption` 分岐が存在しないため `trade.tradeLot` が欠落する要因を追記。
      - `fx-ex27-flexible-term-forward.json` で `default` フォールバックにより `economicTerms.calculationAgent` と `nonStandardisedTerms: false` が出力される実態を正確に反映。
 - `index.md` および `log.md` を更新し、`validate_wiki.py` でエラー 0 件を確認。
+
+## [2026-10-18] query | デジタル系オプション（Digital / Binary / Touch）の CDM 表現限界と記述の全面適正化
+- `concepts/fx_products_and_synthetic_forward.md` におけるデジタル系オプションの記述（§5、§6.5、§8.8）を一次ソースに基づき全面的に再構成・適正化：
+  1. **バニラとデジタルのペイアウトを区別する標準手段の不在を明文化（§5.2）**:
+     - `OptionPayout`（`product-template-type.rosetta`）、`OptionTypeEnum`（`product-template-enum.rosetta`）、`OptionFeature`、および `SettlementTypeEnum -> Cash`（`product-common-settlement-enum.rosetta`：ストライク価格と決済価格の差額による本源的価値と明記）の一次ソース定義を精査し、現行 CDM にはバニラペイアウトとデジタル固定ペイアウトを区別する専用の型・列挙値・属性が存在しないことを結論として明示。
+     - FpML `<fxDigitalOption>` の Ingest 変換関数 `MapFxDigitalOptionPayout`（`ingest-fpml-confirmation-product-fxdigitaloption-func.rosetta`）が未完のスケルトン実装であり、`fx-ex14`〜`fx-ex19` の出力 JSON が CDM 自身の必須データルール 5 件（`EconomicTerms` の `Quantity` 条件、`OptionPayout.underlier`、`OptionTypePresent` 条件、`SettlementBase.settlementType`、`OptionSettlementChoice` 条件）に違反している実態を §5.2 および §8.8 に整理。
+  2. **`OptionPayout` + `Barrier` + `FeaturePayment` 流用案の誤解解消と構造的破綻の体系化（§5.3, §8.8）**:
+     - 従来 §5.2 で「CDM における正規表現設計」として紹介しつつ §8.8.1〜8.8.2 で課題を後出ししていた構成を廃止し、§5.3 にて「なぜ既存型流用案が正規表現になり得ないか」を4つの観点（① `FeaturePayment` は「トリガー発生時の支払（リベート等）」であり No-Touch / Double No-Touch では支払条件が真逆に破綻する点、② 欧州型満期単発バイナリと期間ノックインによる基礎オプション有効化の概念混同、③ `OptionTypePresent` および `Quantity` 必須制約に伴う `tradeLot.quantity` と `FeaturePayment.amount` の二重計上・ストライク欠落問題、④ Asset-or-Nothing の片道通貨受渡の表現不能性）から厳密に整理。
+  3. **実務システムにおける推奨アプローチの提示（§5.4, §6.5）**:
+     - アプローチ 1（標準スキーマ維持＋`nonStandardisedTerms = True`＋`taxonomy` 明示による外部エンジン管理）と、アプローチ 2（`extending_cdm_with_rune_dsl.md` に準拠した Rune DSL 独自拡張による型安全なデジタル属性定義）の比較指針を策定。
+     - §6.5 にて、プロダクト定義の限界と切り離して、外部エンジン判定後の権利行使・決済ライフサイクルイベント（`BusinessEvent`）は標準プリミティブで決定論的に記録可能であることを整理。
+- `index.md` および `log.md` を同期更新し、`validate_wiki.py` による整合性チェックを実施。
+
+## [2026-10-18] query | 為替デジタルオプションの第一原理再構成（確定差金決済額アプローチ）と Observable 2方式の検証
+- `common-domain-model/docs/product-model.md` の Payout / Underlier / SettlementTerms の定義に立ち返り、`fx-ex14-euro-digital-option` の経済効果を「① 行使条件」「② 決済額」「③ 対価」に分解して再構成。
+- バニラとデジタルの差は ② のみであり、`CashSettlementTerms.cashSettlementAmount`（"If not otherwise specified, would typically be calculated as ..."）で確定決済額として表現できることを示し、`concepts/fx_products_and_synthetic_forward.md` に §5.5 を新設（併せて §5.2.2 の記述を整合化）。
+- CDM 内の先例として、`cashSettlementAmount` と排他選択の `recoveryFactor`（固定回収率＝デジタル CDS、FpML から取り込み）を記載。
+- `underlier`（`Observable`）として ① `Asset -> Cash (GBP)` を用いる方式と、② `Index -> ForeignExchangeRateIndex (GBP/USD)`（`AssetBase.identifier (1..*)` 必須制約の充足、および `ValuationSource.quotedCurrencyPair` からの `@ref:scoped: "quotedCurrencyPair-1"` 参照解決）を用いる方式の 2 種類を `my_cdm_json_samples/events/` に出力し、`cdm-workflowstep-validator`（CDM 7.5.0）で双方とも `STATUS: PASS`（`QUALIFIED: [ContractFormation]`）を確認。
+- §5.3 の 4 課題の再評価、Touch 系への展開（knockIn / knockOut ＋ 確定額）、残る限界（Vanilla/NDO Qualification の誤認、`AtOrAbove` 境界、Ingestion 未実装、即時払い Touch）を整理。frontmatter `sources` に `product-model.md` 等を追加、`index.md` の要約を更新。
+

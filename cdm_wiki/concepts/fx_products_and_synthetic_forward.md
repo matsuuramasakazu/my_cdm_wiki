@@ -4,7 +4,9 @@ category: "concepts"
 sources:
   - "../CDM_INDEX.md"
   - "../../common-domain-model/rosetta-source/src/main/rosetta/product-template-type.rosetta"
+  - "../../common-domain-model/rosetta-source/src/main/rosetta/product-template-enum.rosetta"
   - "../../common-domain-model/rosetta-source/src/main/rosetta/product-common-settlement-type.rosetta"
+  - "../../common-domain-model/rosetta-source/src/main/rosetta/product-common-settlement-enum.rosetta"
   - "../../common-domain-model/rosetta-source/src/main/rosetta/product-qualification-func.rosetta"
   - "../../common-domain-model/rosetta-source/src/main/rosetta/observable-event-type.rosetta"
   - "../../common-domain-model/rosetta-source/src/main/rosetta/observable-event-enum.rosetta"
@@ -15,8 +17,8 @@ sources:
   - "../../common-domain-model/rosetta-source/src/main/rosetta/event-common-func.rosetta"
   - "../../common-domain-model/rosetta-source/src/main/resources/ingest/output/fpml-confirmation-to-trade-state/fpml-5-13-products-fx-derivatives/fx-ex01-fx-spot.json"
   - "../../common-domain-model/rosetta-source/src/main/resources/ingest/output/fpml-confirmation-to-trade-state/fpml-5-13-products-fx-derivatives/fx-ex03-fx-fwd.json"
-  - "../../common-domain-model/rosetta-source/src/main/resources/ingest/output/fpml-confirmation-to-trade-state/fpml-5-13-products-fx-derivatives/fx-ex07-non-deliverable-forward.json"
   - "../../common-domain-model/rosetta-source/src/main/resources/ingest/input/fpml-5-13-products-fx-derivatives/fx-ex07-non-deliverable-forward.xml"
+  - "../../common-domain-model/rosetta-source/src/main/resources/ingest/output/fpml-confirmation-to-trade-state/fpml-5-13-products-fx-derivatives/fx-ex07-non-deliverable-forward.json"
   - "../../common-domain-model/rosetta-source/src/main/resources/ingest/output/fpml-confirmation-to-trade-state/fpml-5-13-products-fx-derivatives/fx-ex09-euro-opt.json"
   - "../../common-domain-model/rosetta-source/src/main/resources/ingest/output/fpml-confirmation-to-trade-state/fpml-5-13-products-fx-derivatives/fx-ex10-amer-opt.json"
   - "../../common-domain-model/rosetta-source/src/main/resources/ingest/output/fpml-confirmation-to-trade-state/fpml-5-13-products-fx-derivatives/fx-ex11-non-deliverable-option.json"
@@ -35,6 +37,8 @@ sources:
   - "../../common-domain-model/rosetta-source/src/main/resources/ingest/input/fpml-5-13-incomplete-products-fx-derivatives/fx-ex17-no-touch-option.xml"
   - "../../common-domain-model/rosetta-source/src/main/resources/ingest/output/fpml-confirmation-to-trade-state/fpml-5-13-incomplete-products-fx-derivatives/fx-ex18-double-one-touch-option.json"
   - "../../common-domain-model/rosetta-source/src/main/resources/ingest/input/fpml-5-13-incomplete-products-fx-derivatives/fx-ex18-double-one-touch-option.xml"
+  - "../../common-domain-model/rosetta-source/src/main/resources/ingest/output/fpml-confirmation-to-trade-state/fpml-5-13-incomplete-products-fx-derivatives/fx-ex19-double-no-touch-option.json"
+  - "../../common-domain-model/rosetta-source/src/main/resources/ingest/input/fpml-5-13-incomplete-products-fx-derivatives/fx-ex19-double-no-touch-option.xml"
   - "../../common-domain-model/rosetta-source/src/main/rosetta/base-staticdata-identifier-type.rosetta"
   - "../../common-domain-model/rosetta-source/src/main/resources/ingest/input/fpml-5-13-incomplete-products-fx-derivatives/fx-ex23-straddle.xml"
   - "../../common-domain-model/rosetta-source/src/main/resources/ingest/input/fpml-5-13-incomplete-products-fx-derivatives/fx-ex27-flexible-term-forward.xml"
@@ -44,8 +48,11 @@ sources:
   - "../../common-domain-model/rosetta-source/src/main/rosetta/observable-asset-type.rosetta"
   - "../../common-domain-model/rosetta-source/src/main/rosetta/ingest-fpml-confirmation-tradestate-func.rosetta"
   - "../../common-domain-model/rosetta-source/src/main/rosetta/ingest-fpml-confirmation-settlement-func.rosetta"
+  - "../../common-domain-model/rosetta-source/src/main/rosetta/ingest-fpml-confirmation-pricequantity-func.rosetta"
+  - "../../common-domain-model/rosetta-source/src/main/rosetta/base-staticdata-asset-common-type.rosetta"
   - "../../common-domain-model/rosetta-source/src/main/resources/functions/business-event/exercise/exercise-cash-settled-func-output.json"
   - "../../common-domain-model/rosetta-source/src/main/resources/functions/business-event/exercise/exercise-swaption-full-physical-func-output.json"
+  - "../../common-domain-model/docs/product-model.md"
 last_updated: "2026-10-18"
 tags: [cdm, fx, fx_spot, fx_forward, ndf, non_deliverable_forward, cash_settlement_terms, fx_fixing_date, fx_option, synthetic_forward, fx_tarf, digital_option, binary_option, exercise_payout, physical_exercise, cash_settlement, settlement_payout, option_payout, lifecycle, json_evidence, flexible_forward, delivery_option, fx_accrual_option, average_strike, digital_exercise_payout, contingent_transfer, identified_list, package_transaction]
 ---
@@ -687,127 +694,284 @@ CDM ではこの調整を、決済前の [`QuantityChangeInstruction`](../../com
 
 ---
 
-## 5. デジタル系通貨オプション（Digital / Binary Options）の CDM モデリング
+## 5. デジタル系通貨オプション（Digital / Binary Options）の CDM モデリングと表現限界
 
-### 5.1 デジタルオプションの類型とペイオフ特性
+### 5.1 デジタルオプションの類型とバニラオプションとのペイオフ差異
 
-**デジタルオプション（Digital Option / Binary Option）** は、行使条件が満たされた場合に原資産価格に比例した損益ではなく、**あらかじめ定められた固定金額（または原資産そのもの）** を受渡しするエキゾチックオプションです。為替市場（FX）においては、以下のバリエーションが標準的に取引されます。
+**デジタルオプション（Digital Option / Binary Option）** は、判定条件（トリガー／タッチ条件）が満たされた場合に、バニラオプションのような原資産価格と行使価格の差額（本源的価値: $\max(S_T - K, 0) \times N$）や2通貨の双方向元本交換ではなく、**あらかじめ定められた固定金額（または原資産通貨そのものの片道受渡）** を行う不連続ペイオフ型のエキゾチックオプションです。為替市場（FX）においては、以下のバリエーションが標準的に取引されます。
 
 ```mermaid
-mindmap
-  root((為替デジタル系<br>オプション))
-    ヨーロピアン型<br>(European Expiry)
-      Cash-or-Nothing<br>(固定現金受渡)
-      Asset-or-Nothing<br>(通貨元本受渡)
-      Range Digital<br>(レンジ内固定受渡)
-    アメリカン・タッチ型<br>(Touch Options)
-      One-Touch<br>(期間中1度でもタッチで成立)
-      No-Touch<br>(期間中1度もタッチせずで成立)
-      Double One-Touch<br>(2つのバリアいずれかにタッチ)
-      Double No-Touch<br>(2つのバリアに触れずレンジ維持)
+flowchart TD
+    Root["為替デジタル系オプション<br>(FX Digital / Binary Options)"]
+    Root --> Euro["ヨーロピアン型<br>(満期日単発判定: European Trigger)"]
+    Root --> Touch["アメリカン・タッチ型<br>(期間中常時監視: American Touch)"]
+    
+    Euro --> CoN["Cash-or-Nothing<br>(固定現金 C を片道受渡)"]
+    Euro --> AoN["Asset-or-Nothing<br>(原資産通貨元本を片道受渡)"]
+    Euro --> Range["Range Digital<br>(満期レートがレンジ内で固定現金受渡)"]
+    
+    Touch --> OT["One-Touch<br>(期間中に1度でもバリア到達で固定額受渡)"]
+    Touch --> NT["No-Touch<br>(期間中に1度もバリア到達せずで満期固定額受渡)"]
+    Touch --> DOT["Double One-Touch<br>(上下2つのバリアいずれかに到達で固定額受渡)"]
+    Touch --> DNT["Double No-Touch<br>(期間中上下バリアに触れずレンジ維持で満期固定額受渡)"]
 ```
 
-| デジタルオプション種別 | 判定条件（Condition） | ペイオフ（受渡内容） | 支払タイミング |
+| オプション種別 | 判定条件（Condition） | ペイオフ（受渡内容） | 支払タイミング |
 |---|---|---|---|
-| **European Cash-or-Nothing** | 満期日のレート $S_T \ge K$（または $\le K$） | あらかじめ合意した固定金額 $C$（現金） | 満期決済日 |
-| **European Asset-or-Nothing** | 満期日のレート $S_T \ge K$（または $\le K$） | 原資産そのもの（基準通貨の額面） | 満期受渡日 |
-| **American One-Touch** | 観測期間中に一度でもバリア $B$ にタッチ（$S_t \ge B$） | 固定金額 $C$ | タッチ即時（Immediate）または満期日 |
-| **American No-Touch** | 観測期間中、一度もバリア $B$ にタッチしない | 固定金額 $C$ | 満期日 |
-| **Double One-Touch (DOT)** | 上限バリア $B_U$ または下限バリア $B_L$ のいずれかにタッチ | 固定金額 $C$ | タッチ即時または満期日 |
-| **Double No-Touch (DNT)** | 期間中、為替レートが常にレンジ内（$B_L < S_t < B_U$）に留まる | 固定金額 $C$ | 満期日 |
+| **プレーンバニラ（比較基準）** | 満期日（または期間中）に $S_T > K$（Call）または $S_T < K$（Put） | **現物**: 通貨ペア双方向の元本交換（$N$ と $K \times N$）<br>**差金 (NDO)**: 本源的価値 $\max(S_T - K, 0) \times N$ | 満期決済日（または行使から $T+2$） |
+| **European Cash-or-Nothing** | 満期日のフィキシングレート $S_T \ge B$（または $\le B$） | **あらかじめ合意した固定金額 $C$（単一通貨の片道現金支払）** | 満期決済日 |
+| **European Asset-or-Nothing** | 満期日のフィキシングレート $S_T \ge B$（または $\le B$） | **原資産通貨そのものの額面 $N$（対価通貨の支払なし）** | 満期受渡日 |
+| **European Range Digital** | 満期日のレートがレンジ内（$B_L \le S_T \le B_U$） | 固定金額 $C$ | 満期決済日 |
+| **American One-Touch** | 観測期間中に一度でもバリア $B$ に到達（$S_t \ge B$ または $\le B$） | 固定金額 $C$ | タッチ即時（Immediate / $T+2$）または満期決済日 |
+| **American No-Touch** | 観測期間中、一度もバリア $B$ に到達しない | 固定金額 $C$ | 満期決済日 |
+| **Double One-Touch (DOT)** | 上限バリア $B_U$ または下限バリア $B_L$ のいずれかに到達 | 固定金額 $C$ | タッチ即時または満期決済日 |
+| **Double No-Touch (DNT)** | 期間中、為替レートが常にレンジ内（$B_L < S_t < B_U$）に留まる | 固定金額 $C$ | 満期決済日 |
 
 ---
 
-### 5.2 CDM における正規表現設計（`OptionPayout` ＋ `Barrier` ＋ `FeaturePayment`）
+### 5.2 CDM 一次ソースにおけるサポート実態：バニラとデジタルを区別する標準手段の不在
 
-CDM において、デジタル／バイナリー系オプションは汎用オプション型 [`OptionPayout`](../../common-domain-model/rosetta-source/src/main/rosetta/product-template-type.rosetta) の拡張機能としてモデル化されます。
+> [!CAUTION]
+> **一次ソースにおけるデジタル系オプション表現の結論**:
+> **現行の FINOS CDM（[`OptionPayout`](../../common-domain-model/rosetta-source/src/main/rosetta/product-template-type.rosetta) および関連スキーマ）には、バニラオプションの「行使価格と実勢レートの差額に基づくペイアウト（Intrinsic Value Payout）」と、デジタル／バイナリ・オプションの「トリガー条件成立による固定額／単一通貨ペイアウト（Digital / Binary Payout）」をデータモデル上で明確に区別して表現する専用の型・列挙値・属性は存在しません。**
+
+一次ソース（Rosetta DSL 型定義・列挙型・FpML Ingest 関数・Qualification 関数）を精査すると、以下の 4 つの観点から「デジタル系ペイアウトをバニラと区別する標準機構が未整備である」ことが裏付けられます。
+
+#### 1. `Payout` および `OptionPayout` スキーマにおけるデジタル専用属性の不在
+- **専用 Payout 型の不在**:
+  [`product-template-type.rosetta`](../../common-domain-model/rosetta-source/src/main/rosetta/product-template-type.rosetta)（L53-65）の `choice Payout` に定義されているオプション系型は [`OptionPayout`](../../common-domain-model/rosetta-source/src/main/rosetta/product-template-type.rosetta)（L126-194）のみであり、`DigitalOptionPayout` のような独立した型は存在しません。
+- **`OptionTypeEnum` の定義範囲**:
+  `OptionPayout.optionType` の型である [`OptionTypeEnum`](../../common-domain-model/rosetta-source/src/main/rosetta/product-template-enum.rosetta)（L253-271）は、`PutCallEnum`（`Put`, `Call`）を継承して `Payer`, `Receiver`, `Straddle` を追加した計 5 値のみで構成されており、`Digital`、`Binary`、`CashOrNothing`、`AssetOrNothing`、`OneTouch`、`NoTouch` といった列挙値は一切存在しません。
+- **`OptionFeature` の定義範囲**:
+  [`OptionFeature`](../../common-domain-model/rosetta-source/src/main/rosetta/product-template-type.rosetta)（L661-666）が保持する属性は `fxFeature`（コンポジット／クANTO）、`strategyFeature`（スプレッド／カレンダー）、`averagingFeature`（アジアン平均）、`barrier`（ノックイン／ノックアウト）、`passThrough` の 5 つのみであり、「満期またはタッチ時に固定金額を支払う（Digital Payout）」ことを指定する属性は存在しません。
+
+#### 2. `SettlementTypeEnum -> Cash` および `CashSettlementTerms` の定義との乖離
+- **差金決済（`Cash`）の公式定義**:
+  [`SettlementTypeEnum`](../../common-domain-model/rosetta-source/src/main/rosetta/product-common-settlement-enum.rosetta)（L39-44）において、`Cash` は以下の通り定義されています：
+  > *"The intrinsic value of the option will be delivered by way of a cash settlement amount determined, (i) by reference to the differential between the strike price and the settlement price..."*
+  
+  すなわち、CDM のオプションにおける `settlementType = Cash` は「ストライク価格と決済価格の差額に基づく本源的価値（$\max(S_T - K, 0)$）の差金決済（NDO 等）」を意味しており、デジタルオプションの固定額支払（Cash-or-Nothing）を意味しません。
+- **`CashSettlementTerms.cashSettlementAmount` の公式 Ingest 未マッピング**:
+  [`CashSettlementTerms`](../../common-domain-model/rosetta-source/src/main/rosetta/product-common-settlement-type.rosetta)（L77-130）内の `cashSettlementAmount`（L115）は *"The amount paid by the seller to the buyer for cash settlement on the cash settlement date. If not otherwise specified, would typically be calculated as..."*（指定されなければ通常は計算式で算出される差金決済額）と定義され、回収率 `recoveryFactor` との排他選択制約（`optional choice cashSettlementAmount, recoveryFactor`）を持ちます。しかし、現行の FpML Ingest 変換関数では `<fxDigitalOption><payout>` をこの `cashSettlementAmount` へマッピングする実装は未整備（空）となっています（※ [product-model.md](../../common-domain-model/docs/product-model.md) の第一原理に基づき、この `cashSettlementAmount` をデジタルオプションの確定決済額として活用する構成については **§5.5** で詳述します）。
+
+#### 3. FpML `<fxDigitalOption>` Ingest 変換関数の未完（スケルトン）実態と必須制約違反
+- FpML 5.13 には為替デジタルオプション専用の `<fxDigitalOption>` スキーマが存在し、ヨーロピアン判定用の `<trigger>`、アメリカン・タッチ判定用の `<touch>`、および固定受取額を表す `<payout>`（`currency`, `amount`, `payoutStyle`）が明確に定義されています。
+- しかし、CDM 側の Ingest 変換関数 [`MapFxDigitalOptionPayout`](../../common-domain-model/rosetta-source/src/main/rosetta/ingest-fpml-confirmation-product-fxdigitaloption-func.rosetta)（L72-108）は開発途上の初期スケルトン実装にとどまっており、以下の状態となっています：
+  ```rosetta
+  func MapFxDigitalOptionPayout:
+      inputs:
+          fpmlFxDigitalOption fpml.FxDigitalOption (0..1)
+      output:
+          optionPayout OptionPayout (0..1)
+
+      set optionPayout:
+          OptionPayout {
+              payerReceiver: MapSellerAsPayerAndBuyerAsReceiver(fpmlFxDigitalOption -> buyerSellerModel),
+              settlementTerms: MapFxDigitalOptionToSettlementTerms(fpmlFxDigitalOption),
+              buyerSeller: MapBuyerSeller(fpmlFxDigitalOption -> buyerSellerModel),
+              underlier: empty,
+              exerciseTerms: MapExerciseTerms(...),
+              ...
+          }
+  ```
+  - **デジタル固有要素の完全欠落**: FpML の `<trigger>`、`<touch>`、`<payout>` を読み取るロジックが一切書かれておらず、`strike` も `feature` も未設定のまま捨てられます。
+  - **必須属性・データルール違反の発生**: `underlier: empty` とハードコードされ、`optionType` もマッピングされず、さらに [`MapPriceQuantityList`](../../common-domain-model/rosetta-source/src/main/rosetta/ingest-fpml-confirmation-tradestate-func.rosetta)（L416-450）に `fpml.FxDigitalOption` の分岐が存在しないため `trade.tradeLot` 自体が欠落します。
+  - このため、一次ソースのデジタルオプション出力サンプル（[`fx-ex14-euro-digital-option.json`](../../common-domain-model/rosetta-source/src/main/resources/ingest/output/fpml-confirmation-to-trade-state/fpml-5-13-incomplete-products-fx-derivatives/fx-ex14-euro-digital-option.json) 〜 [`fx-ex19-double-no-touch-option.json`](../../common-domain-model/rosetta-source/src/main/resources/ingest/output/fpml-confirmation-to-trade-state/fpml-5-13-incomplete-products-fx-derivatives/fx-ex19-double-no-touch-option.json)）はすべて `incomplete-products`（不完全プロダクト）フォルダに隔離されており、CDM 自身の必須バリデーションルール（`OptionPayout.underlier (1..1)`、`condition OptionTypePresent`、`EconomicTerms` の `condition Quantity`、`SettlementBase.settlementType (1..1)`）に違反する不完全データとなっています（詳細は §8.8 参照）。
+
+#### 4. 商品適格性判定（Product Qualification）関数の不在
+- [`product-qualification-func.rosetta`](../../common-domain-model/rosetta-source/src/main/rosetta/product-qualification-func.rosetta) には、バニラオプション認定用の `Qualify_ForeignExchange_VanillaOption`（L675-685）や NDO 認定用の `Qualify_ForeignExchange_NDO`（L640-650）は定義されていますが、**デジタル／バイナリ／タッチオプションを認定する Qualification 関数は一切存在しません**。
+
+---
+
+### 5.3 既存型（`OptionPayout` ＋ `Barrier` ＋ `FeaturePayment`）を流用する対応案の検証と構造的限界
+
+CDM 標準スキーマの範囲内でデジタル系オプションを表現する代替案として、「`OptionPayout.strike` を省略（`empty`）した上で、`OptionPayout.feature.barrier`（[`Barrier`](../../common-domain-model/rosetta-source/src/main/rosetta/product-template-type.rosetta)）の [`TriggerEvent`](../../common-domain-model/rosetta-source/src/main/rosetta/observable-event-type.rosetta) に判定レート（[`Trigger.level`](../../common-domain-model/rosetta-source/src/main/rosetta/observable-event-type.rosetta)）を設定し、固定受取額を [`FeaturePayment.amount`](../../common-domain-model/rosetta-source/src/main/rosetta/observable-event-type.rosetta) に格納する」という対応案が検討されることがあります。
+
+しかし、一次ソースの型定義とデータルール（`condition`）に照らして厳密に検証すると、この流用案には**以下の重大な意味的矛盾およびバリデーション上の破綻**が存在し、CDM の正規表現として位置づけることはできません。
 
 ```mermaid
-classDiagram
-    class OptionPayout {
-        +BuyerSeller buyerSeller
-        +PayerReceiver payerReceiver
-        +Underlier underlier
-        +ExerciseTerms exerciseTerms
-        +OptionFeature feature
-        +SettlementTerms settlementTerms
-    }
-    class ExerciseTerms {
-        +OptionExerciseStyleEnum style
-        +AdjustableOrRelativeDate expirationDate
-    }
-    class OptionFeature {
-        +Barrier barrier
-    }
-    class Barrier {
-        +TriggerEvent knockIn
-        +TriggerEvent knockOut
-    }
-    class TriggerEvent {
-        +Trigger trigger
-        +FeaturePayment featurePayment
-    }
-    class Trigger {
-        +PriceSchedule level
-        +TriggerTypeEnum triggerType
-        +TriggerTimeTypeEnum triggerTimeType
-    }
-    class FeaturePayment {
-        +PartyReferencePayerReceiver payerReceiver
-        +number amount
-        +string currency
-        +AdjustableOrRelativeDate paymentDate
-        +TimeTypeEnum time
-    }
-
-    OptionPayout --> ExerciseTerms : exerciseTerms
-    OptionPayout --> OptionFeature : feature
-    OptionFeature --> Barrier : barrier
-    Barrier --> TriggerEvent : knockIn / knockOut
-    TriggerEvent --> Trigger : trigger
-    TriggerEvent --> FeaturePayment : featurePayment
+flowchart TD
+    Workaround["代替流用案:<br>OptionPayout + feature.barrier + TriggerEvent.featurePayment"]
+    
+    Workaround --> Flaw1["課題1: FeaturePayment の意味論的破綻<br>『トリガー発生時の支払』と定義されており<br>No-Touch / DNT（非到達時に支払）で条件が真逆に破綻"]
+    Workaround --> Flaw2["課題2: 欧州型バイナリとノックインバリアの混同<br>Barrier.knockIn は『基礎オプションの有効化』であり<br>満期単発のデジタル判定と区別不能"]
+    Workaround --> Flaw3["課題3: 必須制約 (OptionTypePresent / Quantity) との矛盾<br>tradeLot.quantity と FeaturePayment.amount の二重計上リスク、<br>必須の optionType (Call/Put) とストライク欠落の不整合"]
+    Workaround --> Flaw4["課題4: Asset-or-Nothing の表現不能<br>FeaturePayment は現金・比率のみで、<br>対価なしの片道通貨受渡をバニラ現物行使と区別不能"]
 ```
 
-#### 各構成要素の CDM マッピング規則
+#### 1. `Barrier` / `FeaturePayment` の本来の意味と No-Touch（ノータッチ）での論理破綻
+- **一次ソースにおける本来の定義**:
+  - [`Barrier`](../../common-domain-model/rosetta-source/src/main/rosetta/product-template-type.rosetta)（L820-828）は *"As per ISDA 2002 Definitions."* と注記されており、`knockIn` は「所定トリガー到達時に基礎オプションが有効化（active）される条件」、`knockOut` は「所定トリガー到達時に基礎オプションが消滅する条件」です。
+  - [`FeaturePayment`](../../common-domain-model/rosetta-source/src/main/rosetta/observable-event-type.rosetta)（L84-99）の公式定義は ***"Payment made following trigger occurrence."***（**トリガー事象の発生に伴って行われる支払**＝主にバリア・オプションがノックアウトされた際のリベート支払等）です。なお、CDM 一次ソース全体（全 `*-func.rosetta` および全サンプル JSON）において、FX プロダクトで `FeaturePayment` を使用している箇所は **0 件** です。
+- **No-Touch / Double No-Touch における致命的矛盾**:
+  - ワンタッチ（One-Touch）であれば「バリア到達（トリガー発生）に伴って固定額が支払われる」ため、`knockIn` + `FeaturePayment` で現象面を近似できたとしても、**ノータッチ（No-Touch / Double No-Touch）は「期間中に一度もトリガーが発生しなかった場合にのみ、満期に固定額が支払われる」商品**です。
+  - これを `Barrier.knockOut` + `FeaturePayment` に格納すると、CDM の定義上は「バリアにタッチしてノックアウト（トリガー発生）した時に支払われるリベート」という意味になり、**支払条件が経済的実態と完全に逆転（破綻）**します。
 
-1. **行使スタイルの指定 (`exerciseTerms.style`)**:
-   - ヨーロピアン・デジタル: `OptionExerciseStyleEnum -> European`
-   - ワンタッチ／ノータッチ: `OptionExerciseStyleEnum -> American`
-2. **タッチ・判定条件の指定 (`Trigger`)**:
-   - `level`: バリアレート水準（[`PriceSchedule`](../../common-domain-model/rosetta-source/src/main/rosetta/observable-asset-type.rosetta)）
-   - `triggerType`: 判定不等号（[`TriggerTypeEnum`](../../common-domain-model/rosetta-source/src/main/rosetta/observable-event-enum.rosetta) -> `EqualOrGreater`, `EqualOrLess`）
-   - `triggerTimeType`: 監視形態（[`TriggerTimeTypeEnum`](../../common-domain-model/rosetta-source/src/main/rosetta/observable-event-enum.rosetta) -> `Anytime`（取引日中の常時監視：continuous barrier / ワンタッチ）または `Closing`（引け値のみ）。※一次ソースの `TriggerTimeTypeEnum` には `Continuous` という列挙値は存在せず、常時監視は `Anytime` で表現される）
-3. **固定受渡額の指定 (`FeaturePayment` の構造と一次ソースの仕様)**:
-   - **[`FeaturePayment`](../../common-domain-model/rosetta-source/src/main/rosetta/observable-event-type.rosetta)**:
-     - 条件充足時に支払われる固定キャッシュフローとして、**`payerReceiver`（型: `PartyReferencePayerReceiver`, 必須 `1..1`）**、`amount`（金額）、`currency`（通貨）、`paymentDate`（支払期日）、`time`（`Immediate` か `Close` か）を定義。
-   - **注意（`CashSettlementTerms.cashSettlementAmount` 流用の誤解）**:
-     - 一部で「満期差金決済額として `settlementTerms.cashSettlementTerms.cashSettlementAmount` に直接固定額を定義する」代替案が論じられることがありますが、これは ISDA 2003 クレジットイベントや債務不履行時決済（Recovery Factor 等との排他）を想定した型構造です。為替デジタルオプションの固定ペイアウトにこれを適用する Rosetta DSL 上のマッピング関数やサンプル JSON は一次ソースに一切存在せず、正規の表現ではありません。
-4. **ノックインとノックアウトの使い分け**:
-   - **One-Touch**: タッチによって権利（受取）が発生するため `knockIn` を使用。
-   - **No-Touch**: タッチによって権利が消滅するため `knockOut` を使用（満期までノックアウトされなければ満期決済が実行される）。
+#### 2. ヨーロピアン・デジタル（満期単発判定）とバリア（期間監視によるオプション有効化）の概念混同
+- ヨーロピアン・デジタル（例: `fx-ex14-euro-digital-option`）は、満期日（Expiration Date）の単一時点において為替レートがトリガー水準以上（または以下）であれば固定額を支払う契約であり、期間中のノックイン／ノックアウト条項ではありません。
+- これを `OptionPayout.feature.barrier.knockIn` で表現すると、「バリア突破によって基礎となるオプションが有効化されるノックイン・オプション」と構文上区別がつかなくなります。
+
+#### 3. `OptionPayout` および `EconomicTerms` の必須制約（`condition`）との矛盾と二重計上リスク
+CDM の標準バリデーションを通過する有効な `TradeState` / `OptionPayout` を構築するには、以下の必須制約を満たす必要があります：
+1. **`OptionPayout.underlier (1..1)`**: アンダーライング（通貨 `Cash` 等）の設定が必須。
+2. **`condition OptionTypePresent` ([`product-template-type.rosetta`](../../common-domain-model/rosetta-source/src/main/rosetta/product-template-type.rosetta) L184-187)**:
+   ```rosetta
+   condition OptionTypePresent:
+       if underlier -> Observable exists or underlier -> Product -> TransferableProduct exists
+       then optionType exists
+   ```
+   アンダーライングが `Observable`（通貨 `Cash` 等）である場合、デジタルオプションであっても必ず `optionType`（`Call` または `Put` 等）を設定しなければバリデーションエラーとなります。
+3. **`EconomicTerms` の `condition Quantity` ([`product-template-type.rosetta`](../../common-domain-model/rosetta-source/src/main/rosetta/product-template-type.rosetta) L46-49)**:
+   ```rosetta
+   condition Quantity:
+       if payout -> OptionPayout exists ...
+       then priceQuantity -> quantitySchedule exists
+   ```
+   `OptionPayout` が存在する場合、必ず `priceQuantity.quantitySchedule`（すなわち `Trade.tradeLot.priceQuantity.quantity`）に数量を設定しなければなりません。
+
+この必須制約により、以下のジレンマが発生します：
+- **数量の二重計上（Double Counting）**: 必須制約を満たすために `tradeLot.priceQuantity.quantity` に固定ペイアウト額（例: 750,000 GBP）を設定し、同時に `feature.barrier.knockIn.featurePayment.amount` にも `750,000 GBP` を設定すると、「基礎となる Call/Put オプションの名目元本」と「バリアの `FeaturePayment`（リベート／一時金）」の双方がデータ上に存在し、外部の評価・決済エンジンが二重計上するリスクが生じます。
+- **ストライク未設定の解釈曖昧性**: `OptionPayout.strike` は多重度 `(0..1)` のため省略自体は可能ですが、`underlier`（通貨）、`optionType`（`Call`/`Put`）、`tradeLot.quantity`（750,000 GBP）が揃った状態で `strike` だけが空の `OptionPayout` は、システム側から見ると「ストライク価格が未入力（またはゼロ）のバニラオプション」と区別できません。
+
+#### 4. Asset-or-Nothing（原資産通貨の片道受渡）の表現不能性
+- European Asset-or-Nothing は「満期に条件を満たせば、対価通貨の支払なしに基準通貨の元本 $N$ のみを引き渡す」契約です。
+- しかし、`FeaturePayment` は現金支払額（`amount` / `currency`）または比率（`levelPercentage`）しか保持できず、また `OptionPayout` を現物行使（`Create_Exercise`）して `SettlementPayout` を派生生成しても、バニラオプションの現物受渡（2通貨の双方向交換）と「対価通貨ゼロの片道受渡」をスキーマ上で区別する手段が存在しません。
 
 ---
 
-### 5.3 FpML Ingest マッピングの現状と制約（incomplete-products の実態分析）
+### 5.4 実務システムにおける推奨アプローチ（非標準条項フラグ vs Rune DSL 拡張）
 
-CDM の一次リポジトリにおけるデジタルオプションの Ingest 変換実装を監査した結果、以下の**実装上の制約・課題**が判明しています。
+以上の一次ソース分析から、実務において FINOS CDM で為替デジタル系オプションを取り扱う場合は、既存の `Barrier` + `FeaturePayment` を無理に「正規表現」として流用するのではなく、システムの要件に応じて以下の **2つのアプローチのいずれか** を採用することが推奨されます。
 
-1. **FpML の XML 構造**:
-   - FpML 5.13 では `<fxDigitalOption>` スキーマにより、`<trigger>`（ヨーロピアン）、`<touch>`（アメリカン・タッチ）、`<payout>`（固定受渡額）、`<premium>` が構造化されています。
-2. **CDM 側の変換関数 ([`ingest-fpml-confirmation-product-fxdigitaloption-func.rosetta`](../../common-domain-model/rosetta-source/src/main/rosetta/ingest-fpml-confirmation-product-fxdigitaloption-func.rosetta) / [`ingest-fpml-confirmation-tradestate-func.rosetta`](../../common-domain-model/rosetta-source/src/main/rosetta/ingest-fpml-confirmation-tradestate-func.rosetta))**:
-   - 現在の CDM コードベースでは `MapFxDigitalOptionNonTransferableProduct` が定義されているものの、**初期スケルトン実装にとどまっており、以下の要素が変換されず欠落（empty）** しています：
-     - `underlier`: `empty` にハードコード
-     - `strike`: マッピング未定義
-     - `feature.barrier`: FpML の `<trigger>` / `<touch>` からの変換ロジックが未実装
-   - さらに、`Trade.tradeLot` を生成する [`MapPriceQuantityList`](../../common-domain-model/rosetta-source/src/main/rosetta/ingest-fpml-confirmation-tradestate-func.rosetta)（L416-450）の `fpmlProduct` 分岐には `FxSingleLeg`、`FxSwap`、`FxOption` のみが定義されており **`fpml.FxDigitalOption` の分岐が存在しないため、`trade.tradeLot`（数量・価格情報）自体が完全に出力されず欠落**します。
-3. **成果物の隔離配置**:
-   - このため、デジタルオプションのサンプル変換結果（[`fx-ex14-euro-digital-option.json`](../../common-domain-model/rosetta-source/src/main/resources/ingest/output/fpml-confirmation-to-trade-state/fpml-5-13-incomplete-products-fx-derivatives/fx-ex14-euro-digital-option.json) 〜 `fx-ex19`）はすべて `incomplete-products`（不完全プロダクト）ディレクトリ配下に配置されており、`OptionPayout` の一部属性（`payerReceiver`, `buyerSeller`, `exerciseTerms`, `settlementTerms.settlementDate`）とプレミアム支払（`transferHistory`）のみが出力され、`tradeLot` やトリガー・固定ペイアウト額を持たない状態となっています。
-4. **商品分類（Qualification）の未定義**:
-   - [`product-qualification-func.rosetta`](../../common-domain-model/rosetta-source/src/main/rosetta/product-qualification-func.rosetta) には、バニラオプション認定用の `Qualify_ForeignExchange_VanillaOption` や NDO 認定用の `Qualify_ForeignExchange_NDO` は存在するものの、**デジタル系通貨オプション専用の判定関数（`Qualify_ForeignExchange_DigitalOption` 等）は未実装** です（なお `fx-ex14`〜`fx-ex19` では `underlier` が空のため `Qualify_ForeignExchange_VanillaOption` も `False` となります）。
+| アプローチ | 設計方針 | メリット | デメリット・制約 | 適したユースケース |
+|---|---|---|---|---|
+| **アプローチ 1:<br>標準スキーマ維持 ＋ `nonStandardisedTerms = True` による外部管理** | 標準 CDM 型を変更せず、`OptionPayout` の必須属性（`underlier`, `optionType`, `tradeLot`）を満たした上で、**`economicTerms.nonStandardisedTerms = True`** と **`product.taxonomy`**（`EuroBinary`, `OneTouch`, `NoTouch` 等）によりデジタル商品であることを明示し、ペイオフ判定は外部エンジンで行う。 | ・CDM 標準の Java / Python ライブラリを無改造で利用可能<br>・モデルバリデーションエラー（5件の必須違反）を回避可能<br>・権利行使・決済後のイベント（`BusinessEvent`）は標準プリミティブでそのまま記録可能 | ・標準スキーマ単体では「バニラ」と「デジタル」のペイオフ式の違いやタッチ条件の詳細を機械可読に保持できない（社内規約または外部タームシート参照が必要） | 取引ライフサイクル管理（約定・プレミアム決済・行使／消滅・資金決済の監査記録）を標準 CDM で統一したい場合（§4.2.2 の TARF と同様の割り切り） |
+| **アプローチ 2:<br>Rune DSL（旧 Rosetta DSL）による独自スキーマ拡張** | [Rune DSLを用いたCDMモデルの独自拡張ワークフロー](extending_cdm_with_rune_dsl.md) に従い、独自名前空間（例: `com.example.cdm.fx`）で `OptionPayout` または `OptionFeature` を拡張し、デジタル専用属性（`DigitalPayoutFeature`）を追加定義する。 | ・Cash-or-Nothing / Asset-or-Nothing / One-Touch / No-Touch の条件と固定ペイアウト額を型安全かつ誤解なく表現可能<br>・プライシングエンジンへの直接入力モデルとして利用可能 | ・独自拡張した `.rosetta` ファイルのビルドとパッケージ配布管理が必要 | プライシングエンジン連携や契約条件の完全な機械可読化（STP）を CDM オブジェクト単体で完結させたい場合 |
+
+#### アプローチ 2（Rune DSL 独自拡張）におけるスキーマ設計イメージ
+バニラとデジタルのペイアウトを厳密に区別する必要がある場合、無理に `Barrier.featurePayment` を転用するのではなく、[Rune DSLを用いたCDMモデルの独自拡張ワークフロー](extending_cdm_with_rune_dsl.md) の手順に従って以下のような拡張型を定義するのが CDM の設計思想（型安全性・単一表現の原則）に最も忠実です：
+
+```rosetta
+// 独自名前空間におけるデジタルオプション拡張概念例
+enum DigitalPayoutStyleEnum:
+    CashOrNothing      <"条件成立時に固定金額（現金）を支払う">
+    AssetOrNothing     <"条件成立時に原資産（基準通貨元本）を引き渡す">
+
+enum TouchConditionEnum:
+    AtExpiry           <"満期日単発判定（European Binary / Range Digital）">
+    OneTouch           <"期間中に一度でもトリガー水準に到達すれば成立">
+    NoTouch            <"期間中に一度もトリガー水準に到達しなければ満期成立">
+
+type DigitalOptionFeature:
+    payoutStyle DigitalPayoutStyleEnum (1..1)
+    touchCondition TouchConditionEnum (1..1)
+    trigger Trigger (1..2)              <"単一トリガーまたはレンジ上下限（Double Touch / Range）">
+    fixedPayout Money (0..1)            <"CashOrNothing 時の固定支払額・通貨">
+    settlementTiming TimeTypeEnum (0..1) <"タッチ即時決済（Immediate）か満期決済（Close/Expiry）か">
+```
+
+---
+
+### 5.5 第一原理からの再構成：「行使条件」と「決済額」の分離による標準スキーマ表現（確定差金決済額アプローチ）
+
+§5.3 の流用案は「既存の `Fx-European-Option`（2通貨交換オプション）をテンプレートにしてデジタル要素を *付け足す*」発想でした。ここでは [product-model.md](../../common-domain-model/docs/product-model.md) の定義に立ち返り、デジタルオプションの経済効果から CDM 構成要素を第一原理で組み立て直します。
+
+#### 1. product-model.md の分解原則
+- **Payout**（L16-19）は「将来の 1 つ以上の資産移転に関する当事者間コミットメントのパラメトリック記述であり、その移転はある資産等の将来の価値・パフォーマンスに条件付けられうる（オプションの場合）」と定義されています。
+- **OptionPayout の underlier**（L539-589）は「行使（exercise）を定義するもの」であり（Underlier 使用表）、行使の決済が現金か現物かは payout の定義（`settlementTerms`）で指定されます。
+- **TradeLot.PriceQuantity**（L804-852）では `price`・`quantity`・`observable` は商品特性に応じて取捨選択され、バニラ FX オプションと異なりデジタルオプションには対価通貨の交換額（`price.derivedQuantity`）が存在しません。
+- **SettlementTerms**（L1044-1103）は決済特性を定義し、差金決済固有のパラメータは `cashSettlementTerms` が担います。
+
+#### 2. 経済効果の分解（`fx-ex14-euro-digital-option` を例に）
+FpML 入力 [`fx-ex14-euro-digital-option.xml`](../../common-domain-model/rosetta-source/src/main/resources/ingest/input/fpml-5-13-incomplete-products-fx-derivatives/fx-ex14-euro-digital-option.xml) の経済効果は「買手が 53,000 GBP のプレミアムを払い、2001-11-26 14:00 London に GBP/USD（Reuters `GBP=`）が 1.4800 *以上* なら、売手が 2001-11-28 に 750,000 GBP を支払う」です。これを 3 つの問いに分解します：
+
+| 問い | 経済的な答え | CDM の担い手（一次ソース） |
+|---|---|---|
+| **① 何が条件で発生するか（行使条件）** | GBP/USD の満期フィキシングが 1.48 以上 | `OptionPayout.underlier`（`Cash` GBP または `ForeignExchangeRateIndex` GBP/USD）＋ `optionType = Call` ＋ `strike.strikePrice`（1.48 USD/GBP）＋ `exerciseTerms`（European, `automaticExercise`）— すなわち **ITM なら自動行使** |
+| **② 発生したら何が移転するか（決済額）** | 固定 750,000 GBP（計算式なし） | `settlementTerms.settlementType = Cash` ＋ **`cashSettlementTerms.cashSettlementAmount`**（`Money`：750,000 GBP） |
+| **③ 対価は何か** | 約定時の 53,000 GBP プレミアム | `TradeState.transferHistory`（`transferType = Premium`。一次ソース NDO サンプル [`fx-ex11-non-deliverable-option.json`](../../common-domain-model/rosetta-source/src/main/resources/ingest/output/fpml-confirmation-to-trade-state/fpml-5-13-products-fx-derivatives/fx-ex11-non-deliverable-option.json) と同形） |
+
+**核心**: バニラとデジタルの違いは ① ではなく **② のみ**にあります。バニラ（差金決済）は決済額が「数量 ×（フィキシング − ストライク）」で *計算* され、デジタルは決済額が契約時に *確定* しています。[`CashSettlementTerms`](../../common-domain-model/rosetta-source/src/main/rosetta/product-common-settlement-type.rosetta)（L108-121）の `cashSettlementAmount` は *"The amount paid by the seller to the buyer for cash settlement on the cash settlement date. **If not otherwise specified**, would typically be calculated as ..."* と定義されており、「指定されれば計算に代わる確定額」という意味論を最初から持っています。
+
+> [!NOTE]
+> **CDM 内の先例（クレジット）**: 同じ `CashSettlementTerms` 内で `cashSettlementAmount` と排他選択（`condition CashSettlementTermsChoice: optional choice cashSettlementAmount, recoveryFactor`）される `recoveryFactor` は *"Used for fixed recovery, ... determined at contract formation"* であり、FpML `<cashSettlementTerms><recoveryFactor>` から取り込まれます（[`ingest-fpml-confirmation-settlement-func.rosetta`](../../common-domain-model/rosetta-source/src/main/rosetta/ingest-fpml-confirmation-settlement-func.rosetta) L756-766）。固定回収率 CDS は市場で「デジタル（バイナリ）CDS」と呼ばれる商品であり、CDM は **デジタル性を新しい payout 型ではなく「事前確定された差金決済条件」として表現する** 設計を既に採っています。
+
+#### 3. 組み立て結果（CDM 7.5.0 公式エンジンで全データルール合格）
+
+```json
+"payout": [ {
+  "@type": "cdm.product.template.OptionPayout",
+  "payerReceiver": { "payer": "Party1", "receiver": "Party2" },
+  "priceQuantity": { "quantitySchedule": { "@ref:scoped": "quantity-1" } },
+  "settlementTerms": {
+    "settlementType": "Cash",
+    "settlementCurrency": { "@data": "GBP" },
+    "settlementDate": { "valueDate": "2001-11-28" },
+    "cashSettlementTerms": [ {
+      "valuationMethod": { "valuationSource": {
+        "quotedCurrencyPair": { "currency1": { "@data": "GBP" }, "currency2": { "@data": "USD" },
+                                "quoteBasis": "Currency2PerCurrency1" },
+        "informationSource": { "primarySource": { "sourceProvider": { "@data": "Reuters" },
+                                                  "sourcePage": { "@data": "GBP=" } } } } },
+      "valuationTime": { "hourMinuteTime": "14:00:00", "businessCenter": { "@data": "GBLO" } },
+      "cashSettlementAmount": { "value": 750000, "unit": { "currency": { "@data": "GBP" } } }
+    } ]
+  },
+  "buyerSeller": { "buyer": "Party2", "seller": "Party1" },
+  "underlier": { "@type": "cdm.observable.asset.Observable", "@ref:scoped": "observable-1" },
+  "optionType": "Call",
+  "exerciseTerms": {
+    "style": "European",
+    "expirationDate": [ { "adjustableDate": { "adjustedDate": { "@data": "2001-11-26" } } } ],
+    "expirationTime": { "hourMinuteTime": "14:00:00", "businessCenter": { "@data": "GBLO" } },
+    "expirationTimeType": "SpecificTime",
+    "exerciseProcedure": { "automaticExercise": { "isApplicable": true }, "followUpConfirmation": false }
+  },
+  "strike": { "strikePrice": { "value": 1.48, "unit": { "currency": { "@data": "USD" } },
+                               "perUnitOf": { "currency": { "@data": "GBP" } }, "priceType": "ExchangeRate" } }
+} ]
+// tradeLot.priceQuantity: quantity-1 = 750,000 GBP, observable-1 = Cash(GBP)
+// transferHistory: Premium 53,000 GBP (party2 -> party1, 2001-11-14)
+```
+
+- `TradeState` を `WorkflowStep.businessEvent.after` に格納し、`cdm-workflowstep-validator`（CDM 7.5.0, `RosettaTypeValidator`）で検証した結果は **`STATUS: PASS`**（構文・多重度・参照解決・全 `condition`）。§8.8 の 5 件の必須違反（`Quantity`, `underlier`, `OptionTypePresent`, `settlementType` 等）はすべて解消されます。
+- 補足: NDO サンプルと同形の `valuationDate.fxFixingDate` を付与すると、`FxFixingDate` の必須属性（`period`, `periodMultiplier`）と `FxFixingDateDateChoice` 違反が出るため、フィキシング＝満期時刻である本商品では省略しています（フィキシング時刻は `valuationTime` と `exerciseTerms.expirationTime` で表現）。
+- **`underlier`（`Observable`）の 2 つの選択肢とトレードオフ**:
+  - **選択肢 A（`Asset -> Cash (GBP)`）**: バニラ FX オプション／NDO と同じ構造。`Qualify_AssetClass_ForeignExchange`（[`product-qualification-func.rosetta`](../../common-domain-model/rosetta-source/src/main/rosetta/product-qualification-func.rosetta) L171）が `True` となる一方、`Qualify_ForeignExchange_NDO` も `True` と判定されます。
+  - **選択肢 B（`Index -> ForeignExchangeRateIndex`）**: [`observable-asset-type.rosetta`](../../common-domain-model/rosetta-source/src/main/rosetta/observable-asset-type.rosetta)（L43-50, L439-440）および [`MapQuotedCurrencyPairToObservableWithLocation`](../../common-domain-model/rosetta-source/src/main/rosetta/ingest-fpml-confirmation-pricequantity-func.rosetta)（L2406-2439）に定義された「為替レートインデックス（`quotedCurrencyPair` ＋ `primaryFxSpotRateSource`）」を `Observable` に置く方法です。「通貨の交換ではなく為替レート水準そのものを観測対象とする」という経済的実態により忠実であり、`ValuationSource.quotedCurrencyPair` の `[metadata address "pointsTo"=Observable->Index->ForeignExchangeRateIndex->quotedCurrencyPair]` により、`cashSettlementTerms.valuationMethod.valuationSource.quotedCurrencyPair` から `@ref:scoped: "quotedCurrencyPair-1"` で直接ポインタ参照することも可能です（なお、`ForeignExchangeRateIndex` は [`AssetBase`](../../common-domain-model/rosetta-source/src/main/rosetta/base-staticdata-asset-common-type.rosetta) L16-17 を継承するため、`RosettaTypeValidator` の多重度検証を通過するには `identifier AssetIdentifier (1..*)` の設定が必須です）。
+
+#### 4. §5.3 の 4 課題の再評価
+
+| §5.3 の課題 | 本アプローチでの扱い |
+|---|---|
+| 課題1: `FeaturePayment` の意味論破綻（No-Touch で逆転） | **解消**。`FeaturePayment` を使わない。支払は「行使された場合の差金決済」という CDM 本来の意味のまま。 |
+| 課題2: ヨーロピアン・バイナリとノックインの混同 | **解消**。満期単発判定は `strike` ＋ `optionType` ＋ 自動行使で表し、`Barrier` を使わない。 |
+| 課題3: `quantity` と `FeaturePayment.amount` の二重計上 | **性質が変わる**。`quantity`（750,000 GBP）と `cashSettlementAmount`（750,000 GBP）は同額だが、後者は追加の支払ではなく「行使時決済額の確定値」であり、加算されない。運用上は「`cashSettlementAmount` が存在すれば決済額は計算せずその値を使う」「`quantity` は報告上の想定元本＝ペイアウト額」と規約化する。 |
+| 課題4: Asset-or-Nothing の表現不能 | **FX では消滅**。FX の「資産」は通貨そのものなので、Asset-or-Nothing（基準通貨元本 N を受領）は「基準通貨建て Cash-or-Nothing」と経済的に同一。`settlementCurrency` / `cashSettlementAmount` の通貨を基準通貨（本例 GBP）にするか決済通貨（USD）にするかで両者を区別できる。 |
+
+#### 5. デジタル系ファミリーへの展開（概念設計・エンジン未検証）
+
+| 商品 | 構成 | 評価 |
+|---|---|---|
+| European Digital Put（`AtOrBelow`） | 上記の `optionType = Put` | ◎ そのまま |
+| Range Digital（`fx-ex15`） | Digital Call(下限) − Digital Call(上限) の合成。`OptionFeature.strategyFeature.strikeSpread.upperStrike` に上限を置く案、または 2 トレードのパッケージ | ○ 合成として表現可（`StrikeSpread` の固定額適用は解釈規約が必要） |
+| One-Touch（満期払い） | `feature.barrier.knockIn`（期間監視）＋ `strike` なし ＋ 自動行使 ＋ `cashSettlementAmount` | ○ 「ノックインで権利が発生し、満期に確定額を受領」で意味論一致 |
+| No-Touch / Double No-Touch | `feature.barrier.knockOut`（`TriggerEvent` を 1〜2 件、または `Trigger.level (0..2)`）＋ `cashSettlementAmount` | ○ 「タッチで権利消滅、残存すれば満期に確定額」で [`Barrier`](../../common-domain-model/rosetta-source/src/main/rosetta/product-template-type.rosetta)（L635-637）本来の定義と一致 |
+| One-Touch（即時払い `Immediate`） | タッチ時点での決済日を相対日付で表す標準手段がない | △ `nonStandardisedTerms = True` 併用 |
+
+#### 6. 残る限界（正直な評価）
+1. **商品自動判定の誤認**: [`Qualify_ForeignExchange_VanillaOption`](../../common-domain-model/rosetta-source/src/main/rosetta/product-qualification-func.rosetta)（L1754-1768: Bermuda 以外・feature なし）と `Qualify_ForeignExchange_NDO`（L1771-1784: European・`cashSettlementTerms` あり）は、DSL を読む限り `underlier = Cash` の場合に条件を満たす。対策は `product.taxonomy` に非計算値（例: FpML `productType = EuroBinary`、ISDA 分類値）を明示するか、`underlier` に `ForeignExchangeRateIndex` を用いつつ、拡張側で「`cashSettlementAmount` が存在する `OptionPayout` = Digital」と判定する `Qualify_` 関数を追加すること（上流へのコントリビューション候補）。
+2. **境界値の扱い**: FpML `AtOrAbove` は等号を含むが、バニラ `Call` の ITM 判定（フィキシング > ストライク）と等号時の扱いが一致する保証はない。厳密性が必要なら規約化が必要。
+3. **Ingestion 未実装**: 現行 [`ingest-fpml-confirmation-product-fxdigitaloption-func.rosetta`](../../common-domain-model/rosetta-source/src/main/rosetta/ingest-fpml-confirmation-product-fxdigitaloption-func.rosetta) はスケルトンのため、本表現は手動構築またはマッピング拡張が必要。
+4. **ライフサイクル**: ITM 時は §6.3 の差金決済パス（`QuantityChange` ＋ `Transfer`：金額＝`cashSettlementAmount`）、OTM 時は行使なしで満期消滅となり、標準イベント体系に自然に乗る。
+
+> [!TIP]
+> §5.4 のアプローチ 1（標準スキーマ＋`nonStandardisedTerms`）と 2（Rune DSL 拡張）の **中間解** として、本アプローチは「標準型のみ・拡張なし・ペイオフは機械可読」を同時に満たします。European Cash-or-Nothing（Call/Put、基準通貨／決済通貨建て）については、本アプローチを第一候補とするのが妥当です。
 
 ---
 
 ## 6. 権利行使後のペイアウト（Payout after Exercise）の決定論的メカニズム
+
 
 通貨オプションの満期到来または権利行使時において、CDM は**「現物受渡（Physical Exercise）」と「差金決済（Cash Settlement / NDO）」の2つの決済形態を決定論的に区別し、異なるライフサイクルパスで処理**します。
 
@@ -974,28 +1138,28 @@ sequenceDiagram
 
 ---
 
-### 6.5 デジタルオプション行使後のペイアウト表現（Cash Settled vs Physical）
+### 6.5 デジタルオプション行使・条件成立後のイベント表現（Cash Settled vs Physical）
 
-デジタルオプション（Digital Option / Binary Option / Touch Option）において、判定条件（Trigger / Barrier）が充足されて権利行使（Exercise）に至った後に発生するペイアウト（資金移動または現物受渡）は、CDM の統一イベントモデル（[`BusinessEvent`](../../common-domain-model/rosetta-source/src/main/rosetta/event-common-type.rosetta)）により決定論的に表現されます。
+第 5 章（§5.2〜§5.3）で詳述した通り、現行 CDM のプロダクト定義（[`OptionPayout`](../../common-domain-model/rosetta-source/src/main/rosetta/product-template-type.rosetta)）にはバニラとデジタルのペイオフ計算式を区別する標準属性は存在しません。しかし、**外部の判定・評価エンジンによってトリガー／タッチ条件の成立が判定された後に発生するライフサイクルイベント（権利行使・契約終了・資金移動）については、CDM の統一イベントモデル（[`BusinessEvent`](../../common-domain-model/rosetta-source/src/main/rosetta/event-common-type.rosetta)）の標準プリミティブを用いて決定論的に記録・監査することが可能**です。
 
 ```mermaid
 flowchart TD
-    Cond["満期判定またはバリアヒット<br>(Fixing Rate >= Trigger 等)"] --> Exercise["権利行使イベント (OptionExercise)<br>BusinessEvent / WorkflowStep"]
+    Cond["外部エンジンによる条件判定<br>(満期 Fixing >= Trigger / 期間中 Touch 成立)"] --> Exercise["権利行使イベント (OptionExercise)<br>BusinessEvent / WorkflowStep"]
     
     Exercise --> CloseOrig["1. 原契約の終了<br>quantityChange (Replace, 数量 0)<br>State.closedState = Terminated<br>State.positionState = Closed"]
     
     Exercise --> Branch{"決済形態の分岐"}
     
-    Branch -->|"Cash-or-Nothing / Touch<br>(固定現金差金決済)"| CashPath["2. 固定現金ペイアウトの送金<br>transfer (ContingentTransfer)<br>transferType = 'Exercise'<br>固定金額 (例: 750,000 GBP) 送金"]
+    Branch -->|"Cash-or-Nothing / Touch<br>(固定現金決済)"| CashPath["2. 固定現金ペイアウトの送金<br>transfer (ContingentTransfer)<br>transferType = 'Exercise'<br>固定金額 (例: 750,000 GBP) 送金"]
     
-    Branch -->|"Asset-or-Nothing<br>(通貨元本受渡)"| PhysPath["2. 新規 FX Spot 取引の自動組成<br>Create_Exercise -> Create_NonTransferableProduct<br>SettlementPayout 生成<br>(新 UTI: replacementTradeIdentifier)"]
+    Branch -->|"Asset-or-Nothing<br>(通貨元本片道受渡)"| PhysPath["2. 現物受渡の実行<br>Create_Exercise による SettlementPayout 派生<br>または受渡日の単一通貨 Transfer 実行"]
     
     CashPath --> HistCash["原契約の transferHistory に<br>プレミアム支払と行使送金を監査蓄積"]
-    PhysPath --> SettleSpot["スポット受渡日 (Value Date) に<br>2通貨の現物資金移動 (Transfer)"]
+    PhysPath --> SettleSpot["受渡日 (Value Date) に<br>対象通貨元本の資金移動 (Transfer)"]
 ```
 
 #### 1. 差金決済型（Cash-or-Nothing / Touch Payout: 固定金額送金）
-為替デジタルオプションの大部分は、条件成立時にあらかじめ合意した固定金額の現金を支払う「差金決済型」です。
+為替デジタルオプションの大部分を占める「条件成立時に合意済みの固定金額を支払う契約（European Cash-or-Nothing, One-Touch, No-Touch 等）」では、条件成立による支払確定をバニラ差金決済（NDO 行使）と同一のイベントプリミティブ構成で表現します。
 - **イベントの意図（`intent`）**: `EventIntentEnum -> OptionExercise`
 - **イベントプリミティブの構成**:
   1. **契約終了（[`QuantityChangeInstruction`](../../common-domain-model/rosetta-source/src/main/rosetta/event-common-type.rosetta)）**:
@@ -1007,16 +1171,14 @@ flowchart TD
      - `transferType`: `TransferTypeEnum -> Exercise`
      - `payerReceiver`: オプション売り手が `payerPartyReference`、オプション買い手が `receiverPartyReference`。
      - `settlementDate`: 決済期日（Value Date）。
-- **状態反映（`TradeState.transferHistory`）**:
+- **状態反映（`TradeState.transferHistory`）とイベント認定（Qualification）**:
   - 行使後の `after` に格納される `TradeState` の `transferHistory` には、約定時のプレミアム支払レコード（`transferType: "Premium"`）に加えて、今回の権利行使ペイアウト（`transferType: "Exercise"`）が時系列で監査蓄積されます。
-- **イベント認定（Qualification）**:
-  - [`Qualify_Exercise`](../../common-domain-model/rosetta-source/src/main/rosetta/event-qualification-func.rosetta)（L200-217: `OptionPayout exists` かつ `intent = OptionExercise` かつ `quantityChange exists` かつ `transfer exists` かつ `closedState.state = Terminated`）が成立（※`Qualify_CashTransfer` は `only-element` 制約により単一 `transfer` のみのイベントを対象とするため、複合イベントでは `Qualify_Exercise` に認定される）。
+  - [`Qualify_Exercise`](../../common-domain-model/rosetta-source/src/main/rosetta/event-qualification-func.rosetta)（L195-217: `OptionPayout exists` かつ `intent = OptionExercise` かつ `quantityChange exists` かつ `transfer exists` かつ `closedState.state = Terminated`）が決定論的に成立します。
+  - ※なお、ノータッチ（No-Touch）オプションが期間中にバリアにタッチして権利消滅（リベートなし）した場合は、`intent` を空として数量を `0` に置換する `QuantityChangeInstruction` 単体イベント（`Qualify_Termination`）または満期無価値失効（`ClosedStateEnum -> Expired`）として処理します。
 
-#### 2. 原資産受渡型（Asset-or-Nothing: 通貨交換）
-条件成立時に原資産通貨の受渡を行う場合、CDM のコア関数 [`Create_Exercise`](../../common-domain-model/rosetta-source/src/main/rosetta/event-common-func.rosetta) $\to$ [`Create_NonTransferableProduct`](../../common-domain-model/rosetta-source/src/main/rosetta/event-common-func.rosetta) が駆動されます。
-- 原デジタルオプション契約はクローズ（`ClosedStateEnum -> Terminated`）されます。
-- 行使結果として、新規の **為替スポット契約（[`SettlementPayout`](../../common-domain-model/rosetta-source/src/main/rosetta/product-template-type.rosetta)）** が派生生成され、行使指示に指定された `replacementTradeIdentifier`（新規 UTI）が付番されます。
-- その後、スポット受渡日（Value Date）に 2 通貨の現物送金（`Transfer`）が実行されます。
+#### 2. 原資産受渡型（Asset-or-Nothing: 通貨受渡）
+条件成立時に原資産通貨そのものの受渡を行う場合、CDM のコア関数 [`Create_Exercise`](../../common-domain-model/rosetta-source/src/main/rosetta/event-common-func.rosetta) $\to$ [`Create_NonTransferableProduct`](../../common-domain-model/rosetta-source/src/main/rosetta/event-common-func.rosetta) を駆動して原契約をクローズ（`ClosedStateEnum -> Terminated`）し、新規の [`SettlementPayout`](../../common-domain-model/rosetta-source/src/main/rosetta/product-template-type.rosetta)（新規 UTI: `replacementTradeIdentifier`）を派生生成します。
+- ※**実装上の注意点**: §6.2.2 および §8.9 で詳述する通り、`Create_NonTransferableProduct` が自動生成する `SettlementPayout` は `underlier` と `payerReceiver` のみを持つスケルトンであり、また Asset-or-Nothing では対価通貨の反対送金が発生しない（片道受渡である）ため、受渡日（Value Date）における実際の資金移動は外部エンジンが生成する単一通貨の `TransferInstruction` によって確定させます。
 
 ---
 
@@ -1231,9 +1393,9 @@ CDM 一次リポジトリにおけるエキゾチックオプション（アベ�
 
 ### 8.8 デジタル系オプションの実サンプル XML / JSON 実態調査
 
-一次リポジトリ配下の FpML 入力 XML および CDM 出力 JSON を対比調査した結果、デジタル系オプションにおける CDM のマッピング状況が実証されました。
+一次リポジトリ配下の FpML 入力 XML および CDM 出力 JSON を対比調査した結果、デジタル系オプションにおける CDM のマッピング状況および未完（Incomplete）隔離の具体的な要因が実証されました。
 
-- **検証対象サンプル一覧**:
+- **検証対象サンプル一覧（全6件・すべて `incomplete-products` 配下）**:
   - ヨーロピアン・デジタル: [`fx-ex14-euro-digital-option.xml`](../../common-domain-model/rosetta-source/src/main/resources/ingest/input/fpml-5-13-incomplete-products-fx-derivatives/fx-ex14-euro-digital-option.xml) $\to$ [`fx-ex14-euro-digital-option.json`](../../common-domain-model/rosetta-source/src/main/resources/ingest/output/fpml-confirmation-to-trade-state/fpml-5-13-incomplete-products-fx-derivatives/fx-ex14-euro-digital-option.json)
   - ヨーロピアン・レンジ・デジタル: [`fx-ex15-euro-range-digital-option.xml`](../../common-domain-model/rosetta-source/src/main/resources/ingest/input/fpml-5-13-incomplete-products-fx-derivatives/fx-ex15-euro-range-digital-option.xml) $\to$ [`fx-ex15-euro-range-digital-option.json`](../../common-domain-model/rosetta-source/src/main/resources/ingest/output/fpml-confirmation-to-trade-state/fpml-5-13-incomplete-products-fx-derivatives/fx-ex15-euro-range-digital-option.json)
   - ワンタッチ: [`fx-ex16-one-touch-option.xml`](../../common-domain-model/rosetta-source/src/main/resources/ingest/input/fpml-5-13-incomplete-products-fx-derivatives/fx-ex16-one-touch-option.xml) $\to$ [`fx-ex16-one-touch-option.json`](../../common-domain-model/rosetta-source/src/main/resources/ingest/output/fpml-confirmation-to-trade-state/fpml-5-13-incomplete-products-fx-derivatives/fx-ex16-one-touch-option.json)
@@ -1241,48 +1403,35 @@ CDM 一次リポジトリにおけるエキゾチックオプション（アベ�
   - ダブル・ワンタッチ: [`fx-ex18-double-one-touch-option.xml`](../../common-domain-model/rosetta-source/src/main/resources/ingest/input/fpml-5-13-incomplete-products-fx-derivatives/fx-ex18-double-one-touch-option.xml) $\to$ [`fx-ex18-double-one-touch-option.json`](../../common-domain-model/rosetta-source/src/main/resources/ingest/output/fpml-confirmation-to-trade-state/fpml-5-13-incomplete-products-fx-derivatives/fx-ex18-double-one-touch-option.json)
   - ダブル・ノータッチ: [`fx-ex19-double-no-touch-option.xml`](../../common-domain-model/rosetta-source/src/main/resources/ingest/input/fpml-5-13-incomplete-products-fx-derivatives/fx-ex19-double-no-touch-option.xml) $\to$ [`fx-ex19-double-no-touch-option.json`](../../common-domain-model/rosetta-source/src/main/resources/ingest/output/fpml-confirmation-to-trade-state/fpml-5-13-incomplete-products-fx-derivatives/fx-ex19-double-no-touch-option.json)
 
-#### 要素対比と実態分析（`fx-ex14-euro-digital-option` の場合）
+#### 1. 要素対比と実態分析（`fx-ex14-euro-digital-option` の場合）
 
 | 要素名 | FpML 入力 XML (`fx-ex14.xml`) | CDM 出力 JSON (`fx-ex14.json`) | 監査結果と要因分析 |
 |---|---|---|---|
-| **商品タクソノミ** | `<productType>EuroBinary</productType>` | `taxonomy[0].value.name: "EuroBinary"` | 保持（独自スキーマ URL 紐づけ、ISDA 分類は未定義） |
+| **商品タクソノミ** | `<productType>EuroBinary</productType>` | `taxonomy[0].value.name: "EuroBinary"` | 保持（独自スキーマ URL 紐づけ、ISDA 自動分類は未定義） |
 | **買手・売手** | `<buyerPartyReference href="party2"/>` (UBS)<br>`<sellerPartyReference href="party1"/>` (Citi) | `buyerSeller.buyer: "Party1"`, `seller: "Party2"` | 正常変換（`trade.counterparty` にて `Party1 -> party2 (UBS)`, `Party2 -> party1 (Citi)` にバインド） |
 | **行使条件** | `<europeanExercise>` (満期: 2001-11-26) | `exerciseTerms.style: "European"` | 正常変換 |
-| **受渡日** | `<valueDate>2001-11-28</valueDate>` | `settlementTerms.settlementDate.valueDate: "2001-11-28"` | 正常変換 |
-| **トリガー条件** | `<trigger><triggerRate>1.4800</triggerRate></trigger>` | **欠落（出力なし）** | `MapFxDigitalOptionNonTransferableProduct` で `feature` 未マッピングのため欠落 |
-| **固定ペイアウト** | `<payout><amount>750000</amount><currency>GBP</currency></payout>` | **欠落（出力なし）** | `MapFxDigitalOptionNonTransferableProduct` で未マッピングのため欠落 |
-| **アンダーライング** | `<quotedCurrencyPair>GBP/USD</quotedCurrencyPair>` | **欠落（`underlier: empty`）** | DSL コード（L41）上で `underlier: empty` とハードコード |
+| **受渡日・決済種別** | `<valueDate>2001-11-28</valueDate>` | `settlementTerms.settlementDate.valueDate: "2001-11-28"`<br>（`settlementType` は**欠落**） | [`MapFxDigitalOptionToSettlementTerms`](../../common-domain-model/rosetta-source/src/main/rosetta/ingest-fpml-confirmation-settlement-func.rosetta)（L171-190）が `settlementDate` しかセットせず、`settlementType` を未設定とするため |
+| **トリガー条件** | `<trigger><triggerRate>1.4800</triggerRate><triggerCondition>Above</triggerCondition></trigger>` | **欠落（出力なし）** | [`MapFxDigitalOptionPayout`](../../common-domain-model/rosetta-source/src/main/rosetta/ingest-fpml-confirmation-product-fxdigitaloption-func.rosetta)（L72-108）で `<trigger>` / `<touch>` が未マッピングのため欠落 |
+| **固定ペイアウト** | `<payout><currency>GBP</currency><amount>750000</amount><payoutStyle>Immediate</payoutStyle></payout>` | **欠落（出力なし）** | `MapFxDigitalOptionPayout` で `<payout>` が未マッピングのため欠落 |
+| **アンダーライング** | `<quotedCurrencyPair>GBP/USD</quotedCurrencyPair>` | **欠落（`underlier: empty`）** | `MapFxDigitalOptionPayout`（L82）上で `underlier: empty` とハードコード |
+| **オプション種別** | なし（`<triggerCondition>Above</triggerCondition>` で表現） | **欠落（`optionType` 出力なし）** | `MapFxDigitalOptionPayout` で `optionType` 未設定 |
 | **ロット・数量・価格** | `<payout>` / `<trigger>` 内の数量・レート | **欠落（`trade.tradeLot` 出力なし）** | [`MapPriceQuantityList`](../../common-domain-model/rosetta-source/src/main/rosetta/ingest-fpml-confirmation-tradestate-func.rosetta)（L416-450）に `fpml.FxDigitalOption` 分岐が存在しないため欠落 |
 | **プレミアム** | `<premium><amount>53000 GBP</amount></premium>` | `transferHistory[0].transfer` (`53000 GBP`) | 正常変換（初期資金移動として記録） |
 
+#### 2. `fx-ex14`〜`fx-ex19` で発生する CDM 標準バリデーションエラー（5件）の内訳
+
+一次ソースの `fx-ex14`〜`fx-ex19` の出力 JSON を CDM 自身のモデルバリデータにかけると、上記のスケルトン実装に起因して以下の **5 つの必須データルール違反（Model Validation Failures）** が発生します：
+
+| # | 違反が発生する CDM 型 | 違反ルール・属性名 | 一次ソース定義箇所 | エラー発生の直接原因 |
+|---|---|---|---|---|
+| **1** | `EconomicTerms` | `condition Quantity` | [`product-template-type.rosetta`](../../common-domain-model/rosetta-source/src/main/rosetta/product-template-type.rosetta) (L46-49) | `OptionPayout` が存在するにもかかわらず、`MapPriceQuantityList` に `FxDigitalOption` 分岐がなく `priceQuantity.quantitySchedule`（`tradeLot`）が空のため |
+| **2** | `OptionPayout` | `underlier (1..1)` | [`product-template-type.rosetta`](../../common-domain-model/rosetta-source/src/main/rosetta/product-template-type.rosetta) (L131) | `MapFxDigitalOptionPayout`（L82）で `underlier: empty` とハードコードされているため |
+| **3** | `OptionPayout` | `condition OptionTypePresent` | [`product-template-type.rosetta`](../../common-domain-model/rosetta-source/src/main/rosetta/product-template-type.rosetta) (L184-187) | `underlier` が `NonTransferableProduct` でない場合に必須となる `optionType`（`Call`/`Put` 等）が未設定のため |
+| **4** | `SettlementBase` | `settlementType (1..1)` | [`product-common-settlement-type.rosetta`](../../common-domain-model/rosetta-source/src/main/rosetta/product-common-settlement-type.rosetta) (L29) | `MapFxDigitalOptionToSettlementTerms` が `settlementDate` のみをセットし、必須の `settlementType`（`Cash` / `Physical`）をセットしないため |
+| **5** | `SettlementTerms` | `condition OptionSettlementChoice` | [`product-common-settlement-type.rosetta`](../../common-domain-model/rosetta-source/src/main/rosetta/product-common-settlement-type.rosetta) (L59-64) | `settlementType` が存在する場合に連動して要求される決済詳細条件が未設定のため |
+
 > **知見のまとめ**:
-> CDM コードベース上、デジタル系オプションの FpML Ingest（[`ingest-fpml-confirmation-product-fxdigitaloption-func.rosetta`](../../common-domain-model/rosetta-source/src/main/rosetta/ingest-fpml-confirmation-product-fxdigitaloption-func.rosetta) および [`ingest-fpml-confirmation-tradestate-func.rosetta`](../../common-domain-model/rosetta-source/src/main/rosetta/ingest-fpml-confirmation-tradestate-func.rosetta)）は開発途上のスケルトン実装（Incomplete）にとどまっています。
-> 契約の基本枠組み（当事者、プレミアム、満期期日、アメリカン／ヨーロピアン行使スタイル）はパースされますが、`tradeLot` の生成分岐ならびにトリガー条件・固定ペイアウト額を `OptionPayout.feature.barrier`（`TriggerEvent.featurePayment`）へ橋渡しするマッピングが存在せず、全サンプルで欠落することが実証されました。
-
-##### 8.8.1 CDM 一次ソース型定義に基づく FX デジタルオプション表現の設計考察（ストライク未設定・純粋バリア＋`FeaturePayment` 方式）
-
-上記 Ingest の欠落に対し、一次ソースの型定義（[`OptionPayout`](../../common-domain-model/rosetta-source/src/main/rosetta/product-template-type.rosetta)、[`Barrier`](../../common-domain-model/rosetta-source/src/main/rosetta/product-template-type.rosetta)、[`TriggerEvent`](../../common-domain-model/rosetta-source/src/main/rosetta/observable-event-type.rosetta)、[`FeaturePayment`](../../common-domain-model/rosetta-source/src/main/rosetta/observable-event-type.rosetta)）および商品適格性判定（[`product-qualification-func.rosetta`](../../common-domain-model/rosetta-source/src/main/rosetta/product-qualification-func.rosetta)）のルールに照らして FX デジタルオプションを構造化する場合、以下のモデリング設計が導出されます：
-
-1. **一次ソース型ルールに基づくモデリング構成**:
-   - **`OptionPayout.strike` の省略 (`0..1`)**: `OptionPayout.strike` は多重度 `(0..1)` の任意属性であり、条件制約 `AsianOptionChoice_averagingFeature`（`if feature -> averagingFeature exists then strike -> strikePrice exists`）も `averagingFeature` を使用しない限り `strike` を要求しません。行使価格 $K$ を未設定（`absent`）とすることで、バニラ差金ペイオフ $(S_T - K)$ との混同を避ける構成が可能です。
-   - **トリガー水準の配置**: トリガーレート（例: 1.4800 USD/GBP）は、[`OptionPayout.feature.barrier.knockIn -> trigger -> level`](../../common-domain-model/rosetta-source/src/main/rosetta/observable-event-type.rosetta)（型: `PriceSchedule`）として定義します（`Trigger` の条件制約 `Choice` により `level`・`creditEvents`・`creditEventsReference` のいずれかが必須）。
-   - **判定条件と監視形態**: FpML の `AtOrAbove` は [`TriggerTypeEnum -> EqualOrGreater`](../../common-domain-model/rosetta-source/src/main/rosetta/observable-event-enum.rosetta)、監視タイミングは [`TriggerTimeTypeEnum`](../../common-domain-model/rosetta-source/src/main/rosetta/observable-event-enum.rosetta)（`Closing` または `Anytime`）に対応します。
-   - **固定受取額**: 条件充足時の固定支払額（例: 750,000 GBP）は、`TriggerEvent.featurePayment`（型: [`FeaturePayment`](../../common-domain-model/rosetta-source/src/main/rosetta/observable-event-type.rosetta)、必須の `payerReceiver` と正数の `amount >= 0` を持つ）に格納します。
-   - **商品判定（Product Qualification）との整合性**:
-     - `OptionPayout.feature.barrier` が存在するため、[`Qualify_ForeignExchange_VanillaOption`](../../common-domain-model/rosetta-source/src/main/rosetta/product-qualification-func.rosetta)（L684: `optionPayout -> feature is absent`）は `False` となり、バニラオプションへの誤判定が回避されます。
-     - また、`settlementTerms.cashSettlementTerms` を設定しない場合、[`Qualify_ForeignExchange_NDO`](../../common-domain-model/rosetta-source/src/main/rosetta/product-qualification-func.rosetta)（L646: `settlementTerms -> cashSettlementTerms exists`）も `False` となります。
-
-##### 8.8.2 `OptionPayout` + `Barrier` 流用時における構造的トレードオフと実務上の注意点
-
-一方で、一次ソースに「純粋なデジタル／バイナリ・オプション専用の Payout 型」が存在せず、バニラ・バリア用の `OptionPayout` + `Barrier` を流用する設計には、以下の**構造的トレードオフ・解釈上の課題**が存在します。
-
-1. **欧州型デジタル（European Binary）とワンタッチオプション（One-Touch Option）の構文上の近接性**:
-   - 欧州型バイナリ（例: `fx-ex14`）は「満期時点（At Expiry）でのみトリガー判定を行う」契約ですが、CDM の `feature.barrier.knockIn` は本来、期間中のバリア到達（タッチ）を記述する構造です。
-   - `TriggerEvent.schedule` や `exerciseTerms.style = European` との組み合わせで表現することになるため、期間中常時監視するアメリカン型のワンタッチオプション（`exerciseTerms.style = American`, `triggerTimeType = Anytime`）との違いを評価エンジン側で厳密に区別する実装規約が必要となります。
-2. **`tradeLot` の数量（`PriceQuantity.quantity`）と `FeaturePayment.amount` の二重計上リスク**:
-   - `TradableProduct.tradeLot` の数量（`priceQuantity.quantity`）に名目額（例: 750,000 GBP）を設定し、同時に `feature.barrier.knockIn.featurePayment.amount` にも固定支払額（750,000 GBP）を設定した場合、外部のキャッシュフロー生成エンジンや決済システムが「オプション行使に伴う原資産元本の受渡」と「バリア条項のリベート／一時金支払」の双方を個別の支払義務として二重計上（Double Counting）しないよう留意が必要です。
-3. **`OptionPayout.strike` 未設定に対するシステム解釈の非確定性**:
-   - `OptionPayout.strike` はスキーマ上省略可能（`0..1`）ですが、外部プライシングエンジンによっては `strike` が空の `OptionPayout` を「ストライク未定のバニラオプション」や「ゼロ・ストライクの原資産受渡契約」と解釈する余地が残ります。これらは専用のデジタルオプション型を持たない現行 CDM スキーマの構造的限界として認識しておく必要があります。
+> 一次ソースの検証から明らかな通り、CDM における `<fxDigitalOption>` の Ingest 変換は未完のスケルトンであり、また標準の `OptionPayout` にはバニラとデジタルのペイアウトを区別する型構造が存在しません。既存型（`Barrier` + `FeaturePayment`）を流用する代替案の構造的破綻や、実務システムにおける推奨アプローチ（`nonStandardisedTerms = True` または Rune DSL 独自拡張）については **第 5 章（§5.2〜§5.4）** を参照してください。
 
 #### 複数オプション戦略（ストラドル・スプレッド等）の Ingest 実態
 - **検証ファイル**:
@@ -1484,6 +1633,7 @@ default:
 - [TradableProduct と TradeLot の分離設計](tradable_product_and_tradelot.md)
 - [契約日付モデリング](contract_dates_modeling.md)
 - [WorkflowStep とライフサイクルサンプル解析](workflow_step_and_lifecycle_samples.md)
+- [Rune DSLを用いたCDMモデルの独自拡張ワークフロー](extending_cdm_with_rune_dsl.md)
 - [Rosetta DSL 定義インベントリ](../overview/rosetta_dsl_inventory.md)
 
 
