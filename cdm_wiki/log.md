@@ -412,6 +412,20 @@
   - `my_cdm_json_samples/fx-synthetic-forward-strip-package-workflowstep.json`
 - `concepts/fx_products_and_synthetic_forward.md`（4.1.1節、8.13節）、`index.md`、`log.md` を更新同期。
 
-
-
-
+## [2026-10-18] update | fx_products_and_synthetic_forward.md の一次情報照合監査と不整合是正
+- `concepts/fx_products_and_synthetic_forward.md` 全文を一次情報（`common-domain-model/rosetta-source/` の Rosetta DSL 定義および Ingest / BusinessEvent サンプル JSON/XML）と照合監査し、以下の不整合を是正：
+  1. **ワークスペースルール整理と二次創作物の根拠除外**: `.agents/AGENTS.md` および `cdm-wiki-manager/SKILL.md` にて `my_cdm_json_samples` を参照・操作対象に含めつつ「二次創作物のため CDM 仕様解説の根拠には用いない」規定を明文化。`fx_products_and_synthetic_forward.md` の Frontmatter `sources:` および本文（§4.1.1, §8.8.1〜8.8.2, §8.11, §8.12, §8.13）から二次創作物への依存を排除し、すべて `common-domain-model` 一次ソース（`ingest-fpml-confirmation-tradestate-func.rosetta`, `exercise-cash-settled-func-output.json`, `exercise-swaption-full-physical-func-output.json`, `event-qualification-func.rosetta` 等）に基づく記述へ刷新。
+  2. **`OptionPayout` 型構造と FpML `<asian>` マッピングの不整合是正（§3, §8.7A）**: `OptionPayout`（`product-template-type.rosetta` L121-145）の多重度および `observationTerms ObservationTerms (0..1)` をクラス図・属性表に追加。`MapFxOptionFeaturesToObservationTerms`（`ingest-fpml-confirmation-product-fxoption-func.rosetta` L102-119）が `<asian>` を `OptionPayout.observationTerms` にマッピングし `OptionPayout.feature` を `absent` のままとするため、`fx-ex21` が `Qualify_ForeignExchange_VanillaOption` で `True` となる一次ソースの仕組みを明記。
+  3. **権利行使時の `ClosedStateEnum`・プリミティブ構成・`Update_ProductDirection` バグの是正（§6.1〜§6.5, §8.9, §8.12）**:
+     - `Create_TradeState`（`event-common-func.rosetta` L2244-2250）および `Qualify_Exercise`（`event-qualification-func.rosetta` L198, L213）は数量 0 時のクローズ状態として一律 `ClosedStateEnum -> Terminated` を設定・要求しており、`Exercised` では `Qualify_Exercise` が不適合となる一次ソース仕様を明記。
+     - `Update_ProductDirection`（`event-common-func.rosetta` L554-567）の関数シグネチャを 1 引数（`before NonTransferableProduct (1..1)`）に修正し、かつ内部の `set` 文（L563-566）が誤って `OptionPayout -> payerReceiver` に代入してしまい `SettlementPayout -> payerReceiver` が反転しない一次ソース実装上のバグを注記。
+     - 差金決済オプションの権利行使について、`ExerciseInstruction.exerciseQuantity` に `TransferInstruction` が内包されるという誤記を修正し、`PrimitiveInstruction` 内で `quantityChange` と `transfer`（`transferType = Exercise`）を複合指定する正規構造（`exercise-cash-settled-func-output.json` 準拠）に是正。
+  4. **DSL 列挙値・条件制約名・ファイルリンクの是正（§5.2, §7）**:
+     - `TriggerTimeTypeEnum`（`observable-event-enum.rosetta` L22-25）に存在しない `Continuous` を廃止し、正規の `Anytime`（常時監視：continuous barrier）および `Closing` に修正。
+     - `OptionPayout` の条件制約名を一次ソース（`product-template-type.rosetta` L137-143）の正確な 2 条件 `AsianOptionChoice_averagingFeature` および `AsianOptionChoice_averagingStrikeFeature` に修正。
+     - `FeaturePayment` の定義元リンクを `observable-event-type.rosetta` に修正し、Wiki 内部の `file:///` 絶対パスリンクをすべて相対パスに統一。
+  5. **バリア・デジタル・期間渡しフォワード等の Ingest 出力実態の精密化（§5.3, §8.7B, §8.8, §8.10, §8.11）**:
+     - `fx-ex13-fx-dbl-barrier-option.json` でバリア未マッピングにより `ForeignExchange_VanillaOption (calculated: true)` が誤付与される事実を追記。
+     - `fx-ex14`〜`fx-ex19` で `MapPriceQuantityList` に `fpml.FxDigitalOption` 分岐が存在しないため `trade.tradeLot` が欠落する要因を追記。
+     - `fx-ex27-flexible-term-forward.json` で `default` フォールバックにより `economicTerms.calculationAgent` と `nonStandardisedTerms: false` が出力される実態を正確に反映。
+- `index.md` および `log.md` を更新し、`validate_wiki.py` でエラー 0 件を確認。

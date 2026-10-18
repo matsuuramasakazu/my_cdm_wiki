@@ -28,3 +28,5 @@ common-domain-model/
 cdm_json/
 rune-python-generator/
 rune-python-runtime/
+target/
+rosetta-code-generators/
