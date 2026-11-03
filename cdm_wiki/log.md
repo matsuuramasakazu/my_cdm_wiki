@@ -449,3 +449,17 @@
 - `underlier`（`Observable`）として ① `Asset -> Cash (GBP)` を用いる方式と、② `Index -> ForeignExchangeRateIndex (GBP/USD)`（`AssetBase.identifier (1..*)` 必須制約の充足、および `ValuationSource.quotedCurrencyPair` からの `@ref:scoped: "quotedCurrencyPair-1"` 参照解決）を用いる方式の 2 種類を `my_cdm_json_samples/events/` に出力し、`cdm-workflowstep-validator`（CDM 7.5.0）で双方とも `STATUS: PASS`（`QUALIFIED: [ContractFormation]`）を確認。
 - §5.3 の 4 課題の再評価、Touch 系への展開（knockIn / knockOut ＋ 確定額）、残る限界（Vanilla/NDO Qualification の誤認、`AtOrAbove` 境界、Ingestion 未実装、即時払い Touch）を整理。frontmatter `sources` に `product-model.md` 等を追加、`index.md` の要約を更新。
 
+## [2026-10-19] query | packageInformation の型制約（IdentifiedList）と Rune JSON における @type 付与規則の解明
+- `concepts/json_serialization_and_dialects.md` に §4.2.1「`@type` 付与の適用規則：ポリモーフィック型（必須）vs 具象型（任意・冗長）」およびケーススタディ（`packageInformation` と `IdentifiedList`）を追記：
+  1. **型制約の厳密性**: 一次情報 `event-common-type.rosetta`（L103）および `event-workflow-type.rosetta`（L80）に基づき、`EventInstruction.packageInformation` の型は `IdentifiedList` であり、DSL 上に subtype（派生クラス）が存在しないため `IdentifiedList` 以外の型は取りえないことを確定。
+  2. **`@type` 付与の仕様と挙動**: Rune Serialization Documentation（Section 4.3）に基づき、`@type` は基底型・Choice型などのポリモーフィック型で具象クラスを識別する際に必須となるが、非ポリモーフィックな具象型では省略可能（Compactness 原則）であることを整理。
+  3. **実機検証（CDM 7.5.0 バリデータ）**: 子要素に `"@type": "cdm.base.staticdata.identifier.IdentifiedList"` を明示した場合と省略した場合の双方でデシリアライズ・検証が `STATUS: PASS` すること、および subtype ではない無関係な型（例: `Identifier`）を指定した場合は `Not a subtype` エラーで拒絶されることを確認。
+- `cdm_wiki/index.md` の `concepts/json_serialization_and_dialects.md` 要約を更新。
+
+## [2026-10-28] query | Trade の condition SettlementPayout と Rosetta DSL 構文読解の体系化
+- `event-common-type.rosetta`（L310-L315）における `condition SettlementPayout` の動作仕様と Rosetta DSL 構文を解読し、`concepts/trade_settlement_payout_condition.md` を新設。
+- ガード節 `SettlementPayoutOnlyExists(product -> economicTerms -> payout)` の抽出ロジック（`extract SettlementPayout exists then all = True`）および純粋な決済ペイアウト取引（FX Spot/Forward、現物受渡）の判定仕様を整理。
+- 表明節における `Buyer` / `Seller` ロール（`PartyRoleEnum`）および約定価格 `price`（`TradeLot.priceQuantity.price`）の必須制約の業務的根拠（スワップ型の Payer/Receiver モデリングとの対比）を解説。
+- カタログ（`index.md`）およびログ（`log.md`）を更新。
+
+

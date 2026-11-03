@@ -4,7 +4,10 @@ category: "concepts"
 sources:
   - "../CDM_INDEX.md"
   - "../../common-domain-model/docs/serialization.md"
-last_updated: "2026-09-25"
+  - "../../common-domain-model/rosetta-source/src/main/rosetta/event-common-type.rosetta"
+  - "../../common-domain-model/rosetta-source/src/main/rosetta/base-staticdata-identifier-type.rosetta"
+  - "https://rune.finos.org/docs/serialization"
+last_updated: "2026-10-19"
 tags: [cdm, json, serialization, rune, rosetta, v6, v7, jsonschema]
 ---
 
@@ -199,6 +202,25 @@ CDM における最も劇的な構造変化の一つが、ポリモーフィッ�
   }
 ]
 ```
+
+#### 4.2.1 `@type` 付与の適用規則：ポリモーフィック型（必須）vs 具象型（任意・冗長）
+
+Rune JSON シリアライゼーション標準（[Rune Serialization Documentation](https://rune.finos.org/docs/serialization) Section 4.3 "Include Type when required"）において、`@type` 属性の付与ルールは以下の 3 つの階層に分かれます：
+
+1. **ドキュメント・トップレベル（必須）**:
+   - JSON 最上位のルートオブジェクトには、モデル名・バージョンとともに完全修飾型名を指定する（例: `"@type": "cdm.event.workflow.WorkflowStep"` や `"@type": "cdm.event.common.TradeState"`）。
+2. **ポリモーフィックな属性（直和型・抽象クラス・Choice型）（必須）**:
+   - 属性の宣言型が抽象型や基底クラス（Base class）、または Choice 型である場合、デシリアライザが具象サブクラスを一意に判別するために `@type`（FQN）の明示が**必須**となる。
+   - 例: `Payout`（`cdm.product.asset.InterestRatePayout`, `cdm.product.template.SettlementPayout` 等）、`rateSpecification`（`cdm.product.asset.FixedRateSpecification` 等）、`Transfer`（`cdm.event.common.UnscheduledTransfer` 等）。
+3. **非ポリモーフィックな具象型属性（省略可能・冗長だが許容）**:
+   - 属性の宣言型が一意の具象型であり、Rosetta DSL 上でその型を継承するサブクラス（subtype）が存在しない場合、シリアライザ出力では原則として `@type` は省略される（Compactness 原則）。
+   - **具象型に明示的に `@type` を付与した場合の挙動**:
+     デシリアライザ（`RuneJsonObjectMapper` / Jackson）は、属性の宣言型と `@type` で指定された型の一致（または継承関係）を検証する。正しい具象型名が指定されている場合は**何らエラーにならず正常に受理される（PASS）**。ただし、宣言型の subtype ではない無関係な型が指定された場合は `DESERIALIZATION_ERROR (Could not resolve type id '...' as a subtype of '...': Not a subtype)` となり拒絶される。
+
+##### 【ケーススタディ】`packageInformation` と `IdentifiedList`
+- **型制約**: `BusinessEvent`（親の `EventInstruction`）の `packageInformation` は、Rosetta DSL（[`event-common-type.rosetta`](../../common-domain-model/rosetta-source/src/main/rosetta/event-common-type.rosetta) L103、[`event-workflow-type.rosetta`](../../common-domain-model/rosetta-source/src/main/rosetta/event-workflow-type.rosetta) L80）において `IdentifiedList (0..1)` と定義されている。
+- **派生型の不在**: `IdentifiedList`（[`base-staticdata-identifier-type.rosetta`](../../common-domain-model/rosetta-source/src/main/rosetta/base-staticdata-identifier-type.rosetta) L28）を継承する subtype は CDM 上に存在しないため、**`packageInformation` には `IdentifiedList` 以外の型は取りえない**。
+- **`@type` 明示の可否**: 子要素に `"@type": "cdm.base.staticdata.identifier.IdentifiedList"` を明示しても、CDM 公式エンジン（`RuneJsonObjectMapper`）で検証エラーとならず完全に有効（Valid）である。ただし仕様上は自明であるため、省略しても同様に PASS する（明示するかどうかは任意・冗長）。
 
 ### 4.3 未参照キーの枝刈り（Pruning）
 
