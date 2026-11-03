@@ -7,8 +7,9 @@ sources:
   - "../../common-domain-model/rosetta-source/src/main/rosetta/product-template-type.rosetta"
   - "../../common-domain-model/rosetta-source/src/main/rosetta/product-common-settlement-type.rosetta"
   - "../../common-domain-model/rosetta-source/src/main/rosetta/ingest-fpml-confirmation-payment-func.rosetta"
-last_updated: "2026-09-16"
-tags: [cdm, rosetta, tradableproduct, tradelot, nontransferableproduct, notional, swap, principal_payment]
+  - "../../common-domain-model/rosetta-source/src/generated/java/cdm/product/common/settlement/ResolvablePriceQuantity.java"
+last_updated: "2026-11-03"
+tags: [cdm, rosetta, tradableproduct, tradelot, nontransferableproduct, notional, swap, principal_payment, hydration, reference_resolution]
 ---
 
 # TradableProduct における product と tradeLot の分離構造 & 元本参照解決
@@ -124,6 +125,20 @@ graph TD
   } ]
 } ]
 ```
+
+### 3.3 メモリ上の参照解決（Hydration）と JSON 上のインライン展開（Denormalization）の違い
+
+`payout.priceQuantity` の `@ref:scoped`（参照ポインタ）を `tradeLot.priceQuantity` の実体に結びつける処理は、**「メモリ上のオブジェクトに対して行うか」** と **「JSON 文字列上で直接書き換えるか」** で意味合いと CDM 仕様上の許容性が異なります。
+
+1. **メモリ上のオブジェクトにおける実体セット（Hydration / Reference Resolution：CDM 標準動作）**:
+   - Java 生成クラス [`ResolvablePriceQuantity.java`](../../common-domain-model/rosetta-source/src/generated/java/cdm/product/common/settlement/ResolvablePriceQuantity.java) において、`quantitySchedule` の型は `ReferenceWithMetaNonNegativeQuantitySchedule` です。
+   - このラッパー型は内部に **`reference`（参照ポインタ `"quantity-1"`）** と **`value`（解決後の `NonNegativeQuantitySchedule` 実体インスタンス）** の 2 つのフィールドを持っています。
+   - `RuneJsonObjectMapper` でデシリアライズ（および `ReferenceResolver` を実行）すると、メモリ上の `payout.priceQuantity.quantitySchedule.value` に `tradeLot` 側の実体オブジェクトが自動的に埋め込まれます（**インメモリ・ハイドレーション / 参照解決**）。これにより、Rosetta DSL の計算関数は `payout -> priceQuantity -> quantitySchedule -> value` として直接数値を読み取ることができます。
+2. **JSON 上で `@ref:scoped` を実体 JSON に直接置き換える処理（Inlining / Denormalization：CDM 標準 JSON では非許容）**:
+   - 一方、JSON ファイル上で `payout.priceQuantity.quantitySchedule` の `{"@ref:scoped": "quantity-1"}` を消して、そこに直接 `{"value": 10000000, ...}` の実体 JSON を埋め込む処理は、広義にはハイドレーションの一種ですが、より正確には **「インライン展開（Inlining）」** または **「非正規化（Denormalization）」** と呼ばれます。
+   - **【重要制約】**: [`product-common-settlement-type.rosetta`](../../common-domain-model/rosetta-source/src/main/rosetta/product-common-settlement-type.rosetta#L51-L59) において、`quantitySchedule` と `priceSchedule` には `[metadata address "pointsTo"=PriceQuantity->quantity]`（Java アノテーション `@RuneScopedAttributeReference`）が付与されており、定義コメントにも以下のように明記されています：
+     > *"The quantity must be specified outside of the payout in a PriceQuantity object and only referenced inside the payout using an address."*
+   - したがって、**CDM 公式の Rune JSON フォーマットとしては、`payout` 内に数量・価格の実体を直書きすることは仕様上認められておらず**、必ず `tradeLot` 側に実体（`@key:scoped`）を置き、`payout` 側は参照（`@ref:scoped`）で指す構造を維持する必要があります（UI 表示用などの独自 DTO としてインライン展開することは可能ですが、それを再度 CDM エンジンに食わせることはできません）。
 
 ---
 

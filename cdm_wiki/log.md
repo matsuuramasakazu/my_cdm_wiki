@@ -462,4 +462,14 @@
 - 表明節における `Buyer` / `Seller` ロール（`PartyRoleEnum`）および約定価格 `price`（`TradeLot.priceQuantity.price`）の必須制約の業務的根拠（スワップ型の Payer/Receiver モデリングとの対比）を解説。
 - カタログ（`index.md`）およびログ（`log.md`）を更新。
 
+## [2026-11-03] query | WorkflowStep および TradeState の RDB 永続化アーキテクチャ・テーブル設計の体系化
+- `event-workflow-type.rosetta`、`event-workflow-func.rosetta`、`event-common-type.rosetta`、`event-common-func.rosetta`、`docs/event-model.md`、`docs/serialization.md` の一次仕様に基づき、`concepts/workflow_step_rdb_persistence_design.md` を新設。
+- `WorkflowStep` 以下の深いツリーを第3正規形で完全分解することがアンチパターンとなる4つの理由（780種の型と `SplitInstruction` 再帰構造、Choice/Polymorphism、`@key:scoped` / `@ref:external` 参照整合性、`GlobalKeyHashCalculator` による決定論的構造ハッシュ `@key` の不変性要件）を整理。
+- CDM の `[rootType]` および `[metadata key]` / `[metadata reference]` 境界に準拠した 3 レイヤー・6 テーブル構成（Layer 1: `workflow_step`, `workflow_step_identifier` / Layer 2: `trade_state`, `trade_state_transition` / Layer 3: `trade_identifier_index`, `trade_party_role_index`）のハイブリッド JSONB ＋ イベントソーシングモデル（ER図・PostgreSQL DDL）を定義。
+- イベントソーシング設計の観点から、`proposedEvent` (`EventInstruction`) と `businessEvent` (`BusinessEvent extends EventInstruction`) を `workflow_step` から別テーブルに分けず統合（Single-Table パターン）し、多重度 `0..*` の状態遷移（`instruction[]` / `after[]`）のみを `trade_state_transition` と `trade_state` に切り出す構造的根拠（エンベロープとペイロードの 1:1 不可分性、継承関係、2段階イベント追記フロー、確定イベント専用ビュー）を §3 に詳述。
+- `Instruction.before` のインライン展開と `@ref` 参照の双方に対応する参照解決・実体復元（Hydration）パターン、`action: Correct / Cancel` のイミュータブル履歴管理、および `WITH RECURSIVE` による状態遷移系譜（Lineage DAG）検索クエリを解説。
+- `concepts/tradable_product_and_tradelot.md` に §3.3 を追加し、`payout.priceQuantity` から `tradeLot.priceQuantity` への `@ref:scoped` 参照解決における「インメモリ・ハイドレーション（`ReferenceWithMeta.value` への実体セット）」と「JSON 上のインライン展開（`[metadata address]` / `@RuneScopedAttributeReference` 制約により CDM 標準 JSON では非許容）」の違いを明記。
+- カタログ（`index.md`）およびログ（`log.md`）を更新。
+
+
 
