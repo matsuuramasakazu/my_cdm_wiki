@@ -1,0 +1,2362 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CDM v6 WorkflowStep RDB 永続化 ER 設計 要求定義書</title>
+<style>
+  :root {
+    --bg: #f8fafc;
+    --surface: #ffffff;
+    --surface-subtle: #f1f5f9;
+    --border: #e2e8f0;
+    --border-strong: #cbd5e1;
+    --text: #0f172a;
+    --text-muted: #475569;
+    --accent: #1d4ed8;
+    --accent-soft: #eff6ff;
+    --accent-border: #bfdbfe;
+    --code-bg: #f1f5f9;
+    --code-text: #0f172a;
+    --note-bg: #f0f9ff;
+    --note-border: #0284c7;
+    --important-bg: #eef2ff;
+    --important-border: #4f46e5;
+    --tip-bg: #ecfdf5;
+    --tip-border: #059669;
+    --sidebar-width: 280px;
+  }
+
+  * {
+    box-sizing: border-box;
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    margin: 0;
+    padding: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: "Hiragino Kaku Gothic ProN", "Hiragino Sans", "Yu Gothic UI", "Yu Gothic", "Meiryo", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    font-size: 14.5px;
+    line-height: 1.75;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .layout {
+    display: flex;
+    min-height: 100vh;
+  }
+
+  /* Sidebar TOC */
+  .sidebar {
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    width: var(--sidebar-width);
+    flex-shrink: 0;
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    padding: 24px 18px;
+    overflow-y: auto;
+  }
+
+  .sidebar-title {
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin: 0 0 14px 0;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .toc {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  .toc li {
+    margin: 2px 0;
+  }
+
+  .toc a {
+    display: block;
+    padding: 5px 10px;
+    border-radius: 6px;
+    color: var(--text-muted);
+    text-decoration: none;
+    font-size: 12.8px;
+    line-height: 1.45;
+    transition: background-color 0.15s ease, color 0.15s ease;
+  }
+
+  .toc a:hover {
+    background: var(--surface-subtle);
+    color: var(--text);
+  }
+
+  .toc a.active {
+    background: var(--accent-soft);
+    color: var(--accent);
+    font-weight: 600;
+  }
+
+  .toc .toc-sub {
+    padding-left: 20px;
+    font-size: 12px;
+  }
+
+  /* Main content */
+  .main {
+    flex: 1;
+    min-width: 0;
+    padding: 36px 48px 80px 48px;
+  }
+
+  .doc-container {
+    max-width: 1080px;
+    margin: 0 auto;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 44px 52px 60px 52px;
+    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
+  }
+
+  /* Header */
+  .doc-header {
+    border-bottom: 2px solid var(--text);
+    padding-bottom: 22px;
+    margin-bottom: 32px;
+  }
+
+  .doc-eyebrow {
+    display: inline-block;
+    font-size: 11.5px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    color: var(--accent);
+    background: var(--accent-soft);
+    border: 1px solid var(--accent-border);
+    padding: 3px 10px;
+    border-radius: 999px;
+    margin-bottom: 12px;
+  }
+
+  h1 {
+    font-size: 26px;
+    line-height: 1.35;
+    margin: 0 0 14px 0;
+    color: var(--text);
+    letter-spacing: -0.01em;
+  }
+
+  .doc-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px 22px;
+    font-size: 12.5px;
+    color: var(--text-muted);
+  }
+
+  .doc-meta span strong {
+    color: var(--text);
+  }
+
+  h2 {
+    font-size: 19px;
+    line-height: 1.4;
+    margin: 44px 0 16px 0;
+    padding-bottom: 8px;
+    border-bottom: 1.5px solid var(--border-strong);
+    color: var(--text);
+    scroll-margin-top: 20px;
+  }
+
+  h3 {
+    font-size: 15.8px;
+    line-height: 1.45;
+    margin: 28px 0 12px 0;
+    color: #1e293b;
+    scroll-margin-top: 20px;
+  }
+
+  h4 {
+    font-size: 14.5px;
+    line-height: 1.45;
+    margin: 20px 0 10px 0;
+    color: #334155;
+  }
+
+  p {
+    margin: 0 0 14px 0;
+  }
+
+  ul, ol {
+    margin: 0 0 16px 0;
+    padding-left: 24px;
+  }
+
+  li {
+    margin-bottom: 6px;
+  }
+
+  li > ul, li > ol {
+    margin-top: 6px;
+    margin-bottom: 6px;
+  }
+
+  hr {
+    border: none;
+    border-top: 1px solid var(--border);
+    margin: 36px 0;
+  }
+
+  code {
+    font-family: "Cascadia Code", "Consolas", "SFMono-Regular", Menlo, Monaco, monospace;
+    font-size: 0.88em;
+    background: var(--code-bg);
+    color: var(--code-text);
+    padding: 1.5px 5px;
+    border-radius: 4px;
+    border: 1px solid #e2e8f0;
+    word-break: break-word;
+  }
+
+  /* Tables */
+  .table-wrap {
+    width: 100%;
+    overflow-x: auto;
+    margin: 16px 0 22px 0;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+    line-height: 1.6;
+    background: var(--surface);
+  }
+
+  thead th {
+    background: #f1f5f9;
+    color: #0f172a;
+    font-weight: 700;
+    text-align: left;
+    padding: 10px 12px;
+    border-bottom: 1.5px solid var(--border-strong);
+    border-right: 1px solid var(--border);
+    vertical-align: bottom;
+  }
+
+  thead th:last-child {
+    border-right: none;
+  }
+
+  tbody td {
+    padding: 9px 12px;
+    border-bottom: 1px solid var(--border);
+    border-right: 1px solid var(--border);
+    vertical-align: top;
+  }
+
+  tbody td:last-child {
+    border-right: none;
+  }
+
+  tbody tr:last-child td {
+    border-bottom: none;
+  }
+
+  tbody tr:nth-child(even) {
+    background: #fafcff;
+  }
+
+  /* Callouts */
+  .callout {
+    margin: 18px 0 22px 0;
+    padding: 14px 18px;
+    border-radius: 8px;
+    border-left: 4px solid;
+    font-size: 13.8px;
+  }
+
+  .callout-title {
+    font-weight: 700;
+    font-size: 13px;
+    letter-spacing: 0.03em;
+    margin-bottom: 6px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .callout p:last-child, .callout ul:last-child {
+    margin-bottom: 0;
+  }
+
+  .callout-note {
+    background: var(--note-bg);
+    border-color: var(--note-border);
+  }
+  .callout-note .callout-title { color: #0369a1; }
+
+  .callout-important {
+    background: var(--important-bg);
+    border-color: var(--important-border);
+  }
+  .callout-important .callout-title { color: #3730a3; }
+
+  .callout-tip {
+    background: var(--tip-bg);
+    border-color: var(--tip-border);
+  }
+  .callout-tip .callout-title { color: #047857; }
+
+  /* Badges */
+  .badge {
+    display: inline-block;
+    font-size: 11.5px;
+    font-weight: 700;
+    padding: 2px 7px;
+    border-radius: 5px;
+    line-height: 1.4;
+    white-space: nowrap;
+  }
+  .badge-core { background: #dbeafe; color: #1e40af; border: 1px solid #bfdbfe; }
+  .badge-child { background: #e0f2fe; color: #075985; border: 1px solid #bae6fd; }
+  .badge-subtype { background: #ede9fe; color: #5b21b6; border: 1px solid #ddd6fe; }
+  .badge-col { background: #fef3c7; color: #92400e; border: 1px solid #fde68a; }
+  .badge-master { background: #d1fae5; color: #065f46; border: 1px solid #a7f3d0; }
+  .badge-json { background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1; }
+  .badge-rec { background: #dbeafe; color: #1d4ed8; border: 1px solid #93c5fd; font-size: 11px; padding: 1px 6px; }
+
+  /* Diagrams */
+  .diagram-card {
+    margin: 18px 0 26px 0;
+    padding: 18px;
+    background: #fcfdff;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    overflow-x: auto;
+  }
+
+  .diagram-card svg {
+    display: block;
+    margin: 0 auto;
+    max-width: 100%;
+    height: auto;
+  }
+
+  .diagram-caption {
+    text-align: center;
+    font-size: 12.2px;
+    color: var(--text-muted);
+    margin-top: 10px;
+  }
+
+  /* Mobile / Responsive */
+  @media (max-width: 1024px) {
+    .layout {
+      display: block;
+    }
+    .sidebar {
+      position: static;
+      height: auto;
+      width: 100%;
+      border-right: none;
+      border-bottom: 1px solid var(--border);
+      padding: 16px 20px;
+    }
+    .toc {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      gap: 2px 12px;
+    }
+    .toc .toc-sub {
+      display: none;
+    }
+    .main {
+      padding: 20px 14px 48px 14px;
+    }
+    .doc-container {
+      padding: 24px 20px 36px 20px;
+    }
+  }
+
+  /* Print */
+  @media print {
+    body {
+      background: #ffffff;
+      font-size: 10.5pt;
+    }
+    .sidebar {
+      display: none;
+    }
+    .main {
+      padding: 0;
+    }
+    .doc-container {
+      border: none;
+      box-shadow: none;
+      padding: 0;
+      max-width: none;
+    }
+    h2, h3, .diagram-card, .callout {
+      break-inside: avoid;
+    }
+    .table-wrap {
+      overflow: visible;
+    }
+    table {
+      font-size: 8.8pt;
+    }
+  }
+</style>
+</head>
+<body>
+<div class="layout">
+  <nav class="sidebar" aria-label="目次">
+    <div class="sidebar-title">目次 / Contents</div>
+    <ul class="toc">
+      <li><a href="#sec-1">1. 目的・背景および前提条件</a></li>
+      <li><a class="toc-sub" href="#sec-1-1">1.1 背景と目的</a></li>
+      <li><a class="toc-sub" href="#sec-1-2">1.2 前提条件</a></li>
+      <li><a class="toc-sub" href="#sec-1-3">1.3 対象スコープ</a></li>
+
+      <li><a href="#sec-2">2. CDM v6 WorkflowStep 構造分析</a></li>
+      <li><a class="toc-sub" href="#sec-2-1">2.1 状態モデルと制約条件</a></li>
+      <li><a class="toc-sub" href="#sec-2-2">2.2 単線連鎖と多対多 DAG</a></li>
+      <li><a class="toc-sub" href="#sec-2-3">2.3 OTC FX デリバティブ商品構造</a></li>
+      <li><a class="toc-sub" href="#sec-2-4">2.4 メタデータ参照と累積肥大化</a></li>
+
+      <li><a href="#sec-3">3. 業務ユースケースとデータ操作要件</a></li>
+      <li><a class="toc-sub" href="#sec-3-1">3.1 取引ライフサイクル管理</a></li>
+      <li><a class="toc-sub" href="#sec-3-2">3.2 定期イベント処理</a></li>
+      <li><a class="toc-sub" href="#sec-3-3">3.3 照会・系譜追跡</a></li>
+      <li><a class="toc-sub" href="#sec-3-4">3.4 アクセスパターン一覧</a></li>
+
+      <li><a href="#sec-4">4. アーキテクチャ設計方針と方式比較</a></li>
+      <li><a class="toc-sub" href="#sec-4-1">4.1 CQRS / Projection 併用</a></li>
+      <li><a class="toc-sub" href="#sec-4-2">4.2 比較①：多対多遷移 DAG</a></li>
+      <li><a class="toc-sub" href="#sec-4-3">4.3 比較②：JSONB 原本格納粒度</a></li>
+      <li><a class="toc-sub" href="#sec-4-4">4.4 比較③：スキーマ設計アプローチ</a></li>
+      <li><a class="toc-sub" href="#sec-4-5">4.5 時間軸と訂正・取消管理</a></li>
+      <li><a class="toc-sub" href="#sec-4-6">4.6 マスタ正規化と不変性の両立</a></li>
+
+      <li><a href="#sec-5">5. 切り出し vs JSON 内包の判断基準</a></li>
+      <li><a class="toc-sub" href="#sec-5-1">5.1 6つの評価軸</a></li>
+      <li><a class="toc-sub" href="#sec-5-2">5.2 テーブル切り出し決定フロー</a></li>
+      <li><a class="toc-sub" href="#sec-5-3">5.3 永続化区分（5区分）</a></li>
+
+      <li><a href="#sec-6">6. CDM v6 主要型の永続化分類</a></li>
+      <li><a class="toc-sub" href="#sec-6-1">6.1 ワークフロー・イベント制御系</a></li>
+      <li><a class="toc-sub" href="#sec-6-2">6.2 取引・ポジション状態系</a></li>
+      <li><a class="toc-sub" href="#sec-6-3">6.3 累積履歴リスト系</a></li>
+      <li><a class="toc-sub" href="#sec-6-4">6.4 商品・経済条件・OTC FX 拡張</a></li>
+      <li><a class="toc-sub" href="#sec-6-5">6.5 バージョン付きマスタ系</a></li>
+
+      <li><a href="#sec-7">7. 概念 ER モデル設計</a></li>
+      <li><a class="toc-sub" href="#sec-7-1">7.1 ドメイン領域分割</a></li>
+      <li><a class="toc-sub" href="#sec-7-2">7.2 概念 ER 図（図 7-1 / 7-2）</a></li>
+      <li><a class="toc-sub" href="#sec-7-3">7.3 レコード遷移例（USD/KRW NDF）</a></li>
+
+      <li><a href="#sec-8">8. 整合性・責務境界・非機能要件</a></li>
+      <li><a class="toc-sub" href="#sec-8-1">8.1 トランザクション整合性</a></li>
+      <li><a class="toc-sub" href="#sec-8-2">8.2 バリデーション責務境界</a></li>
+      <li><a class="toc-sub" href="#sec-8-3">8.3 非機能要件</a></li>
+
+      <li><a href="#sec-9">9. 次工程に向けた検討事項</a></li>
+      <li><a href="#sec-appendix">付録：要件検討ヒアリング決定ログ</a></li>
+    </ul>
+  </nav>
+
+  <main class="main">
+    <article class="doc-container">
+      <header class="doc-header">
+        <div class="doc-eyebrow">REQUIREMENTS SPECIFICATION / CDM v6 ER DESIGN</div>
+        <h1>CDM v6 <code>WorkflowStep</code> RDB 永続化 ER 設計 要求定義書</h1>
+        <div class="doc-meta">
+          <span><strong>対象モデル:</strong> FINOS Common Domain Model (CDM) v6 系</span>
+          <span><strong>対象 RDB:</strong> PostgreSQL (<code>JSONB</code>)</span>
+          <span><strong>主スコープ商品:</strong> OTC FX デリバティブ（他アセット OTC デリバティブ拡張対応）</span>
+          <span><strong>想定規模:</strong> 小〜中規模（初期導入・PoC）</span>
+        </div>
+      </header>
+
+      <!-- Section 1 -->
+      <section id="sec-1">
+        <h2>1. 目的・背景および前提条件</h2>
+
+        <h3 id="sec-1-1">1.1 背景と目的</h3>
+        <p>FINOS Common Domain Model（以下、CDM）は、金融取引およびそのライフサイクルイベントを機械可読かつ標準化された形式で表現するドメインモデルである。CDM の最上位メッセージ単位である <code>WorkflowStep</code> は、約定から契約形成、条件変更、リセット、キャッシュフロー決済、清算、更改、解約、満期に至る取引状態（<code>TradeState</code>）の遷移を、イミュータブルなイベント連鎖として表現する設計となっている。</p>
+        <p>一方で、CDM のデータ構造は多層ネスト、<code>choice</code> 型による多態性、商品種別ごとの分岐、配列（<code>0..*</code>）の入れ子、およびモデル内クロスリファレンス（<code>[metadata key]</code> / <code>[metadata reference]</code> / <code>[metadata address]</code>）を含み、そのままリレーショナルデータベース（RDB）へ全面的に正規化することはスキーマ肥大化・結合コスト増大・保守性低下の観点から現実的ではない。</p>
+        <p>本要求定義書は、CDM v6 準拠の <code>WorkflowStep</code> JSON データを RDB へ永続化するにあたり、以下を明確に定義することを目的とする。</p>
+        <ol>
+          <li><code>WorkflowStep</code> のイベントソーシング指向とイミュータブルな状態遷移特性を維持する永続化アーキテクチャの要件</li>
+          <li>取引ライフサイクル管理業務および定期イベント処理のデータ操作ユースケースとアクセスパターン要件</li>
+          <li>CDM DSL の多数の型に対し、「テーブルに切り出すもの」と「JSON データ内にのみ保持するもの」を客観的に決定するための判断フレームワークと分類基準</li>
+          <li>設計上の主要トレードオフ（系譜表現、JSON 原本格納粒度、スキーマ方針、マスタ管理）の比較整理と推奨方針</li>
+        </ol>
+
+        <h3 id="sec-1-2">1.2 前提条件</h3>
+        <ul>
+          <li><strong>対象 CDM バージョン</strong>: CDM バージョン 6 系。すべての型定義・属性・多重度・制約条件は、一次情報ソースである CDM v6 の Rosetta DSL 定義を正とする。</li>
+          <li><strong>対象 RDB</strong>: PostgreSQL（<code>JSONB</code> 型および標準的なインデックス機能の利用を前提とする）。</li>
+          <li><strong>想定規模と設計優先度</strong>: 小〜中規模の業務システム初期導入および PoC を想定する（有効取引数千〜数万件、日次イベント数千件規模）。過度な分散・高度チューニングよりも、<strong>機能要件の充足、データモデルの明快さ、保守性・シンプルさ</strong>を優先する。</li>
+        </ul>
+
+        <h3 id="sec-1-3">1.3 対象スコープ</h3>
+
+        <h4>1.3.1 対象とする <code>WorkflowStep</code> の範囲</h4>
+        <p>CDM v6 の <code>WorkflowStep</code> に定義される以下の 4 領域をすべて永続化・管理対象とする。</p>
+        <ol>
+          <li><strong>確定済み取引イベント</strong>: <code>WorkflowStep.businessEvent</code>（<code>BusinessEvent</code>）および遷移後状態 <code>after</code>（<code>TradeState</code>）</li>
+          <li><strong>提案・承認・却下ワークフロー</strong>: <code>proposedEvent</code>（<code>EventInstruction</code>）、<code>nextEvent</code>（<code>EventInstruction</code>）、<code>approval</code>（<code>WorkflowStepApproval</code>）、<code>rejected</code> フラグ、<code>workflowState</code>（<code>WorkflowState</code>）</li>
+          <li><strong>訂正・取消イベントと系譜</strong>: <code>action</code>（<code>ActionEnum</code>: <code>New</code> / <code>Correct</code> / <code>Cancel</code>）および <code>previousWorkflowStep</code> 参照によるイベント連鎖</li>
+          <li><strong>ポジション系イベント</strong>: <code>WorkflowStep.counterpartyPositionBusinessEvent</code>（<code>CounterpartyPositionBusinessEvent</code>）および <code>CounterpartyPositionState</code></li>
+        </ol>
+
+        <h4>1.3.2 対象金融商品の範囲</h4>
+        <ul>
+          <li><strong>主スコープ</strong>: <strong>OTC FX デリバティブ</strong>（FX Spot / FX Forward、FX Swap、NDF、NDS、FX Vanilla Option、NDO、FX Barrier / Digital / Asian Option 等）</li>
+          <li><strong>拡張スコープ</strong>: 共通コア構造を商品非依存とすることで、その他の OTC デリバティブ（金利スワップ、クレジットデリバティブ、エクイティスワップ等）も自然な拡張でカバーできる設計とする。</li>
+        </ul>
+
+        <h4>1.3.3 対象業務スコープ</h4>
+        <ul>
+          <li><strong>取引ライフサイクル管理</strong>: 約定（Execution）、契約形成（ContractFormation）、増減額（Increase / Decrease）、条件変更（ContractTermsAmendment）、更改（Novation）、割当（Allocation / Reallocation）、清算（Clearing）、圧縮（Compression）、一部/全部解約（Termination）、訂正・取消（Correct / Cancel）</li>
+          <li><strong>定期イベント処理</strong>: NDF / NDO 等のフィキシング・リセット（Reset）、キャッシュフロー生成および決済ステータス管理（Transfer / TransferState）、満期到来・権利行使/失効処理（Maturity / OptionExercise / Expiry）、バリア・トリガ観測（ObservationEvent）、評価額履歴管理（Valuation）</li>
+        </ul>
+      </section>
+
+      <!-- Section 2 -->
+      <section id="sec-2">
+        <h2>2. CDM v6 <code>WorkflowStep</code> のドメイン構造分析（一次ソース準拠）</h2>
+        <p>ER 設計の前提となる CDM v6 の構造的特性を、一次ソース（Rosetta DSL）に基づき整理する。</p>
+
+        <h3 id="sec-2-1">2.1 <code>WorkflowStep</code> の状態モデルと制約条件</h3>
+        <p>CDM v6 のワークフロー型定義および生成関数仕様により、<code>WorkflowStep</code> は以下の状態遷移構造を持つ。</p>
+
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th style="width: 17%;">ステップ種別</th>
+                <th style="width: 28%;">主要属性の充足条件</th>
+                <th style="width: 20%;"><code>previousWorkflowStep</code></th>
+                <th style="width: 35%;"><code>action</code> の遷移規則（CDM v6 生成関数準拠）</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>確定済み（取引）</strong></td>
+                <td><code>businessEvent</code> が存在、<code>rejected</code>・<code>nextEvent.instruction</code> 不在</td>
+                <td>任意（<code>as-key</code> 参照）</td>
+                <td>先行なしは <code>New</code> のみ。先行が <code>New</code>/<code>Correct</code> なら <code>New</code>/<code>Correct</code>/<code>Cancel</code> 可。<code>Cancel</code> 後は不可</td>
+              </tr>
+              <tr>
+                <td><strong>確定済み（ポジション）</strong></td>
+                <td><code>counterpartyPositionBusinessEvent</code> が存在</td>
+                <td>任意</td>
+                <td><code>businessEvent</code> と排他（<code>CounterpartyPositionBusinessEventOrBusinessEventChoice</code>）</td>
+              </tr>
+              <tr>
+                <td><strong>提案中（Proposed）</strong></td>
+                <td><code>proposedEvent</code> が存在、<code>nextEvent</code>・<code>rejected</code> 不在</td>
+                <td>任意（訂正時は先行提案を参照）</td>
+                <td>先行なしまたは先行確定イベント後は <code>New</code>。先行提案の訂正時は <code>Correct</code></td>
+              </tr>
+              <tr>
+                <td><strong>却下（Rejected）</strong></td>
+                <td><code>rejected = True</code>、<code>businessEvent</code>・<code>nextEvent</code> 不在</td>
+                <td>必須（先行の提案ステップを参照）</td>
+                <td><code>Create_RejectedWorkflowStep</code> により生成</td>
+              </tr>
+              <tr>
+                <td><strong>取消（Cancelled）</strong></td>
+                <td><code>action = ActionEnum -&gt; Cancel</code>、<code>previousWorkflowStep</code> が存在</td>
+                <td>必須（取消対象ステップを参照）</td>
+                <td><code>Create_WorkflowStep</code> の仕様上、取消時は <code>businessEvent</code> 不在で先行ステップへ系譜参照を持つ</td>
+              </tr>
+              <tr>
+                <td><strong>次イベント予定</strong></td>
+                <td><code>nextEvent.instruction</code> が存在、<code>businessEvent</code>・<code>rejected</code> 不在</td>
+                <td>任意</td>
+                <td>後続イベントの事前指示を保持</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="callout callout-note">
+          <div class="callout-title">NOTE</div>
+          <p><code>WorkflowStep</code> の <code>condition CounterpartyPositionBusinessEventOrBusinessEventChoice</code> は <code>required choice counterpartyPositionBusinessEvent, businessEvent</code> として定義されているが、提案・却下・取消ステップでは双方とも不在となる（<code>WorkflowStepStatus</code> 参照）。アプリ層の CDM バリデーション運用および RDB 制約設計では、確定ステップと非確定ステップの差異を前提に扱う必要がある。</p>
+        </div>
+
+        <h3 id="sec-2-2">2.2 単線連鎖と多対多遷移（DAG）の二重構造</h3>
+        <p>CDM v6 には 2 種類の系譜リンクが存在する。</p>
+        <ol>
+          <li><strong>ワークフロー連鎖（単線 / ツリー）</strong>: <code>WorkflowStep.previousWorkflowStep</code>（多重度 <code>0..1</code>、<code>[metadata reference]</code>）。提案 → 承認/却下、または確定イベント → 訂正/取消の系列を表す。</li>
+          <li><strong>取引状態遷移グラフ（多対多 DAG）</strong>: CDM v6 の共通イベント定義において、<code>BusinessEvent</code>（<code>EventInstruction</code> を継承）は <code>instruction Instruction (0..*)</code> と <code>after TradeState (0..*)</code> を持つ。各 <code>Instruction</code> は <code>before TradeState (0..1) [metadata reference]</code> と <code>primitiveInstruction PrimitiveInstruction (0..1)</code> を持つ。
+            <ul>
+              <li><strong>0 対 1</strong>: 新規約定（<code>Execution</code>：<code>before</code> 不在、<code>after</code> に 1 件生成）</li>
+              <li><strong>1 対 1</strong>: 契約形成、増減額、条件変更、リセット、キャッシュフロー転送、全部解約</li>
+              <li><strong>1 対 N</strong>: <code>SplitInstruction</code> を伴う割当（Allocation）、清算（Clearing：元取引 Closed ＋ Alpha/Beta/Gamma 等）、更改（Novation：旧取引 Closed ＋ 新取引生成）</li>
+              <li><strong>N 対 1 / N 対 M</strong>: 圧縮（Compression：複数 <code>Instruction.before</code> → 圧縮後の <code>after</code> 群）</li>
+            </ul>
+          </li>
+        </ol>
+
+        <h3 id="sec-2-3">2.3 OTC FX デリバティブの CDM v6 商品構造</h3>
+        <p>CDM v6 の商品適格性判定・商品テンプレート・決済条件・観測資産定義に基づく OTC FX 商品の構成対応は以下の通りである。</p>
+
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th style="width: 18%;">FX 商品種別</th>
+                <th style="width: 24%;">CDM 適格性判定関数</th>
+                <th style="width: 22%;"><code>Payout</code> 構成</th>
+                <th style="width: 36%;">主要な商品・スケジュール・決済属性の格納位置</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>FX Spot / FX Forward</strong></td>
+                <td><code>Qualify_ForeignExchange_Spot_Forward</code></td>
+                <td><code>SettlementPayout</code> × 1（<code>cashSettlementTerms</code> 不在）</td>
+                <td><code>TradeLot.priceQuantity</code>（2 通貨数量 + <code>ExchangeRate</code> / <code>PriceComposite</code>）、<code>SettlementPayout.settlementTerms.settlementDate.valueDate</code> 等</td>
+              </tr>
+              <tr>
+                <td><strong>FX Swap</strong></td>
+                <td><code>Qualify_ForeignExchange_Swap</code></td>
+                <td><code>SettlementPayout</code> × 2（Near / Far、<code>cashSettlementTerms</code> 不在）</td>
+                <td>各レグの <code>SettlementPayout.settlementTerms.settlementDate</code>、各レグに対応する <code>PriceQuantity</code></td>
+              </tr>
+              <tr>
+                <td><strong>NDF</strong></td>
+                <td><code>Qualify_ForeignExchange_NDF</code></td>
+                <td><code>SettlementPayout</code> × 1（<code>cashSettlementTerms</code> 存在）</td>
+                <td><code>settlementTerms.settlementCurrency</code>、<code>cashSettlementTerms.valuationDate.fxFixingDate</code>、<code>ForeignExchangeRateIndex</code>（<code>quotedCurrencyPair</code> / <code>primaryFxSpotRateSource</code>）</td>
+              </tr>
+              <tr>
+                <td><strong>NDS</strong></td>
+                <td><code>Qualify_ForeignExchange_NDS</code></td>
+                <td><code>SettlementPayout</code> × 2（<code>cashSettlementTerms</code> 存在）</td>
+                <td>Near / Far 各レグの <code>fxFixingDate</code>・<code>settlementDate</code>・<code>settlementCurrency</code></td>
+              </tr>
+              <tr>
+                <td><strong>FX Vanilla Option</strong></td>
+                <td><code>Qualify_ForeignExchange_VanillaOption</code></td>
+                <td><code>OptionPayout</code> × 1（<code>style &lt;&gt; Bermuda</code>、<code>feature</code> 不在）</td>
+                <td><code>buyerSeller</code>、<code>optionType</code>、<code>exerciseTerms</code>（<code>style</code> / <code>expirationDate</code> / <code>expirationTime</code>）、<code>strike.strikePrice</code>、<code>underlier</code></td>
+              </tr>
+              <tr>
+                <td><strong>NDO</strong></td>
+                <td><code>Qualify_ForeignExchange_NDO</code></td>
+                <td><code>OptionPayout</code> × 1（<code>style = European</code>、<code>cashSettlementTerms</code> 存在）</td>
+                <td><code>OptionPayout</code> 属性 ＋ <code>settlementTerms.settlementCurrency</code> / <code>cashSettlementTerms.valuationDate.fxFixingDate</code></td>
+              </tr>
+              <tr>
+                <td><strong>FX Barrier / Digital / Asian</strong></td>
+                <td><code>Qualify_ForeignExchange_SimpleExotic_Barrier</code> / <code>_Digital</code> / <code>_Asian</code></td>
+                <td><code>OptionPayout</code> × 1（<code>feature.knock</code> または <code>feature.averagingFeature</code> 存在）</td>
+                <td><code>OptionPayout.feature.knock</code>（<code>knockIn</code> / <code>knockOut</code> の <code>TriggerEvent</code>・<code>Trigger.level</code>）、<code>feature.barrier</code>、<code>feature.averagingFeature</code>（Digital は <code>strike</code> 不在）</td>
+              </tr>
+              <tr>
+                <td><strong>FX Variance / Volatility / Correlation</strong></td>
+                <td><code>Qualify_ForeignExchange_ParameterReturn*</code></td>
+                <td><code>PerformancePayout</code> × 1</td>
+                <td><code>underlier.Observable.Index.ForeignExchangeRateIndex</code>（または <code>Basket</code>）、<code>returnTerms</code></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h3 id="sec-2-4">2.4 CDM 固有のメタデータ参照機構と累積肥大化リスク</h3>
+        <ol>
+          <li><strong><code>[metadata key]</code>（<code>globalKey</code> / <code>externalKey</code>）と <code>[metadata reference]</code></strong>:
+            <ul>
+              <li><code>WorkflowStep</code>、<code>BusinessEvent</code>、<code>TradeState</code>、<code>Trade</code>、<code>NonTransferableProduct</code>、<code>Payout</code>、<code>Party</code>、<code>Account</code>、<code>LegalAgreement</code>、<code>Reset</code>、<code>TransferState</code>、<code>PriceQuantity</code> 等は <code>[metadata key]</code> を持ち、コンテンツハッシュである <code>globalKey</code> およびドキュメント内ローカルキーである <code>externalKey</code> が付与され得る。</li>
+              <li><code>WorkflowStep.party</code> や <code>Trade.party</code> で定義された <code>Party</code> を、<code>Counterparty.partyReference</code>、<code>PartyRole.partyReference</code>、<code>Transfer.payerReceiver</code>、<code>WorkflowStepApproval.party</code>、<code>Identifier.issuerReference</code> 等が <code>[metadata reference]</code> で参照する。</li>
+            </ul>
+          </li>
+          <li><strong><code>[metadata location]</code> と <code>[metadata address "pointsTo"=...]</code></strong>:
+            <ul>
+              <li><code>TradeLot.priceQuantity</code> 側の <code>price</code> / <code>quantity</code> / <code>observable</code> に <code>[metadata location]</code> が付与され、<code>Payout</code> 配下の <code>ResolvablePriceQuantity</code>（<code>quantitySchedule</code> / <code>priceSchedule</code>）や <code>Underlier</code> が <code>[metadata address]</code> で指し示す構造となっている。</li>
+            </ul>
+          </li>
+          <li><strong><code>TradeState</code> 配下の履歴リスト累積肥大化</strong>:
+            <ul>
+              <li>CDM v6 において、<code>TradeState</code> は <code>resetHistory Reset (0..*)</code>、<code>transferHistory TransferState (0..*)</code>、<code>observationHistory ObservationEvent (0..*)</code>、<code>valuationHistory Valuation (0..*)</code> を内包する。</li>
+              <li>ライフサイクルが進むたびに新しい <code>TradeState</code> スナップショットが生成されるため、履歴要素を JSON 内にのみ閉じ込めると、決済管理・リセット抽出のたびに巨大化した JSON の走査・パースが発生する。</li>
+            </ul>
+          </li>
+        </ol>
+      </section>
+
+      <!-- Section 3 -->
+      <section id="sec-3">
+        <h2>3. ライフサイクル管理業務ユースケースとデータ操作要件</h2>
+        <p>ER 設計が効率的に満たすべきデータ操作ユースケースを定義する。</p>
+
+        <h3 id="sec-3-1">3.1 取引ライフサイクル管理ユースケース（UC-LC）</h3>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th style="width: 11%;">ID</th>
+                <th style="width: 22%;">ユースケース名</th>
+                <th style="width: 43%;">概要</th>
+                <th style="width: 24%;">対象となる主要 CDM 型</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>UC-LC-01</strong></td>
+                <td>新規約定登録（Execution）</td>
+                <td>OTC FX 新規約定の <code>WorkflowStep</code>（<code>action = New</code>）を永続化し、初期 <code>TradeState</code>（<code>positionState = Executed</code> 等）を最新状態投影へ登録する。</td>
+                <td><code>WorkflowStep</code>, <code>BusinessEvent</code>, <code>TradeState</code>, <code>Trade</code>, <code>TradeLot</code>, <code>PriceQuantity</code>, <code>Payout</code></td>
+              </tr>
+              <tr>
+                <td><strong>UC-LC-02</strong></td>
+                <td>契約形成・法的契約紐付け（ContractFormation）</td>
+                <td>約定済み <code>TradeState</code> を <code>before</code> とし、ISDA Master Agreement 等の <code>LegalAgreement</code> を紐付けた <code>ContractDetails</code> を含む新 <code>TradeState</code>（<code>Formed</code>）へ遷移させる。</td>
+                <td><code>WorkflowStep</code>, <code>BusinessEvent</code>, <code>ContractDetails</code>, <code>LegalAgreement</code></td>
+              </tr>
+              <tr>
+                <td><strong>UC-LC-03</strong></td>
+                <td>イベント提案・承認・却下ワークフロー</td>
+                <td><code>proposedEvent</code> を持つ提案ステップを登録し、関係者からの <code>approval</code>（<code>WorkflowStepApproval</code>）や <code>workflowState</code> の進行を管理する。承認確定時に <code>businessEvent</code> を持つ新ステップ、却下時に <code>rejected = True</code> ステップを <code>previousWorkflowStep</code> 連鎖で追記する。</td>
+                <td><code>WorkflowStep</code>, <code>EventInstruction</code>, <code>WorkflowStepApproval</code>, <code>WorkflowState</code></td>
+              </tr>
+              <tr>
+                <td><strong>UC-LC-04</strong></td>
+                <td>増減額・条件変更（QuantityChange / TermsChange）</td>
+                <td>一部解約、想定元本変更、バリューデート変更、FX ロール等の <code>BusinessEvent</code> を追記し、最新 <code>TradeState</code> および FX 拡張条件（金額・レート・決済日等）を更新投影する。</td>
+                <td><code>BusinessEvent</code>, <code>QuantityChangeInstruction</code>, <code>TermsChangeInstruction</code>, <code>TradeState</code>, <code>PriceQuantity</code></td>
+              </tr>
+              <tr>
+                <td><strong>UC-LC-05</strong></td>
+                <td>分岐・統合イベント（Allocation / Novation / Clearing / Compression）</td>
+                <td>1 取引から複数取引への分割（Split）、当事者交代（PartyChange）、清算、または複数取引の圧縮を多対多遷移として記録し、旧取引を <code>ClosedState</code>（<code>Allocated</code> / <code>Novated</code> / <code>Terminated</code> 等）へ更新、新取引群をアクティブ化する。</td>
+                <td><code>BusinessEvent</code>, <code>SplitInstruction</code>, <code>PartyChangeInstruction</code>, <code>State</code>, <code>ClosedState</code></td>
+              </tr>
+              <tr>
+                <td><strong>UC-LC-06</strong></td>
+                <td>全部解約・取消（Full Termination）</td>
+                <td>取引の早期解約を実行し、<code>TradeState.state.positionState = Closed</code> および <code>closedState</code>（<code>Terminated</code>、<code>activityDate</code>、<code>effectiveDate</code>、<code>lastPaymentDate</code>）と解約手数料の <code>TransferState</code> を記録する。</td>
+                <td><code>BusinessEvent</code>, <code>State</code>, <code>ClosedState</code>, <code>TransferState</code></td>
+              </tr>
+              <tr>
+                <td><strong>UC-LC-07</strong></td>
+                <td>イベント訂正・取消（<code>Correct</code> / <code>Cancel</code>）</td>
+                <td>誤登録された過去 <code>WorkflowStep</code> に対し、<code>action = Correct</code> または <code>Cancel</code>、バージョン加算された <code>eventIdentifier</code>、および <code>previousWorkflowStep</code> を持つ新ステップを追記し、論理的な最新有効状態を再確定する。</td>
+                <td><code>WorkflowStep</code>, <code>ActionEnum</code>, <code>Identifier</code>, <code>AssignedIdentifier</code></td>
+              </tr>
+              <tr>
+                <td><strong>UC-LC-08</strong></td>
+                <td>ポジション系イベント処理</td>
+                <td><code>CounterpartyPositionBusinessEvent</code> によるポジション生成・増減・移管・評価更新を追記し、最新 <code>CounterpartyPositionState</code> を投影管理する。</td>
+                <td><code>WorkflowStep</code>, <code>CounterpartyPositionBusinessEvent</code>, <code>CounterpartyPositionState</code>, <code>CounterpartyPosition</code></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h3 id="sec-3-2">3.2 定期イベント処理ユースケース（UC-PE）</h3>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th style="width: 11%;">ID</th>
+                <th style="width: 23%;">ユースケース名</th>
+                <th style="width: 42%;">概要</th>
+                <th style="width: 24%;">効率実行の要点</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>UC-PE-01</strong></td>
+                <td>フィキシング対象抽出とリセット記録（Reset）</td>
+                <td>営業日時点でフィキシング日（NDF / NDO の <code>fxFixingDate</code> 等）が到来した有効取引を抽出し、市場観測レート（<code>Observation</code>）に基づく <code>Reset</code> を伴う <code>WorkflowStep</code> を生成・記録する。未フィキシング取引の検知も行う。</td>
+                <td><code>fx_fixing_date</code> による高速レンジスキャン、対象取引の <code>reset</code> 記録有無との突合</td>
+              </tr>
+              <tr>
+                <td><strong>UC-PE-02</strong></td>
+                <td>キャッシュフロー生成・決済ステータス管理（Transfer）</td>
+                <td>バリューデート・決済日（<code>settlementDate</code> / <code>valueDate</code>）が到来する取引の決済予定を抽出し、<code>TransferState</code>（通貨・金額・支払/受取当事者・口座・<code>transferStatus</code>: <code>Pending</code> / <code>Instructed</code> / <code>Settled</code> / <code>Disputed</code> / <code>Netted</code>）を一覧照会・状態遷移管理する。</td>
+                <td>決済日・通貨・ステータス・当事者別の高速抽出と決済金額集計</td>
+              </tr>
+              <tr>
+                <td><strong>UC-PE-03</strong></td>
+                <td>オプション満期到来・権利行使／失効処理</td>
+                <td>満期日（<code>expirationDate</code>）およびカットオフ時刻（<code>expirationTime</code>）が到来した有効 FX Option を抽出し、権利行使（<code>OptionExercise</code>：現物決済による FX Forward 生成または差金決済）あるいは失効（<code>ClosedState = Expired</code>）イベントを実行する。</td>
+                <td><code>expiration_date</code>・<code>option_style</code>・<code>position_state</code> による高速抽出</td>
+              </tr>
+              <tr>
+                <td><strong>UC-PE-04</strong></td>
+                <td>バリア／ノック監視と観測イベント記録（ObservationEvent）</td>
+                <td>有効な FX Barrier / Digital Option のトリガ水準（<code>knockIn</code> / <code>knockOut</code>、<code>level</code>）を一覧取得して市場レートと照合し、条件成就時に <code>ObservationEvent</code>（または条件変更・解約イベント）を記録する。</td>
+                <td>アクティブなバリア/ノック条件の通貨ペア別高速抽出</td>
+              </tr>
+              <tr>
+                <td><strong>UC-PE-05</strong></td>
+                <td>満期到来取引クローズ・評価履歴照会（Maturity / Valuation）</td>
+                <td>最終決済日・満期日（<code>terminationDate</code> / <code>valueDate</code>）を過ぎ決済完了した取引を <code>ClosedState = Matured</code> へ遷移させる。また、取引ごとの <code>Valuation</code> 履歴（評価日時・金額・手法）を時系列照会する。</td>
+                <td>満期日レンジ検索および取引単位の評価時系列ソート</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h3 id="sec-3-3">3.3 照会・系譜追跡ユースケース（UC-QR）</h3>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th style="width: 12%;">ID</th>
+                <th style="width: 26%;">ユースケース名</th>
+                <th style="width: 62%;">概要</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>UC-QR-01</strong></td>
+                <td>最新有効取引・ポジション一覧照会</td>
+                <td>取引ステータス（<code>Executed</code> / <code>Formed</code> / <code>Settled</code> / <code>Closed</code>）、資産クラス、FX 商品種別、通貨ペア、当事者、口座、約定日・満期日等で現在の有効取引を絞り込み照会する。</td>
+              </tr>
+              <tr>
+                <td><strong>UC-QR-02</strong></td>
+                <td>業務日軸の時系列イベント検索</td>
+                <td>業務日（<code>eventDate</code> / <code>effectiveDate</code>）の範囲指定により、特定期間に発生・発効した確定イベントおよび取引状態遷移を一覧取得する（取消・訂正された旧ステップの除外／包含切替が可能）。</td>
+              </tr>
+              <tr>
+                <td><strong>UC-QR-03</strong></td>
+                <td>多対多遷移系譜（DAG）追跡</td>
+                <td>任意の取引または <code>WorkflowStep</code> を起点に、割当・更改・清算・圧縮・訂正/取消を含む上流（親取引・元イベント）および下流（派生取引・後続イベント）を再帰クエリ（PostgreSQL <code>WITH RECURSIVE</code>）で追跡する。</td>
+              </tr>
+              <tr>
+                <td><strong>UC-QR-04</strong></td>
+                <td>外部識別子横断検索</td>
+                <td>UTI / USI / 社内取引ID（<code>TradeIdentifier</code>）、イベントID（<code>eventIdentifier</code>）、メッセージID（<code>MessageInformation.messageId</code>）、パッケージID（<code>packageReference</code>）、法人識別子 LEI（<code>PartyIdentifier</code>）から対象ステップ・取引を O(1)〜O(log N) で特定する。</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h3 id="sec-3-4">3.4 ユースケース別アクセスパターン一覧</h3>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th style="width: 21%;">ユースケース群</th>
+                <th style="width: 28%;">主な検索条件（WHERE）</th>
+                <th style="width: 28%;">結合・集計（JOIN / AGG）</th>
+                <th style="width: 23%;">書き込み特性</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>定期フィキシング抽出（UC-PE-01）</td>
+                <td><code>position_state != 'Closed'</code>, <code>fx_fixing_date = :biz_date</code>, 未リセット判定</td>
+                <td><code>current_trade_state</code> ⋈ <code>fx_settlement_detail</code> / <code>fx_option_detail</code> ⟕ <code>trade_reset</code></td>
+                <td>日次バッチ参照 ＋ 取引単位イベント追記</td>
+              </tr>
+              <tr>
+                <td>決済予定・消込管理（UC-PE-02）</td>
+                <td><code>settlement_date BETWEEN :d1 AND :d2</code>, <code>transfer_status IN (...)</code>, <code>currency</code></td>
+                <td><code>trade_transfer</code> ⋈ <code>party_version</code> ⋈ <code>account_version</code>、通貨別・当事者別 <code>SUM(amount)</code></td>
+                <td>画面/バッチ高頻度参照 ＋ ステータス遷移イベント追記</td>
+              </tr>
+              <tr>
+                <td>オプション満期・バリア監視（UC-PE-03, 04）</td>
+                <td><code>position_state != 'Closed'</code>, <code>expiration_date = :biz_date</code> または <code>currency_pair = :pair</code></td>
+                <td><code>current_trade_state</code> ⋈ <code>fx_option_detail</code> ⋈ <code>fx_option_barrier</code></td>
+                <td>日次・日中監視参照 ＋ イベント追記</td>
+              </tr>
+              <tr>
+                <td>提案・承認キュー照会（UC-LC-03）</td>
+                <td><code>step_category = 'Proposed'</code>, <code>workflow_status</code>, 承認待ち当事者</td>
+                <td><code>workflow_step</code> ⋈ <code>workflow_step_approval</code> ⋈ <code>party_version</code></td>
+                <td>画面高頻度参照 ＋ 承認/確定/却下ステップ追記</td>
+              </tr>
+              <tr>
+                <td>識別子検索（UC-QR-04）</td>
+                <td><code>(issuer, identifier_value, identifier_type)</code></td>
+                <td><code>trade_identifier</code> / <code>event_identifier</code> → <code>trade_state</code> / <code>workflow_step</code></td>
+                <td>1 件特定（B-Tree ユニーク/複合インデックス）</td>
+              </tr>
+              <tr>
+                <td>業務日時系列・系譜追跡（UC-QR-02, 03）</td>
+                <td><code>event_date</code> / <code>effective_date</code> 範囲、<code>is_active_chain = TRUE</code>、<code>trade_state_id</code></td>
+                <td><code>trade_state_transition</code> の再帰探索、<code>workflow_step</code> 自己結合</td>
+                <td>読み取り専用（履歴追記のみ）</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- Section 4 -->
+      <section id="sec-4">
+        <h2>4. アーキテクチャ設計方針および方式比較</h2>
+
+        <h3 id="sec-4-1">4.1 CQRS / Projection 併用アーキテクチャ</h3>
+        <p><code>WorkflowStep</code> のイベントソーシング指向と、ライフサイクル管理・定期イベント処理における高速クエリ要件を両立するため、<strong>CQRS（コマンド／クエリ責務分離）および Projection 併用パターン</strong>を採用する。</p>
+        <ul>
+          <li><strong>Write Model（イミュータブル・イベントストア層）</strong>:
+            <ul>
+              <li><code>WorkflowStep</code>、確定済み <code>BusinessEvent</code> / <code>CounterpartyPositionBusinessEvent</code>、遷移後の <code>TradeState</code> / <code>CounterpartyPositionState</code>、および遷移エッジは <strong>原則 Append-Only（追記専用）</strong> とし、過去事実の物理上書き（<code>UPDATE</code>）や物理削除（<code>DELETE</code>）を行わない。</li>
+              <li>訂正・取消も <code>action = Correct / Cancel</code> を持つ新規 <code>WorkflowStep</code> として追記する。</li>
+            </ul>
+          </li>
+          <li><strong>Read Model（最新状態 Projection 層）</strong>:
+            <ul>
+              <li>現在有効な取引・ポジションの最新状態（<code>current_trade_state</code>、<code>current_position_state</code>）および定期イベント抽出用の商品・FX 拡張射影テーブルを維持する。</li>
+              <li>イベント追記と同一の RDB トランザクション内で最新投影テーブルを更新し、強い一貫性を保つ（第 8 章参照）。</li>
+            </ul>
+          </li>
+        </ul>
+
+        <h3 id="sec-4-2">4.2 方式比較①：多対多遷移系譜（DAG）の表現方式</h3>
+        <p><code>BusinessEvent</code> が複数の <code>before TradeState</code> から複数の <code>after TradeState</code> へ遷移し得る構造（Allocation / Clearing / Novation / Compression）に対する RDB 表現方式を比較する。</p>
+
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th style="width: 19%;">評価観点</th>
+                <th style="width: 27%;">案1：明示的遷移エッジテーブル <span class="badge badge-rec">推奨</span></th>
+                <th style="width: 27%;">案2：論理取引 ID ＋ 親取引参照</th>
+                <th style="width: 27%;">案3：JSON 参照依存（専用テーブルなし）</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>構造概要</strong></td>
+                <td><code>WorkflowStep</code> の <code>previousWorkflowStep</code> 連鎖とは別に、<code>before_trade_state_id</code> → <code>workflow_step_id</code> → <code>after_trade_state_id</code> の多対多エッジテーブルを持つ。</td>
+                <td>取引ごとに論理 ID を採番し、通常の状態遷移は同一論理 ID の連番、分岐・統合時のみ親取引 ID リンクを張る。</td>
+                <td><code>WorkflowStep.previousWorkflowStep</code> と JSON 内の <code>instruction[].before</code>（<code>globalKey</code>）のみに委ねる。</td>
+              </tr>
+              <tr>
+                <td><strong>多対多（Compression 等）の表現力</strong></td>
+                <td>1 対 N、N 対 1、N 対 M のいずれの遷移も同一構造で正確に表現可能。</td>
+                <td>1 対 N（分割）は表現しやすいが、N 対 1（Compression）では結局多対多中間テーブルが必要になる。</td>
+                <td>JSON 構造上は表現されるが、RDB 上の参照整合性や関係性が可視化されない。</td>
+              </tr>
+              <tr>
+                <td><strong>系譜クエリ性能（UC-QR-03）</strong></td>
+                <td>PostgreSQL の <code>WITH RECURSIVE</code> と B-Tree インデックスで上流・下流とも高速に走査可能。</td>
+                <td>単一取引内の履歴取得は速いが、分岐・統合を跨ぐ横断系譜クエリが複雑化する。</td>
+                <td>JSONB 内の参照探索が必要となり、逆方向（子から親・親から子）の探索性能が著しく低い。</td>
+              </tr>
+              <tr>
+                <td><strong>CDM モデルとの親和性</strong></td>
+                <td>CDM の <code>before TradeState</code> → <code>BusinessEvent</code> → <code>after TradeState</code> の意味論とそのまま一致する。</td>
+                <td>CDM に存在しない「論理取引 ID」の同一性判定ルール（例：PartyChange 時に別取引とする等）を独自維持する必要がある。</td>
+                <td>スキーマは最小だが、業務上の系譜追跡要件を満たしにくい。</td>
+              </tr>
+              <tr>
+                <td><strong>実装・保守複雑度</strong></td>
+                <td>中（テーブル 1〜2 個の追加で済み、クエリ構造も定型化しやすい）。</td>
+                <td>中〜高（分岐・統合種別ごとの例外処理が増えやすい）。</td>
+                <td>低（書き込み時のみ）。読み取りアプリ側の負担が高い。</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="callout callout-important">
+          <div class="callout-title">IMPORTANT — 推奨方針</div>
+          <p><strong>案1（明示的遷移エッジテーブル）</strong> を推奨する。<code>WorkflowStep</code> 間の単線連鎖（提案→承認/却下、確定→訂正/取消）は <code>workflow_step.previous_workflow_step_id</code> で管理し、取引状態の多対多遷移（約定→契約形成→割当→圧縮→解約）は遷移エッジテーブル（<code>trade_state_transition</code>）で明示的に管理することで、CDM の二層の系譜を無理なく分離・追跡できる。</p>
+        </div>
+
+        <h3 id="sec-4-3">4.3 方式比較②：JSONB 原本の格納粒度（全体格納 vs 分割格納）</h3>
+        <p>CDM の JSONB 原本をどの粒度で格納するかについて、<strong>方式2（<code>WorkflowStep</code> 全体 1 カラム格納）</strong> と <strong>方式3（構成要素別の分割格納＋読み出し時再構成）</strong> を比較検討する。</p>
+
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th style="width: 22%;">評価観点</th>
+                <th style="width: 39%;">方式2：<code>WorkflowStep</code> 全体 JSONB 格納</th>
+                <th style="width: 39%;">方式3：構成要素別（Step ヘッダ / Event / <code>TradeState</code> 等）分割格納</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>ストレージ効率・重複排除</strong></td>
+                <td>Multi-trade イベント（Allocation / Compression 等）では 1 行の JSONB が肥大化する。また、単一取引でもイベントごとに <code>Trade</code> 全体と累積履歴を含むため冗長になりやすい（ただし PostgreSQL の TOAST 圧縮である程度は軽減される）。</td>
+                <td><code>TradeState</code> 単位・商品定義単位・累積履歴差分単位で JSONB を分割できるため、重複格納を抑えやすく、<strong>データ効率に優れる</strong>。</td>
+              </tr>
+              <tr>
+                <td><strong>単一取引 <code>TradeState</code> の読込性能</strong></td>
+                <td>50 取引を含む Allocation イベントから 1 取引の <code>TradeState</code> を読み出す場合でも、巨大な <code>WorkflowStep</code> 全体の TOAST JSONB を展開する必要がある。</td>
+                <td>対象 <code>TradeState</code> の小規模 JSONB 行のみを直接取得できるため、後続ライフサイクル実行時の読み出しコストが小さい。</td>
+              </tr>
+              <tr>
+                <td><strong>CDM 参照整合性（<code>externalKey</code> / <code>address</code>）</strong></td>
+                <td>1 ドキュメント内に <code>WorkflowStep.party</code> や <code>PriceQuantity</code> の参照先がすべて完結しているため、参照切れが起きない。</td>
+                <td><code>WorkflowStep.party</code> の <code>externalKey</code> を <code>Trade</code> や <code>Transfer</code> が参照する構造や、<code>Payout</code> → <code>PriceQuantity</code> の <code>[metadata address]</code> を跨いで分割する場合、<strong>参照スコープの補完・解決ルール</strong>を厳密に設計する必要がある。</td>
+              </tr>
+              <tr>
+                <td><strong>CDM JSON 復元（Round-trip）と <code>globalKey</code> 再現性</strong></td>
+                <td>格納した JSONB をそのまま返却できるため、原本通りの復元と <code>globalKey</code> ハッシュ一致が容易。</td>
+                <td>複数テーブルの JSON 片＋バージョン付きマスタから <code>WorkflowStep</code> を再組立（Assembler）する処理が必要となり、シリアライズ順序や参照形式の差異で <code>globalKey</code> がずれないよう結合テストによる厳密な検証が必須となる。</td>
+              </tr>
+              <tr>
+                <td><strong>実装・保守コスト（小〜中規模導入時）</strong></td>
+                <td>低。取り込み（Ingest）と原本取得が単純で、CDM マイナーバージョン更新時も原本列はそのまま維持できる。</td>
+                <td>中〜高。分割・再構成の変換レイヤー（Decomposition / Reassembly）の実装と、CDM スキーマ変更時の追従テストが必要。</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="callout callout-tip">
+          <div class="callout-title">TIP — 検討指針と折衷の視点</div>
+          <ul>
+            <li>データ効率および単一取引アクセス性能を重視する場合は <strong>方式3（分割格納）</strong> が有力である。特に、<code>WorkflowStep</code> 本体から <code>TradeState</code> 単位（および <code>resetHistory</code> / <code>transferHistory</code> 等の履歴要素）を分離して保持すると、多取引イベントや長期取引での I/O 効率が大きく改善する。</li>
+            <li>一方、本システムは小〜中規模・保守性とシンプルさ優先という前提があるため、方式3を採る場合でも <strong>細分化しすぎず「<code>WorkflowStep</code> エンベロープ JSONB ＋ <code>TradeState</code> 単位 JSONB（または <code>Product</code> 定義 JSONB）」の 2 階層程度の粗粒度分割</strong> に留めるか、あるいは初期フェーズでは方式2で原本保持しつつ最新 <code>TradeState</code> 投影テーブルに単一 <code>TradeState</code> JSONB を持つ構成とすることで、再構成リスクとデータ効率のバランスを取る選択が実務的である。次工程（論理・物理設計）で PoC 検証の上、最終決定する。</li>
+          </ul>
+        </div>
+
+        <h3 id="sec-4-4">4.4 方式比較③：スキーマ設計アプローチ（明示的スキーマ重視 vs JSONB 活用重視）</h3>
+        <p>切り出し戦略の基本スタンスについて、<strong>明示的スキーマ重視方針</strong> と <strong>JSONB 活用重視方針</strong> を比較する。</p>
+
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th style="width: 22%;">評価観点</th>
+                <th style="width: 39%;">明示的スキーマ重視方針 <span class="badge badge-rec">本要件の推奨</span></th>
+                <th style="width: 39%;">JSONB 活用重視方針</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>基本コンセプト</strong></td>
+                <td>業務ロジック・検索・定期バッチ・集計で参照する項目はすべて明示的な物理テーブル／物理列として切り出し、JSONB 式インデックスや JSONPath クエリには原則依存しない。</td>
+                <td>テーブル切り出しは <code>WorkflowStep</code> / <code>TradeState</code> / 識別子等の最小骨格に留め、商品条件・履歴検索・詳細フィルタは PostgreSQL の JSONB 演算子（<code>@&gt;</code> / <code>-&gt;</code> / JSONPath）および GIN・式インデックスを活用する。</td>
+              </tr>
+              <tr>
+                <td><strong>型安全性・データ品質</strong></td>
+                <td><code>DATE</code> / <code>NUMERIC</code> / <code>VARCHAR</code> / <code>NOT NULL</code> / <code>CHECK</code> / <code>FOREIGN KEY</code> により DB レベルで型と参照整合性を強制できる。</td>
+                <td>JSONB 内部の型不整合やキー欠損を DB 制約で防ぎにくく、アプリ側の規約依存度が高まる。</td>
+              </tr>
+              <tr>
+                <td><strong>クエリ可読性・保守性</strong></td>
+                <td>標準的な SQL（JOIN・WHERE・GROUP BY）で記述でき、RDB 開発者にとって理解・レビュー・チューニングが容易。</td>
+                <td>深いネストの JSONPath や配列展開（<code>jsonb_array_elements</code>）が頻発し、実行計画の読解や保守の難易度が上がる。</td>
+              </tr>
+              <tr>
+                <td><strong>定期イベント処理・集計性能</strong></td>
+                <td>B-Tree 複合インデックスによる高速レンジスキャン（フィキシング日、決済日、満期日）や <code>SUM</code> 集計が安定して高速。</td>
+                <td>GIN インデックスは等価・包含検索には強いが、日付範囲検索・ソート・数値集計・配列内要素の複合条件には弱く、式インデックスの乱立を招きやすい。</td>
+              </tr>
+              <tr>
+                <td><strong>スキーマ変更コスト（CDM 改訂・新商品追加）</strong></td>
+                <td>新アセット追加や切り出し対象追加時に DDL マイグレーションが必要（ただしスーパー/サブタイプ設計により既存テーブルへの破壊的変更は抑えられる）。</td>
+                <td>新属性を DDL 変更なしで即座に格納・検索可能であり、スキーマ柔軟性が高い。</td>
+              </tr>
+              <tr>
+                <td><strong>本要件（FX 拡張・履歴4種・マスタ正規化）との整合性</strong></td>
+                <td>履歴 4 種（<code>Reset</code> / <code>TransferState</code> / <code>ObservationEvent</code> / <code>Valuation</code>）の独立テーブル化、FX 特化サブテーブル併設、およびマスタ正規化の要件と整合し、設計原則に一貫性がある。</td>
+                <td>最小骨格に留める前提と、履歴・FX サブテーブル・マスタ正規化の要件とが相反しやすい。</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="callout callout-important">
+          <div class="callout-title">IMPORTANT — 推奨方針</div>
+          <p>本要件では保守性・シンプルさ・定期イベント処理の安定性能を重視し、<strong>明示的スキーマ重視方針</strong> を採用する。JSONB 列は「CDM 原本の保持および商品固有の非定型・低頻度詳細属性（端数丸め規則、複雑な営業日調整詳細、法的選択条項など）の格納」に役割を限定し、業務検索・定期バッチ駆動・集計に必要な項目は明示的なテーブル・列へ切り出す。</p>
+        </div>
+
+        <h3 id="sec-4-5">4.5 時間軸および訂正・取消（<code>Correct</code> / <code>Cancel</code>）の論理有効性管理</h3>
+        <ul>
+          <li><strong>業務日軸（Business Time）</strong>: <code>eventDate</code>（イベント発生日）および <code>effectiveDate</code>（契約発効日）を物理 <code>DATE</code> 列として切り出し、業務日範囲による時系列検索（UC-QR-02）を効率化する。</li>
+          <li><strong>システム記録時刻（System Time）</strong>: 追記監査用に <code>recorded_at</code>（<code>TIMESTAMPTZ</code>）および CDM の <code>EventTimestamp</code> 群を保持する。</li>
+          <li><strong>現在有効チェーンの高速特定</strong>:
+            <ul>
+              <li><code>ActionEnum = Correct</code> または <code>Cancel</code> が追記された場合、先行する対象 <code>WorkflowStep</code> 自体を物理更新・削除せず、<strong>有効性管理用の投影属性または管理テーブル</strong>（例：<code>workflow_step_chain_status</code> あるいは投影テーブル側の <code>superseded_by_step_id</code> / <code>is_effective</code>）によって「現在有効な最新チェーン」を O(1) で判定可能とする。</li>
+              <li>なお、過去の特定記録時刻における状態再現（Bi-temporal クエリ）はオンライン高速検索の対象外とし、必要に応じて追記イベントログの再生（Replay）で対応する。</li>
+            </ul>
+          </li>
+        </ul>
+
+        <h3 id="sec-4-6">4.6 完全マスタ正規化とイミュータビリティの両立</h3>
+        <p><code>Party</code>、<code>Account</code>、<code>LegalAgreement</code> を完全マスタ正規化し、取引テーブルからは外部キー参照のみとする方針において、将来の社名変更・口座情報変更・マスター契約改定時に過去 <code>WorkflowStep</code> の不変性（および CDM <code>globalKey</code> 再現性）が破壊されるリスクを防ぐため、<strong>バージョン付きイミュータブルマスタ（SCD Type 2 / <code>globalKey</code> ベース）</strong> を採用する。</p>
+        <ul>
+          <li><strong>論理エンティティとバージョン行の分離</strong>:
+            <ul>
+              <li>論理マスタ（例：<code>party_master</code>、<code>account_master</code>、<code>legal_agreement_master</code>）が業務上の不変 ID（例：社内当事者コード）を管理する。</li>
+              <li>バージョンテーブル（例：<code>party_version</code>、<code>account_version</code>、<code>legal_agreement_version</code>）が各時点の不変属性と CDM <code>globalKey</code>（一意キー候補）、有効期間（<code>effective_from</code> / <code>effective_to</code>）、最新フラグ（<code>is_current</code>）を保持する。</li>
+            </ul>
+          </li>
+          <li><strong>改定時の挙動</strong>: マスタ属性に変更が生じた場合、既存バージョン行を上書きせず新規バージョン行を <code>INSERT</code> する。</li>
+          <li><strong>イベントからの参照</strong>: 過去の <code>WorkflowStep</code> / <code>TradeState</code> はイベント発生時点の <code>*_version_id</code> を FK 参照し続けるため、過去時点の属性不変性と <code>globalKey</code> 整合性が維持される。最新状態での横断名寄せは <code>*_master_id</code> を介して行う。</li>
+        </ul>
+      </section>
+
+      <!-- Section 5 -->
+      <section id="sec-5">
+        <h2>5. テーブル切り出し vs JSON 内包の判断フレームワーク</h2>
+        <p><code>WorkflowStep</code> 配下に連なる多数の CDM 型について、テーブル切り出しの要否を一貫した基準で判定するためのフレームワークを定義する。</p>
+
+        <h3 id="sec-5-1">5.1 切り出し要否を判定する 6 つの評価軸</h3>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th style="width: 7%;">#</th>
+                <th style="width: 23%;">評価軸</th>
+                <th style="width: 35%;">テーブル切り出し（または親列抽出）を強く推奨する条件</th>
+                <th style="width: 35%;">JSONB 内包に留めるべき条件</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>C1</strong></td>
+                <td><strong>検索・フィルタ・レンジスキャン頻度</strong></td>
+                <td>業務画面・定期バッチで <code>WHERE</code> 条件（特に日付範囲・ステータス・通貨・識別子等）として日常的に使用される。</td>
+                <td>取引詳細画面を開いた際にのみ参照される、または CDM 計算エンジン入力時に丸ごと読み込めば足りる。</td>
+              </tr>
+              <tr>
+                <td><strong>C2</strong></td>
+                <td><strong>JOIN・参照整合性・一意性制約</strong></td>
+                <td>他エンティティとの結合（当事者・口座・法的契約）、一意性保証（UTI/USI、Event ID、Message ID）、または参照整合性（FK）が必要。</td>
+                <td>親オブジェクトに従属する値オブジェクトであり、外部から参照・結合されない。</td>
+              </tr>
+              <tr>
+                <td><strong>C3</strong></td>
+                <td><strong>配列（<code>0..*</code>）の展開と累積肥大化</strong></td>
+                <td>多重度が <code>0..*</code> / <code>1..*</code> であり、要素単位の検索・ステータス更新・集計が必要、またはライフサイクル進行に伴い要素が累積増加する（例：<code>resetHistory</code>、<code>transferHistory</code>、<code>approval</code>、<code>tradeIdentifier</code>）。</td>
+                <td>多重度 <code>0..*</code> であっても要素数が極めて少なく、個別検索・個別集計を行わない（例：住所の <code>street</code> 行、連絡先電話番号等）。</td>
+              </tr>
+              <tr>
+                <td><strong>C4</strong></td>
+                <td><strong>定期イベント・バッチ駆動条件</strong></td>
+                <td>フィキシング日、決済日、オプション満期日、バリア水準など、定期イベント処理（UC-PE）の抽出トリガとなる。</td>
+                <td>契約書面上の補足条項や例外的フォールバック規定など、日次バッチの抽出キーにならない。</td>
+              </tr>
+              <tr>
+                <td><strong>C5</strong></td>
+                <td><strong>構造の安定性と多態性（スパース性）</strong></td>
+                <td>対象商品全体で共通の構造を持つ、または主スコープ（OTC FX）で主要業務を構成する定型サブタイプである。</td>
+                <td>商品・取引ごとにネスト構造が大きく異なり、テーブル化すると NULL 列や中間テーブルが爆発する（例：<code>AdjustableOrRelativeDate</code> の複雑なオフセット定義、エキゾチック条項の細部、<code>MarginCall</code> / <code>Collateral</code> 細部等）。</td>
+              </tr>
+              <tr>
+                <td><strong>C6</strong></td>
+                <td><strong>CDM スキーマ進化・保守コスト</strong></td>
+                <td>切り出しによる業務価値（性能・整合性）が、DDL 保守およびマッピング実装コストを明確に上回る。</td>
+                <td>切り出しても利用頻度が低く、CDM v6.x 改訂時の追従コストだけが先行する。</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h3 id="sec-5-2">5.2 テーブル切り出し決定フロー</h3>
+        <div class="diagram-card">
+          <svg viewBox="0 0 920 690" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="テーブル切り出し決定フロー図">
+            <defs>
+              <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+                <path d="M 0 1 L 10 5 L 0 9 z" fill="#475569"/>
+              </marker>
+            </defs>
+
+            <!-- Start -->
+            <rect x="85" y="14" width="310" height="44" rx="22" fill="#0f172a"/>
+            <text x="240" y="41" text-anchor="middle" fill="#ffffff" font-size="13.5" font-weight="700">対象となる CDM 型 / 属性を評価</text>
+
+            <!-- Vertical Spine Arrows -->
+            <line x1="240" y1="58" x2="240" y2="88" stroke="#475569" stroke-width="1.8" marker-end="url(#arrow)"/>
+            <line x1="240" y1="158" x2="240" y2="196" stroke="#475569" stroke-width="1.8" marker-end="url(#arrow)"/>
+            <line x1="240" y1="274" x2="240" y2="312" stroke="#475569" stroke-width="1.8" marker-end="url(#arrow)"/>
+            <line x1="240" y1="390" x2="240" y2="428" stroke="#475569" stroke-width="1.8" marker-end="url(#arrow)"/>
+            <line x1="240" y1="498" x2="240" y2="536" stroke="#475569" stroke-width="1.8" marker-end="url(#arrow)"/>
+            <line x1="240" y1="606" x2="240" y2="632" stroke="#475569" stroke-width="1.8" marker-end="url(#arrow)"/>
+
+            <!-- Horizontal Branch Arrows -->
+            <line x1="430" y1="123" x2="555" y2="123" stroke="#475569" stroke-width="1.8" marker-end="url(#arrow)"/>
+            <line x1="430" y1="235" x2="555" y2="235" stroke="#475569" stroke-width="1.8" marker-end="url(#arrow)"/>
+            <line x1="430" y1="351" x2="555" y2="351" stroke="#475569" stroke-width="1.8" marker-end="url(#arrow)"/>
+            <line x1="430" y1="463" x2="555" y2="463" stroke="#475569" stroke-width="1.8" marker-end="url(#arrow)"/>
+            <line x1="430" y1="571" x2="555" y2="571" stroke="#475569" stroke-width="1.8" marker-end="url(#arrow)"/>
+
+            <!-- Q1 -->
+            <rect x="50" y="90" width="380" height="68" rx="10" fill="#ffffff" stroke="#1d4ed8" stroke-width="1.8"/>
+            <text x="240" y="119" text-anchor="middle" fill="#0f172a" font-size="13" font-weight="700">Q1. イベント間の系譜・識別子・</text>
+            <text x="240" y="139" text-anchor="middle" fill="#0f172a" font-size="13" font-weight="700">状態遷移の骨格か？</text>
+
+            <!-- T1 -->
+            <rect x="558" y="90" width="336" height="68" rx="10" fill="#dbeafe" stroke="#2563eb" stroke-width="1.6"/>
+            <text x="726" y="119" text-anchor="middle" fill="#1e3a8a" font-size="13.5" font-weight="700">コア正規化テーブル</text>
+            <text x="726" y="140" text-anchor="middle" fill="#1e40af" font-size="12">（イベントストア / 状態 / 系譜 DAG）</text>
+
+            <!-- Q2 -->
+            <rect x="50" y="198" width="380" height="76" rx="10" fill="#ffffff" stroke="#1d4ed8" stroke-width="1.8"/>
+            <text x="240" y="222" text-anchor="middle" fill="#0f172a" font-size="13" font-weight="700">Q2. 複数取引・複数イベントで共有される</text>
+            <text x="240" y="241" text-anchor="middle" fill="#0f172a" font-size="13" font-weight="700">マスタ概念か？</text>
+            <text x="240" y="260" text-anchor="middle" fill="#475569" font-size="11.5">(Party / Account / LegalAgreement)</text>
+
+            <!-- T2 -->
+            <rect x="558" y="201" width="336" height="68" rx="10" fill="#d1fae5" stroke="#059669" stroke-width="1.6"/>
+            <text x="726" y="230" text-anchor="middle" fill="#064e3b" font-size="13.5" font-weight="700">バージョン付きイミュータブルマスタ</text>
+            <text x="726" y="251" text-anchor="middle" fill="#065f46" font-size="12">（SCD Type 2 / globalKey 単位管理）</text>
+
+            <!-- Q3 -->
+            <rect x="50" y="314" width="380" height="76" rx="10" fill="#ffffff" stroke="#1d4ed8" stroke-width="1.8"/>
+            <text x="240" y="338" text-anchor="middle" fill="#0f172a" font-size="13" font-weight="700">Q3. 検索・定期バッチ駆動・集計・</text>
+            <text x="240" y="357" text-anchor="middle" fill="#0f172a" font-size="13" font-weight="700">一意性 / FK 制約の対象か？</text>
+            <text x="240" y="376" text-anchor="middle" fill="#475569" font-size="11.5">(評価軸 C1〜C4)</text>
+
+            <!-- J1 -->
+            <rect x="558" y="317" width="336" height="68" rx="10" fill="#f1f5f9" stroke="#64748b" stroke-width="1.6"/>
+            <text x="726" y="346" text-anchor="middle" fill="#1e293b" font-size="13.5" font-weight="700">JSONB 内包のみ</text>
+            <text x="726" y="367" text-anchor="middle" fill="#475569" font-size="12">（原本 JSON 内にのみ値を保持）</text>
+
+            <!-- Q4 -->
+            <rect x="50" y="430" width="380" height="68" rx="10" fill="#ffffff" stroke="#1d4ed8" stroke-width="1.8"/>
+            <text x="240" y="459" text-anchor="middle" fill="#0f172a" font-size="13" font-weight="700">Q4. 多重度が 0..* / 1..*</text>
+            <text x="240" y="479" text-anchor="middle" fill="#0f172a" font-size="13" font-weight="700">またはライフサイクルで累積するか？</text>
+
+            <!-- T3 -->
+            <rect x="558" y="430" width="336" height="68" rx="10" fill="#e0f2fe" stroke="#0284c7" stroke-width="1.6"/>
+            <text x="726" y="459" text-anchor="middle" fill="#0c4a6e" font-size="13.5" font-weight="700">独立子テーブルへ切り出し</text>
+            <text x="726" y="480" text-anchor="middle" fill="#075985" font-size="12">（1:N / N:M 展開・累積履歴分離）</text>
+
+            <!-- Q5 -->
+            <rect x="50" y="538" width="380" height="68" rx="10" fill="#ffffff" stroke="#1d4ed8" stroke-width="1.8"/>
+            <text x="240" y="567" text-anchor="middle" fill="#0f172a" font-size="13" font-weight="700">Q5. 特定アセット固有（OTC FX 等）で</text>
+            <text x="240" y="587" text-anchor="middle" fill="#0f172a" font-size="13" font-weight="700">他アセットではスパースになるか？</text>
+
+            <!-- T4 -->
+            <rect x="558" y="538" width="336" height="68" rx="10" fill="#ede9fe" stroke="#7c3aed" stroke-width="1.6"/>
+            <text x="726" y="567" text-anchor="middle" fill="#4c1d95" font-size="13.5" font-weight="700">スーパー / サブタイプ拡張テーブル</text>
+            <text x="726" y="588" text-anchor="middle" fill="#5b21b6" font-size="12">（Class Table Inheritance：FX 拡張等）</text>
+
+            <!-- T5 -->
+            <rect x="50" y="634" width="380" height="48" rx="10" fill="#fef3c7" stroke="#d97706" stroke-width="1.6"/>
+            <text x="240" y="655" text-anchor="middle" fill="#78350f" font-size="13.5" font-weight="700">親テーブルの物理列へ抽出</text>
+            <text x="240" y="673" text-anchor="middle" fill="#92400e" font-size="11.5">（1:1 スカラ列・B-Tree 索引対象）</text>
+
+            <!-- Edge Labels -->
+            <rect x="466" y="109" width="44" height="22" rx="11" fill="#ecfdf5" stroke="#059669"/>
+            <text x="488" y="124" text-anchor="middle" fill="#047857" font-size="11.5" font-weight="700">Yes</text>
+            <rect x="216" y="165" width="48" height="20" rx="10" fill="#fff1f2" stroke="#e11d48"/>
+            <text x="240" y="179" text-anchor="middle" fill="#be123c" font-size="11" font-weight="700">No</text>
+
+            <rect x="466" y="221" width="44" height="22" rx="11" fill="#ecfdf5" stroke="#059669"/>
+            <text x="488" y="236" text-anchor="middle" fill="#047857" font-size="11.5" font-weight="700">Yes</text>
+            <rect x="216" y="282" width="48" height="20" rx="10" fill="#fff1f2" stroke="#e11d48"/>
+            <text x="240" y="296" text-anchor="middle" fill="#be123c" font-size="11" font-weight="700">No</text>
+
+            <rect x="466" y="337" width="44" height="22" rx="11" fill="#fff1f2" stroke="#e11d48"/>
+            <text x="488" y="352" text-anchor="middle" fill="#be123c" font-size="11.5" font-weight="700">No</text>
+            <rect x="216" y="398" width="48" height="20" rx="10" fill="#ecfdf5" stroke="#059669"/>
+            <text x="240" y="412" text-anchor="middle" fill="#047857" font-size="11" font-weight="700">Yes</text>
+
+            <rect x="466" y="449" width="44" height="22" rx="11" fill="#ecfdf5" stroke="#059669"/>
+            <text x="488" y="464" text-anchor="middle" fill="#047857" font-size="11.5" font-weight="700">Yes</text>
+            <rect x="172" y="505" width="136" height="20" rx="10" fill="#fff1f2" stroke="#e11d48"/>
+            <text x="240" y="519" text-anchor="middle" fill="#be123c" font-size="10.8" font-weight="700">No (1:1 または 0..1)</text>
+
+            <rect x="466" y="557" width="44" height="22" rx="11" fill="#ecfdf5" stroke="#059669"/>
+            <text x="488" y="572" text-anchor="middle" fill="#047857" font-size="11.5" font-weight="700">Yes</text>
+            <rect x="216" y="610" width="48" height="18" rx="9" fill="#fff1f2" stroke="#e11d48"/>
+            <text x="240" y="623" text-anchor="middle" fill="#be123c" font-size="10.8" font-weight="700">No</text>
+          </svg>
+          <div class="diagram-caption">図 5-1：CDM 型・属性に対するテーブル切り出し vs JSONB 内包の決定フロー</div>
+        </div>
+
+        <h3 id="sec-5-3">5.3 永続化区分（5 区分）の定義</h3>
+        <p>本設計では、すべての CDM 型・属性を以下の 5 区分に分類する。</p>
+        <ol>
+          <li><span class="badge badge-core">コア正規化テーブル</span> イベントストア・状態遷移・系譜 DAG・最新投影の中核を担う独立テーブル。</li>
+          <li><span class="badge badge-child">独立子テーブル</span> 親に対し <code>1:N</code> / <code>N:M</code> となる識別子、タイムスタンプ、承認、累積履歴（<code>Reset</code> / <code>TransferState</code> / <code>ObservationEvent</code> / <code>Valuation</code>）、<code>TradeLot</code> / <code>PriceQuantity</code> 等を切り出したテーブル。</li>
+          <li><span class="badge badge-subtype">スーパー／サブタイプ拡張テーブル</span> 汎用的な <code>Payout</code> テーブルを親とし、OTC FX 特有の定型条件（<code>fx_settlement_payout_detail</code>、<code>fx_option_payout_detail</code>、<code>fx_option_barrier</code> 等）を 1:1 / 1:N で拡張するテーブル。将来 IRS / CDS 等を追加する際も同パターンで拡張可能。</li>
+          <li><span class="badge badge-col">親テーブル物理列</span> 親と 1:1 かつ検索・ソート頻度が高いスカラ属性（<code>action</code>、<code>eventDate</code>、<code>effectiveDate</code>、<code>positionState</code>、<code>closedState.state</code>、<code>workflowStatus</code> 等）を親テーブルの物理列として抽出する。</li>
+          <li><span class="badge badge-json">JSONB 内包のみ</span> テーブル・物理列への切り出しを行わず、JSONB 原本内にのみ値を保持する型・属性。</li>
+        </ol>
+      </section>
+
+      <!-- Section 6 -->
+      <section id="sec-6">
+        <h2>6. CDM v6 主要型の永続化分類マトリクス</h2>
+        <p>第 5 章の判断フレームワークに基づき、<code>WorkflowStep</code> に連なる CDM v6 主要型の永続化区分を定義する。すべての型名・属性名は CDM v6 の Rosetta DSL 定義に準拠する。</p>
+
+        <h3 id="sec-6-1">6.1 グループ A：ワークフロー・イベント制御系（<code>cdm.event.workflow</code> / <code>cdm.event.common</code>）</h3>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th style="width: 17%;">CDM 型名</th>
+                <th style="width: 16%;">一次ソース上の役割・多重度</th>
+                <th style="width: 17%;">永続化区分</th>
+                <th style="width: 26%;">主な切り出し対象属性</th>
+                <th style="width: 24%;">判断根拠（評価軸）</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><code>WorkflowStep</code></td>
+                <td>最上位ルート型（<code>[metadata key]</code>）</td>
+                <td><span class="badge badge-core">コア正規化テーブル</span><br><code>workflow_step</code></td>
+                <td><code>workflow_step_id</code>, <code>global_key</code>, <code>previous_workflow_step_id</code>, <code>step_category</code> (Accepted/Position/Proposed/Rejected/Cancelled/NextEvent), <code>action</code>, <code>rejected</code>, <code>recorded_at</code>, <code>payload_jsonb</code></td>
+                <td>全ライフサイクルの起点・追記専用イベントストアの主表（C1, C2）</td>
+              </tr>
+              <tr>
+                <td><code>Identifier</code><br>(<code>WorkflowStep.eventIdentifier</code>)</td>
+                <td>イベント識別子（<code>1..*</code>）</td>
+                <td><span class="badge badge-child">独立子テーブル</span><br><code>workflow_step_identifier</code></td>
+                <td><code>issuer_type</code>, <code>issuer_party_version_id</code> / <code>issuer_string</code>, <code>identifier_value</code>, <code>identifier_scheme</code>, <code>version</code></td>
+                <td>多重度 <code>1..*</code>、バージョン番号による訂正/取消追跡・横断検索に必須（C1, C2, C3）</td>
+              </tr>
+              <tr>
+                <td><code>EventTimestamp</code><br>(<code>WorkflowStep.timestamp</code>)</td>
+                <td>イベント日時群（<code>1..*</code>）</td>
+                <td><span class="badge badge-child">独立子テーブル</span><br><code>workflow_step_timestamp</code></td>
+                <td><code>qualification</code> (<code>EventTimestampQualificationEnum</code>), <code>event_datetime</code> (<code>TIMESTAMPTZ</code>)</td>
+                <td>多重度 <code>1..*</code>、<code>executionDateTime</code> や <code>eventCreationDateTime</code> 等の種別検索（C1, C3）</td>
+              </tr>
+              <tr>
+                <td><code>WorkflowState</code></td>
+                <td>ステータス・コメント・カスタム情報（<code>0..1</code>）</td>
+                <td><span class="badge badge-col">親テーブル物理列</span><br>＋ <span class="badge badge-json">JSONB 内包</span></td>
+                <td><code>workflow_status</code> (<code>WorkflowStatusEnum</code>), <code>warehouse_identity</code> を親列抽出。<code>comment</code>・<code>partyCustomisedWorkflow</code> は JSONB 内包</td>
+                <td>ステータスによるワークフローキュー検索は高頻度（C1）。<code>partyCustomisedWorkflow</code> は非定型 K-V のため JSONB 向き（C5）</td>
+              </tr>
+              <tr>
+                <td><code>WorkflowStepApproval</code></td>
+                <td>当事者別承認記録（<code>0..*</code>）</td>
+                <td><span class="badge badge-child">独立子テーブル</span><br><code>workflow_step_approval</code></td>
+                <td><code>party_version_id</code>, <code>approved</code>, <code>rejected_reason</code>, <code>approval_timestamp</code>, <code>timestamp_qualification</code></td>
+                <td>提案・承認ワークフロー（UC-LC-03）で未承認者抽出に必須（C1, C2, C3）</td>
+              </tr>
+              <tr>
+                <td><code>MessageInformation</code></td>
+                <td>メッセージヘッダ（<code>0..1</code>）</td>
+                <td><span class="badge badge-col">親テーブル物理列</span><br>＋ <span class="badge badge-json">JSONB 内包</span></td>
+                <td><code>message_id</code>（＋<code>sent_by</code>）を親列抽出し重複受信防止（冪等性チェック）に利用。<code>sentTo</code> / <code>copyTo</code> 等は JSONB 内包</td>
+                <td><code>messageId</code> の一意性・冪等性検証に必須（C2）</td>
+              </tr>
+              <tr>
+                <td><code>BusinessEvent</code></td>
+                <td>確定済み取引イベント（<code>0..1</code>、<code>EventInstruction</code> 継承）</td>
+                <td><span class="badge badge-core">コア正規化テーブル</span><br><code>business_event</code></td>
+                <td><code>global_key</code>, <code>event_qualifier</code>, <code>intent</code> (<code>EventIntentEnum</code>), <code>corporate_action_intent</code>, <code>event_date</code>, <code>effective_date</code>, <code>package_id</code></td>
+                <td>業務日軸検索（UC-QR-02）、イベント種別集計、取引状態遷移のハブ（C1, C2）</td>
+              </tr>
+              <tr>
+                <td><code>CounterpartyPositionBusinessEvent</code></td>
+                <td>確定済みポジションイベント（<code>0..1</code>）</td>
+                <td><span class="badge badge-core">コア正規化テーブル</span><br><code>position_business_event</code></td>
+                <td><code>intent</code> (<code>PositionEventIntentEnum</code>), <code>corporate_action_intent</code>, <code>event_date</code>, <code>effective_date</code>, <code>package_id</code></td>
+                <td><code>BusinessEvent</code> と排他・属性体系が異なるため独立テーブル化（C1, C5）</td>
+              </tr>
+              <tr>
+                <td><code>EventInstruction</code><br>(<code>proposedEvent</code> / <code>nextEvent</code>)</td>
+                <td>提案・予定イベント指示（<code>0..1</code>）</td>
+                <td><span class="badge badge-col">親テーブル物理列</span><br>＋ <span class="badge badge-json">JSONB 内包</span></td>
+                <td>提案の <code>intent</code> / <code>event_date</code> / <code>effective_date</code> を要約列抽出し、<code>instruction</code> 詳細（<code>PrimitiveInstruction</code> 群）は JSONB 内包</td>
+                <td>承認待ち一覧のフィルタは要約列で十分。指示詳細は確定実行時に CDM エンジンへ渡す（C1, C5）</td>
+              </tr>
+              <tr>
+                <td><code>Instruction</code> / <code>PrimitiveInstruction</code></td>
+                <td>プリミティブ命令（<code>0..*</code>）</td>
+                <td><span class="badge badge-child">独立子テーブル</span>（遷移エッジ部）<br>＋ <span class="badge badge-json">JSONB 内包</span></td>
+                <td><code>before TradeState</code> 参照および適用プリミティブ種別（<code>execution</code> / <code>quantityChange</code> / <code>split</code> 等）を遷移テーブルへ記録。各命令の細部は JSONB 内包</td>
+                <td><code>before</code> 参照は多対多 DAG 構築に必須（C2）。13 種の <code>PrimitiveInstruction</code> 詳細の全面正規化は過剰（C5, C6）</td>
+              </tr>
+              <tr>
+                <td><code>CreditLimitInformation</code> / <code>LimitApplicableExtended</code></td>
+                <td>清算与信枠情報（<code>0..1</code>）</td>
+                <td><span class="badge badge-json">JSONB 内包のみ</span></td>
+                <td>なし</td>
+                <td>本要件のライフサイクル・定期イベント処理の主検索対象外であり、構造が清算機関依存でスパース（C5, C6）</td>
+              </tr>
+              <tr>
+                <td><code>Lineage</code><br>(<code>WorkflowStep.lineage</code>)</td>
+                <td>非推奨の旧系譜属性（<code>[deprecated]</code>）</td>
+                <td><span class="badge badge-json">JSONB 内包のみ</span></td>
+                <td>なし</td>
+                <td>CDM v6 で <code>[deprecated]</code> であり、<code>previousWorkflowStep</code> と遷移エッジテーブルで代替する</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h3 id="sec-6-2">6.2 グループ B：取引・ポジション状態系（<code>cdm.event.common</code> / <code>cdm.event.position</code>）</h3>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th style="width: 17%;">CDM 型名</th>
+                <th style="width: 16%;">一次ソース上の役割・多重度</th>
+                <th style="width: 17%;">永続化区分</th>
+                <th style="width: 26%;">主な切り出し対象属性</th>
+                <th style="width: 24%;">判断根拠（評価軸）</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><code>TradeState</code>（履歴）</td>
+                <td>イベント後の不変取引状態（<code>BusinessEvent.after</code> <code>0..*</code>、<code>[metadata key]</code>）</td>
+                <td><span class="badge badge-core">コア正規化テーブル</span><br><code>trade_state</code></td>
+                <td><code>trade_state_id</code>, <code>global_key</code>, <code>business_event_id</code>, <code>trade_date</code>, <code>position_state</code>, <code>closed_state</code>, <code>closed_activity_date</code>, <code>closed_effective_date</code>, <code>closed_last_payment_date</code>, <code>product_id</code>, <code>trade_state_jsonb</code>（方式選択に依存）</td>
+                <td>状態遷移スナップショットの単位。DAG ノードおよび履歴参照の基盤（C1, C2）</td>
+              </tr>
+              <tr>
+                <td><code>TradeState</code>（最新投影）</td>
+                <td>現在有効な最新取引状態（Projection）</td>
+                <td><span class="badge badge-core">コア正規化テーブル</span><br><code>current_trade_state</code></td>
+                <td><code>logical_trade_id</code>, <code>latest_trade_state_id</code>, <code>latest_workflow_step_id</code>, <code>position_state</code>, <code>closed_state</code>, <code>asset_class</code>, <code>product_qualifier</code>, <code>trade_date</code>, <code>effective_date</code>, <code>termination_date</code>, <code>updated_at</code></td>
+                <td>CQRS Read Model。画面照会・定期バッチの高速起点（C1, C4）</td>
+              </tr>
+              <tr>
+                <td><code>State</code> / <code>ClosedState</code></td>
+                <td>取引状態・クローズ事由（<code>0..1</code>）</td>
+                <td><span class="badge badge-col">親テーブル物理列</span><br>(<code>trade_state</code> / <code>current_trade_state</code> 内)</td>
+                <td><code>position_state</code> (<code>PositionStatusEnum</code>), <code>closed_state</code> (<code>ClosedStateEnum</code>), <code>closed_activity_date</code>, <code>closed_effective_date</code>, <code>closed_last_payment_date</code></td>
+                <td><code>TradeState</code> と 1:1 であり、アクティブ取引抽出の主要なフィルタ条件（C1, C4）</td>
+              </tr>
+              <tr>
+                <td><code>TradeIdentifier</code></td>
+                <td>取引識別子（UTI / USI / 社内ID、<code>1..*</code>）</td>
+                <td><span class="badge badge-child">独立子テーブル</span><br><code>trade_identifier</code></td>
+                <td><code>trade_state_id</code> / <code>logical_trade_id</code>, <code>identifier_type</code> (<code>TradeIdentifierTypeEnum</code>), <code>issuer_party_version_id</code> / <code>issuer_string</code>, <code>identifier_value</code>, <code>identifier_scheme</code>, <code>version</code></td>
+                <td>多重度 <code>1..*</code>、外部照合・検索の主要なキー（C1, C2, C3）</td>
+              </tr>
+              <tr>
+                <td><code>Counterparty</code> / <code>PartyRole</code> / <code>AncillaryParty</code></td>
+                <td>取引当事者・役割マッピング（<code>2..2</code> / <code>0..*</code>）</td>
+                <td><span class="badge badge-child">独立子テーブル</span><br><code>trade_party_role</code></td>
+                <td><code>trade_state_id</code>, <code>party_version_id</code>, <code>party_master_id</code>, <code>counterparty_role</code> (<code>Party1</code>/<code>Party2</code>), <code>party_role</code> (<code>PartyRoleEnum</code>), <code>ancillary_role</code> (<code>AncillaryRoleEnum</code>), <code>ownership_party_version_id</code></td>
+                <td>当事者別取引検索・名寄せおよび完全マスタ正規化の結合テーブル（C1, C2, C3）</td>
+              </tr>
+              <tr>
+                <td><code>ExecutionDetails</code></td>
+                <td>約定形態・執行場・パッケージ参照（<code>0..1</code>）</td>
+                <td><span class="badge badge-col">親テーブル物理列</span><br>＋ <span class="badge badge-json">JSONB 内包</span></td>
+                <td><code>execution_type</code> (<code>ExecutionTypeEnum</code>), <code>execution_venue_id</code>, <code>package_list_id</code> を親列抽出。<code>IdentifiedList.componentId</code> 詳細は必要に応じ子テーブルまたは JSONB</td>
+                <td>パッケージ取引のグルーピング・執行形態フィルタに有用（C1, C2）</td>
+              </tr>
+              <tr>
+                <td><code>ContractDetails</code></td>
+                <td>法的契約紐付け・準拠法（<code>0..1</code>）</td>
+                <td><span class="badge badge-child">独立子テーブル</span><br><code>trade_legal_agreement</code> ＋ 親列</td>
+                <td><code>governing_law</code>（親列）、<code>legal_agreement_version_id</code>（<code>documentation</code> <code>0..*</code> の結合テーブル）</td>
+                <td>完全マスタ正規化方針に従い <code>LegalAgreement</code> マスタへ FK 参照（C2, C3）</td>
+              </tr>
+              <tr>
+                <td><code>CounterpartyPositionState</code> / <code>CounterpartyPosition</code> / <code>PositionIdentifier</code></td>
+                <td>ポジション状態・識別子（<code>0..*</code>）</td>
+                <td><span class="badge badge-core">コア正規化テーブル</span><br>＋ <span class="badge badge-child">独立子テーブル</span></td>
+                <td><code>position_state_id</code>, <code>global_key</code>, <code>position_business_event_id</code>, <code>open_datetime</code>, <code>position_state</code>, <code>closed_state</code>, <code>position_identifier</code>, 構成取引参照 (<code>tradeReference</code>)</td>
+                <td>スコープに含まれるポジション系イベントの状態管理・検索に必須（C1, C2, C3）</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h3 id="sec-6-3">6.3 グループ C：累積履歴リスト系（<code>TradeState</code> 配下の肥大化対策・定期イベント中核）</h3>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th style="width: 17%;">CDM 型名</th>
+                <th style="width: 16%;">一次ソース上の役割・多重度</th>
+                <th style="width: 17%;">永続化区分</th>
+                <th style="width: 26%;">主な切り出し対象属性</th>
+                <th style="width: 24%;">判断根拠（評価軸）</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><code>Reset</code><br>(<code>TradeState.resetHistory</code>)</td>
+                <td>フィキシング・リセット履歴（<code>0..*</code>、<code>[metadata key]</code>）</td>
+                <td><span class="badge badge-child">独立子テーブル</span><br><code>trade_reset</code></td>
+                <td><code>reset_id</code>, <code>global_key</code>, <code>logical_trade_id</code>, <code>created_by_workflow_step_id</code>, <code>payout_global_key</code>, <code>reset_date</code>, <code>rate_record_date</code>, <code>reset_value</code>, <code>reset_price_type</code>, <code>unit_currency</code>, <code>per_unit_currency</code></td>
+                <td>NDF / NDO フィキシング実績管理・未フィキシング検出（UC-PE-01）に必須（C1, C3, C4）</td>
+              </tr>
+              <tr>
+                <td><code>Observation</code><br>(<code>Reset.observations</code>)</td>
+                <td>市場観測レート実績（<code>1..*</code>、<code>[rootType]</code>・<code>[metadata key]</code>）</td>
+                <td><span class="badge badge-child">独立子テーブル</span><br><code>market_observation</code> ＋ 結合表</td>
+                <td><code>observation_id</code>, <code>global_key</code>, <code>observation_date</code>, <code>observation_time</code>, <code>observable_code</code>（通貨ペア等）, <code>information_source</code>, <code>observed_value</code></td>
+                <td>複数取引の <code>Reset</code> から再利用される <code>[rootType]</code> のため独立テーブル化が自然（C2, C3）</td>
+              </tr>
+              <tr>
+                <td><code>TransferState</code> / <code>Transfer</code><br>(<code>TradeState.transferHistory</code>)</td>
+                <td>キャッシュフロー・資産移転と決済状態（<code>0..*</code>、<code>[rootType]</code>・<code>[metadata key]</code>）</td>
+                <td><span class="badge badge-child">独立子テーブル</span><br><code>trade_transfer</code></td>
+                <td><code>transfer_state_id</code>, <code>global_key</code>, <code>logical_trade_id</code>, <code>created_by_workflow_step_id</code>, <code>transfer_status</code> (<code>TransferStatusEnum</code>), <code>settlement_date</code>, <code>quantity_amount</code>, <code>asset_currency</code>, <code>payer_party_version_id</code>, <code>payer_account_version_id</code>, <code>receiver_party_version_id</code>, <code>receiver_account_version_id</code>, <code>transfer_expression_type</code>, <code>settlement_origin_payout_key</code>, <code>reset_origin_id</code></td>
+                <td>決済日到来抽出・決済ステータス管理・当事者/通貨別ネッティング集計（UC-PE-02）の中核（C1, C2, C3, C4）</td>
+              </tr>
+              <tr>
+                <td><code>ObservationEvent</code><br>(<code>TradeState.observationHistory</code>)</td>
+                <td>クレジットイベント・コーポレートアクション等の観測履歴（<code>0..*</code>）</td>
+                <td><span class="badge badge-child">独立子テーブル</span><br><code>trade_observation_event</code></td>
+                <td><code>observation_event_id</code>, <code>logical_trade_id</code>, <code>created_by_workflow_step_id</code>, <code>event_category</code> (CreditEvent / CorporateAction), <code>event_type</code>, <code>event_date</code> (<code>eventDeterminationDate</code> / <code>exDate</code>), <code>pay_date</code> / <code>auction_date</code>, <code>detail_jsonb</code></td>
+                <td>履歴 4 種の独立テーブル化方針および将来のマルチアセット観測管理に対応（C1, C3, C5）</td>
+              </tr>
+              <tr>
+                <td><code>Valuation</code><br>(<code>TradeState.valuationHistory</code>)</td>
+                <td>時価評価履歴（<code>0..*</code>）</td>
+                <td><span class="badge badge-child">独立子テーブル</span><br><code>trade_valuation</code></td>
+                <td><code>valuation_id</code>, <code>logical_trade_id</code>, <code>created_by_workflow_step_id</code>, <code>valuation_timestamp</code>, <code>amount_value</code>, <code>amount_currency</code>, <code>method</code> (<code>ValuationTypeEnum</code>), <code>source</code> (<code>ValuationSourceEnum</code>), <code>delta</code>, <code>valuation_timing</code></td>
+                <td>日次等で高頻度に累積するため独立テーブル化が必須（C1, C3）</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="callout callout-note">
+          <div class="callout-title">NOTE</div>
+          <p>グループ C の独立子テーブル（<code>trade_reset</code>、<code>trade_transfer</code>、<code>trade_observation_event</code>、<code>trade_valuation</code>）では、各イベントで新たに追加・状態遷移した要素を「イベント単位の差分レコード」として追記しつつ、<code>logical_trade_id</code> で最新取引へ紐付ける設計とすることで、<code>TradeState</code> 更新ごとの重複行発生を防ぎ、累積肥大化を回避する。</p>
+        </div>
+
+        <h3 id="sec-6-4">6.4 グループ D：商品・経済条件・OTC FX 拡張系（<code>cdm.product.template</code> / <code>cdm.product.common.settlement</code> / <code>cdm.observable.asset</code>）</h3>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th style="width: 17%;">CDM 型名</th>
+                <th style="width: 16%;">一次ソース上の役割・多重度</th>
+                <th style="width: 17%;">永続化区分</th>
+                <th style="width: 26%;">主な切り出し対象属性</th>
+                <th style="width: 24%;">判断根拠（評価軸）</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><code>NonTransferableProduct</code> / <code>ProductTaxonomy</code></td>
+                <td>商品定義・分類（<code>1..1</code> / <code>0..*</code>、<code>[metadata key]</code>）</td>
+                <td><span class="badge badge-core">コア正規化テーブル</span><br><code>product_definition</code><br>＋ 子表 <code>product_taxonomy</code></td>
+                <td><code>product_id</code>, <code>global_key</code>, <code>primary_asset_class</code> (<code>AssetClassEnum</code>), <code>product_qualifier</code> (<code>Qualify_ForeignExchange_*</code> 等), <code>taxonomy_source</code>, <code>taxonomy_value</code>, <code>non_standardised_terms</code>, <code>product_jsonb</code></td>
+                <td>資産クラス・商品種別フィルタおよび商品定義の再利用・識別（C1, C2）</td>
+              </tr>
+              <tr>
+                <td><code>EconomicTerms</code></td>
+                <td>契約経済条件（<code>1..1</code>）</td>
+                <td><span class="badge badge-col">親テーブル物理列</span><br>＋ <span class="badge badge-json">JSONB 内包</span></td>
+                <td><code>effective_date</code>（調整後/未調整の代表日付）、<code>termination_date</code>、<code>non_standardised_terms</code> を列抽出。<code>dateAdjustments</code> / <code>terminationProvision</code> / <code>calculationAgent</code> 詳細は JSONB 内包</td>
+                <td>契約開始日・満期日は全アセット共通の検索キー（C1, C4）。詳細な営業日調整規則等は JSONB 向き（C5）</td>
+              </tr>
+              <tr>
+                <td><code>TradeLot</code> / <code>PriceQuantity</code></td>
+                <td>取引ロット・価格・数量・観測対象（<code>1..*</code> / <code>1..*</code>）</td>
+                <td><span class="badge badge-child">独立子テーブル</span><br><code>trade_lot</code>, <code>trade_price_quantity</code></td>
+                <td><code>lot_identifier</code>, <code>pq_global_key</code>, <code>location_key</code>, <code>quantity_value</code>, <code>quantity_unit_currency</code>, <code>price_value</code>, <code>price_type</code> (<code>ExchangeRate</code> / <code>CashPrice</code> / <code>InterestRate</code> 等), <code>price_unit_currency</code>, <code>price_per_unit_currency</code>, <code>spot_rate_base</code>, <code>forward_points</code> (<code>PriceComposite</code>), <code>effective_date</code></td>
+                <td>FX の 2 通貨想定元本・約定為替レート・スワップポイント・オプションプレミアム等の検索・集計に必須（C1, C3, C4）</td>
+              </tr>
+              <tr>
+                <td><code>Payout</code>（基底）</td>
+                <td>各種ペイアウトの選択基底（<code>1..*</code>、<code>[metadata key]</code>）</td>
+                <td><span class="badge badge-core">コア正規化テーブル</span><br><code>product_payout</code></td>
+                <td><code>payout_id</code>, <code>product_id</code>, <code>global_key</code>, <code>leg_index</code>, <code>payout_type</code> (<code>SettlementPayout</code> / <code>OptionPayout</code> / <code>InterestRatePayout</code> / <code>PerformancePayout</code> 等), <code>payer_role</code>, <code>receiver_role</code>, <code>settlement_type</code>, <code>settlement_currency</code></td>
+                <td>スーパークラス表として全アセット OTC デリバティブへ統一対応（C1, C5）</td>
+              </tr>
+              <tr>
+                <td><code>SettlementPayout</code> ＋ <code>CashSettlementTerms</code> / <code>FxFixingDate</code><br>(FX Forward / Swap / NDF / NDS)</td>
+                <td>FX 決済レグ・NDF フィキシング条件</td>
+                <td><span class="badge badge-subtype">サブタイプ拡張テーブル</span><br><code>fx_settlement_payout_detail</code></td>
+                <td><code>payout_id</code> (PK/FK), <code>leg_role</code> (Single/Near/Far), <code>currency1</code>, <code>currency2</code>, <code>quote_basis</code>, <code>value_date</code> / <code>settlement_date</code>, <code>is_non_deliverable</code>, <code>settlement_currency</code>, <code>fx_fixing_date</code>, <code>fx_rate_source_provider</code>, <code>fx_rate_source_page</code></td>
+                <td>FX Forward / Swap のバリューデート抽出、NDF / NDS のフィキシング日抽出（UC-PE-01, 02）を高速実行（C1, C4, C5）</td>
+              </tr>
+              <tr>
+                <td><code>OptionPayout</code> ＋ <code>ExerciseTerms</code> / <code>OptionStrike</code><br>(FX Vanilla / NDO / Barrier / Digital / Asian)</td>
+                <td>FX オプション条件・行使・ストライク</td>
+                <td><span class="badge badge-subtype">サブタイプ拡張テーブル</span><br><code>fx_option_payout_detail</code></td>
+                <td><code>payout_id</code> (PK/FK), <code>buyer_role</code>, <code>seller_role</code>, <code>option_type</code> (<code>Put</code>/<code>Call</code>/<code>Straddle</code> 等), <code>exercise_style</code> (<code>European</code>/<code>American</code>/<code>Bermuda</code>), <code>expiration_date</code>, <code>expiration_time</code>, <code>expiration_business_center</code>, <code>commencement_date</code>, <code>strike_rate</code>, <code>strike_currency1</code>, <code>strike_currency2</code>, <code>is_non_deliverable</code>, <code>fx_fixing_date</code>, <code>settlement_date</code>, <code>has_barrier</code>, <code>has_averaging</code></td>
+                <td>FX オプション満期到来抽出（UC-PE-03）、ストライク・スタイル別管理、NDO フィキシング抽出に必須（C1, C4, C5）</td>
+              </tr>
+              <tr>
+                <td><code>OptionFeature</code><br>(<code>Knock</code> / <code>Barrier</code> / <code>TriggerEvent</code> / <code>Trigger</code>)</td>
+                <td>FX バリア・ノックイン/アウト・デジタル条件（<code>0..*</code>）</td>
+                <td><span class="badge badge-subtype">サブタイプ子テーブル</span><br><code>fx_option_barrier</code></td>
+                <td><code>barrier_id</code>, <code>payout_id</code> (FK), <code>feature_kind</code> (<code>KnockIn</code> / <code>KnockOut</code> / <code>BarrierCap</code> / <code>BarrierFloor</code>), <code>trigger_type</code> (<code>EqualOrLess</code> / <code>EqualOrGreater</code> 等), <code>trigger_time_type</code>, <code>trigger_level_1</code>, <code>trigger_level_2</code>, <code>observation_start_date</code>, <code>observation_end_date</code>, <code>rebate_amount</code>, <code>rebate_currency</code></td>
+                <td>バリア監視バッチ（UC-PE-04）で通貨ペア・水準別にアクティブなバリアを高速抽出するため（C1, C3, C4）</td>
+              </tr>
+              <tr>
+                <td>その他アセットの <code>Payout</code> 固有詳細<br>(<code>InterestRatePayout</code>, <code>CreditDefaultPayout</code>, <code>PerformancePayout</code>, <code>CommodityPayout</code>, <code>AssetPayout</code>)</td>
+                <td>他アセット OTC デリバティブの細部</td>
+                <td><span class="badge badge-json">JSONB 内包のみ</span><br>（将来拡張時は同サブタイプ表を追加）</td>
+                <td>基底 <code>product_payout</code> と <code>trade_price_quantity</code> のみ切り出し、各ペイアウト固有詳細（計算期間スケジュール、クレジットイベント条項等）は JSONB 内包</td>
+                <td>主スコープ外アセットの過剰正規化を防ぎつつ、<code>product_payout</code> 配下へのサブタイプ表追加で自然拡張可能（C5, C6）</td>
+              </tr>
+              <tr>
+                <td>複雑な補助スケジュール・条項<br>(<code>AdjustableOrRelativeDate</code> の元オフセット、<code>CalculationSchedule</code>、<code>Asian</code>、<code>FxFeature</code>、<code>PhysicalSettlementTerms</code>、<code>Collateral</code> 等)</td>
+                <td>深いネストを持つ非定型・低頻度属性</td>
+                <td><span class="badge badge-json">JSONB 内包のみ</span></td>
+                <td>なし（確定済み・代表日付のみ親/サブタイプ列へ抽出）</td>
+                <td>構造分岐が深く正規化コストが高い。詳細計算・検証時は原本 JSONB を利用する（C5, C6）</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h3 id="sec-6-5">6.5 グループ E：バージョン付きイミュータブルマスタ系（<code>cdm.base.staticdata.party</code> / <code>cdm.legaldocumentation.common</code>）</h3>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th style="width: 17%;">CDM 型名</th>
+                <th style="width: 16%;">一次ソース上の役割・多重度</th>
+                <th style="width: 17%;">永続化区分</th>
+                <th style="width: 26%;">主な切り出し対象属性</th>
+                <th style="width: 24%;">判断根拠（評価軸）</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><code>Party</code> / <code>PartyIdentifier</code></td>
+                <td>当事者・LEI 等の識別子（<code>[metadata key]</code>）</td>
+                <td><span class="badge badge-master">バージョン付きマスタ</span><br><code>party_master</code>, <code>party_version</code>, <code>party_identifier</code></td>
+                <td><code>party_master_id</code>, <code>party_version_id</code>, <code>global_key</code>, <code>party_name</code>, <code>effective_from</code>, <code>effective_to</code>, <code>is_current</code>；子表に <code>identifier_value</code> (LEI 等), <code>identifier_type</code>, <code>scheme</code>。<code>businessUnit</code> / <code>person</code> / <code>contactInformation</code> 詳細は JSONB 内包</td>
+                <td>完全マスタ正規化＋過去イベント不変性（SCD Type 2）の両立（C1, C2, C3）</td>
+              </tr>
+              <tr>
+                <td><code>Account</code></td>
+                <td>口座情報（<code>[metadata key]</code>）</td>
+                <td><span class="badge badge-master">バージョン付きマスタ</span><br><code>account_master</code>, <code>account_version</code></td>
+                <td><code>account_master_id</code>, <code>account_version_id</code>, <code>global_key</code>, <code>party_version_id</code>, <code>account_number</code>, <code>account_name</code>, <code>account_type</code>, <code>beneficiary_party_version_id</code>, <code>servicing_party_version_id</code>, <code>effective_from</code>, <code>effective_to</code>, <code>is_current</code></td>
+                <td>決済口座（<code>Transfer.payerReceiver</code>）や取引口座の正規化参照と改定履歴保持（C1, C2）</td>
+              </tr>
+              <tr>
+                <td><code>LegalAgreement</code> / <code>LegalAgreementIdentification</code></td>
+                <td>ISDA Master Agreement / CSA 等の法的契約（<code>[rootType]</code>・<code>[metadata key]</code>）</td>
+                <td><span class="badge badge-master">バージョン付きマスタ</span><br><code>legal_agreement_master</code>, <code>legal_agreement_version</code></td>
+                <td><code>legal_agreement_master_id</code>, <code>legal_agreement_version_id</code>, <code>global_key</code>, <code>agreement_type</code>, <code>csa_type</code>, <code>publisher</code>, <code>vintage</code>, <code>governing_law</code>, <code>agreement_date</code>, <code>effective_date</code>, <code>party1_version_id</code>, <code>party2_version_id</code>, <code>agreement_terms_jsonb</code></td>
+                <td><code>ContractDetails.documentation</code> からの正規化 FK 参照。詳細な <code>AgreementTerms</code> / Elections は構造が極めて複雑なため JSONB 内包（C2, C5）</td>
+              </tr>
+              <tr>
+                <td><code>LegalEntity</code></td>
+                <td>執行場（<code>ExecutionDetails.executionVenue</code>）やインデックス提供者等の法人</td>
+                <td><span class="badge badge-master">バージョン付きマスタ</span><br>（<code>party_master</code> / <code>legal_entity_version</code> に統合または独立）</td>
+                <td><code>legal_entity_version_id</code>, <code>global_key</code>, <code>name</code>, <code>entity_identifier</code> (LEI / MIC 等)</td>
+                <td>執行場・発行体等の法人参照の正規化（C2）</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- Section 7 -->
+      <section id="sec-7">
+        <h2>7. 概念 ER モデル設計（要件レベル）</h2>
+
+        <h3 id="sec-7-1">7.1 ドメイン領域分割</h3>
+        <p>概念 ER モデルは以下の 5 領域で構成する。</p>
+        <ol>
+          <li><strong>イベントストア＆系譜 DAG 領域</strong>: <code>workflow_step</code>、<code>business_event</code>、<code>position_business_event</code>、<code>trade_state</code>、<code>trade_state_transition</code>、<code>workflow_step_identifier</code>、<code>workflow_step_timestamp</code>、<code>workflow_step_approval</code></li>
+          <li><strong>最新状態 Projection 領域</strong>: <code>current_trade_state</code>、<code>current_position_state</code>、<code>trade_identifier</code>、<code>trade_party_role</code>、<code>trade_legal_agreement</code></li>
+          <li><strong>履歴イベント明細領域</strong>: <code>trade_reset</code>、<code>market_observation</code>、<code>trade_transfer</code>、<code>trade_observation_event</code>、<code>trade_valuation</code></li>
+          <li><strong>商品・OTC FX 拡張領域</strong>: <code>product_definition</code>、<code>product_taxonomy</code>、<code>product_payout</code>、<code>fx_settlement_payout_detail</code>、<code>fx_option_payout_detail</code>、<code>fx_option_barrier</code>、<code>trade_lot</code>、<code>trade_price_quantity</code></li>
+          <li><strong>バージョン付きイミュータブルマスタ領域</strong>: <code>party_master</code> / <code>party_version</code> / <code>party_identifier</code>、<code>account_master</code> / <code>account_version</code>、<code>legal_agreement_master</code> / <code>legal_agreement_version</code></li>
+        </ol>
+
+        <h3 id="sec-7-2">7.2 概念 ER 図</h3>
+
+        <h4>図 7-1：イベントストア・状態遷移 DAG・最新投影・履歴・マスタ関連図</h4>
+        <div class="diagram-card">
+          <svg viewBox="0 0 1160 760" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="イベントストア・状態遷移 DAG・最新投影・履歴・マスタ関連 ER 図">
+            <defs>
+              <marker id="er-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+                <path d="M 0 1 L 10 5 L 0 9 z" fill="#475569"/>
+              </marker>
+            </defs>
+
+            <!-- Domain Zone Backgrounds -->
+            <rect x="12" y="12" width="600" height="442" rx="12" fill="#eff6ff" stroke="#93c5fd" stroke-width="1.4"/>
+            <text x="28" y="34" fill="#1e40af" font-size="12.5" font-weight="700">1. イベントストア ＆ 系譜 DAG 領域（Append-Only）</text>
+
+            <rect x="628" y="12" width="520" height="270" rx="12" fill="#fefce8" stroke="#fde047" stroke-width="1.4"/>
+            <text x="644" y="34" fill="#854d0e" font-size="12.5" font-weight="700">2. 最新状態 Projection ＆ 関連参照領域</text>
+
+            <rect x="628" y="298" width="520" height="250" rx="12" fill="#f0f9ff" stroke="#7dd3fc" stroke-width="1.4"/>
+            <text x="644" y="320" fill="#0369a1" font-size="12.5" font-weight="700">3. 累積履歴イベント明細領域（イベント差分追記）</text>
+
+            <rect x="12" y="470" width="600" height="278" rx="12" fill="#ecfdf5" stroke="#6ee7b7" stroke-width="1.4"/>
+            <text x="28" y="492" fill="#065f46" font-size="12.5" font-weight="700">5. バージョン付きイミュータブルマスタ領域（SCD Type 2）</text>
+
+            <!-- Zone 4 Pointer -->
+            <rect x="628" y="564" width="520" height="184" rx="12" fill="#faf5ff" stroke="#d8b4fe" stroke-width="1.4" stroke-dasharray="5 4"/>
+            <text x="644" y="588" fill="#6b21a8" font-size="12.5" font-weight="700">4. 商品・OTC FX 拡張領域（詳細は図 7-2 参照）</text>
+            <rect x="660" y="610" width="210" height="42" rx="7" fill="#ffffff" stroke="#7c3aed" stroke-width="1.5"/>
+            <text x="765" y="635" text-anchor="middle" fill="#4c1d95" font-size="12" font-weight="700">PRODUCT_DEFINITION</text>
+            <rect x="900" y="610" width="215" height="42" rx="7" fill="#ffffff" stroke="#7c3aed" stroke-width="1.5"/>
+            <text x="1007" y="635" text-anchor="middle" fill="#4c1d95" font-size="12" font-weight="700">TRADE_LOT / PRICE_QTY</text>
+            <text x="660" y="680" fill="#581c87" font-size="11.5">• TRADE_STATE (N) ──▶ (1) PRODUCT_DEFINITION</text>
+            <text x="660" y="700" fill="#581c87" font-size="11.5">• TRADE_STATE (1) ──▶ (1..*) TRADE_LOT ──▶ TRADE_PRICE_QUANTITY</text>
+            <text x="660" y="720" fill="#581c87" font-size="11.5">• PRODUCT_PAYOUT ──▶ FX_SETTLEMENT / FX_OPTION / FX_BARRIER</text>
+
+            <!-- Connectors Zone 1 -->
+            <!-- WORKFLOW_STEP self-loop -->
+            <path d="M 100 56 C 100 32, 180 32, 180 56" fill="none" stroke="#1d4ed8" stroke-width="1.5" marker-end="url(#er-arrow)"/>
+            <text x="206" y="49" fill="#1e40af" font-size="10.2">previous_workflow_step (0..1)</text>
+
+            <!-- WORKFLOW_STEP to child tables -->
+            <line x1="255" y1="74" x2="368" y2="74" stroke="#475569" stroke-width="1.4"/>
+            <text x="310" y="68" text-anchor="middle" fill="#475569" font-size="10">1 : 1..*</text>
+
+            <path d="M 255 86 L 308 86 L 308 130 L 368 130" fill="none" stroke="#475569" stroke-width="1.4"/>
+            <text x="338" y="124" text-anchor="middle" fill="#475569" font-size="10">1 : 1..*</text>
+
+            <path d="M 255 96 L 292 96 L 292 186 L 368 186" fill="none" stroke="#475569" stroke-width="1.4"/>
+            <text x="334" y="180" text-anchor="middle" fill="#475569" font-size="10">1 : 0..*</text>
+
+            <!-- WORKFLOW_STEP to BUSINESS_EVENT & POSITION_BUSINESS_EVENT -->
+            <line x1="125" y1="106" x2="125" y2="178" stroke="#1d4ed8" stroke-width="1.6"/>
+            <text x="155" y="146" fill="#1e40af" font-size="10.2">1 : 0..1</text>
+
+            <path d="M 75 106 L 75 376 L 106 376" fill="none" stroke="#1d4ed8" stroke-width="1.4"/>
+            <text x="30" y="295" fill="#1e40af" font-size="10">1 : 0..1</text>
+
+            <!-- BUSINESS_EVENT to TRADE_STATE & TRANSITION -->
+            <line x1="175" y1="224" x2="175" y2="274" stroke="#1d4ed8" stroke-width="1.6"/>
+            <text x="208" y="254" fill="#1e40af" font-size="10">produces (1:0..*)</text>
+
+            <path d="M 255 202 L 325 202 L 325 296 L 368 296" fill="none" stroke="#1d4ed8" stroke-width="1.4"/>
+            <text x="358" y="268" text-anchor="middle" fill="#1e40af" font-size="10">records DAG (1:0..*)</text>
+
+            <!-- TRADE_STATE to TRANSITION (before/after) -->
+            <line x1="278" y1="296" x2="368" y2="296" stroke="#1d4ed8" stroke-width="1.6"/>
+            <text x="323" y="289" text-anchor="middle" fill="#1e40af" font-size="9.8">before / after</text>
+            <text x="323" y="311" text-anchor="middle" fill="#1e40af" font-size="9.8">(1 : 0..*)</text>
+
+            <!-- POSITION_BUSINESS_EVENT to POSITION_STATE -->
+            <line x1="312" y1="398" x2="368" y2="398" stroke="#1d4ed8" stroke-width="1.5"/>
+            <text x="340" y="391" text-anchor="middle" fill="#1e40af" font-size="9.8">1:0..*</text>
+
+            <!-- Cross-Zone Connectors: Zone 1 -> Zone 2 -->
+            <path d="M 225 322 L 225 344 L 598 344 L 598 92 L 656 92" fill="none" stroke="#a16207" stroke-width="1.6"/>
+            <text x="626" y="84" text-anchor="middle" fill="#854d0e" font-size="10">1 : 1 (latest)</text>
+
+            <path d="M 598 158 L 906 158" fill="none" stroke="#a16207" stroke-width="1.3" stroke-dasharray="4 3"/>
+            <text x="872" y="151" fill="#854d0e" font-size="9.8">1:0..*</text>
+
+            <path d="M 598 214 L 906 214" fill="none" stroke="#a16207" stroke-width="1.3" stroke-dasharray="4 3"/>
+            <text x="872" y="207" fill="#854d0e" font-size="9.8">1:0..*</text>
+
+            <path d="M 578 398 L 614 398 L 614 238 L 656 238" fill="none" stroke="#a16207" stroke-width="1.5"/>
+            <text x="635" y="231" text-anchor="middle" fill="#854d0e" font-size="9.8">1 : 1</text>
+
+            <!-- CURRENT_TRADE_STATE to TRADE_IDENTIFIER & Zone 3 -->
+            <line x1="858" y1="92" x2="906" y2="92" stroke="#a16207" stroke-width="1.5"/>
+            <text x="882" y="85" text-anchor="middle" fill="#854d0e" font-size="9.8">1:1..*</text>
+
+            <path d="M 756 116 L 756 340" fill="none" stroke="#0284c7" stroke-width="1.5"/>
+            <text x="790" y="294" fill="#0369a1" font-size="10">accumulates (1:0..*)</text>
+
+            <!-- Zone 3 internal lines -->
+            <line x1="846" y1="364" x2="914" y2="364" stroke="#0284c7" stroke-width="1.4"/>
+            <text x="880" y="357" text-anchor="middle" fill="#0369a1" font-size="9.8">N : M</text>
+
+            <line x1="756" y1="386" x2="756" y2="416" stroke="#0284c7" stroke-width="1.4"/>
+            <text x="795" y="406" fill="#0369a1" font-size="9.6">reset_origin (0..1)</text>
+
+            <path d="M 712 340 L 712 502 L 660 502" fill="none" stroke="#0284c7" stroke-width="1.2" stroke-dasharray="3 3"/>
+            <path d="M 756 340 L 892 340 L 892 502 L 914 502" fill="none" stroke="#0284c7" stroke-width="1.2" stroke-dasharray="3 3"/>
+
+            <!-- Zone 5 Master internal lines -->
+            <line x1="200" y1="538" x2="246" y2="538" stroke="#059669" stroke-width="1.5"/>
+            <text x="223" y="531" text-anchor="middle" fill="#065f46" font-size="9.8">1:1..*</text>
+
+            <line x1="406" y1="538" x2="446" y2="538" stroke="#059669" stroke-width="1.5"/>
+            <text x="426" y="531" text-anchor="middle" fill="#065f46" font-size="9.8">1:1..*</text>
+
+            <line x1="200" y1="616" x2="246" y2="616" stroke="#059669" stroke-width="1.5"/>
+            <text x="223" y="609" text-anchor="middle" fill="#065f46" font-size="9.8">1:1..*</text>
+
+            <line x1="326" y1="560" x2="326" y2="594" stroke="#059669" stroke-width="1.4"/>
+            <text x="366" y="582" fill="#065f46" font-size="9.6">belongs_to (0..1)</text>
+
+            <line x1="200" y1="696" x2="246" y2="696" stroke="#059669" stroke-width="1.5"/>
+            <text x="223" y="689" text-anchor="middle" fill="#065f46" font-size="9.8">1:1..*</text>
+
+            <!-- Cross-Zone FK notes from Zone 5 -->
+            <text x="454" y="618" fill="#065f46" font-size="10.5" font-weight="600">FK 参照先 (不変バージョン):</text>
+            <text x="454" y="637" fill="#047857" font-size="10">• PARTY_VERSION →</text>
+            <text x="462" y="652" fill="#047857" font-size="9.8">APPROVAL / PARTY_ROLE / TRANSFER</text>
+            <text x="454" y="672" fill="#047857" font-size="10">• ACCOUNT_VERSION →</text>
+            <text x="462" y="687" fill="#047857" font-size="9.8">TRADE_TRANSFER (決済口座)</text>
+            <text x="454" y="707" fill="#047857" font-size="10">• LEGAL_AGREEMENT_VERSION →</text>
+            <text x="462" y="722" fill="#047857" font-size="9.8">TRADE_LEGAL_AGREEMENT</text>
+
+            <!-- Entities: Zone 1 -->
+            <rect x="45" y="56" width="210" height="50" rx="7" fill="#ffffff" stroke="#1d4ed8" stroke-width="2"/>
+            <text x="150" y="78" text-anchor="middle" fill="#1e3a8a" font-size="12.5" font-weight="700">WORKFLOW_STEP</text>
+            <text x="150" y="96" text-anchor="middle" fill="#475569" font-size="10.2">action / step_category / global_key</text>
+
+            <rect x="368" y="52" width="224" height="44" rx="7" fill="#ffffff" stroke="#3b82f6" stroke-width="1.4"/>
+            <text x="480" y="79" text-anchor="middle" fill="#1e293b" font-size="11.5" font-weight="700">WORKFLOW_STEP_IDENTIFIER</text>
+
+            <rect x="368" y="108" width="224" height="44" rx="7" fill="#ffffff" stroke="#3b82f6" stroke-width="1.4"/>
+            <text x="480" y="135" text-anchor="middle" fill="#1e293b" font-size="11.5" font-weight="700">WORKFLOW_STEP_TIMESTAMP</text>
+
+            <rect x="368" y="164" width="224" height="44" rx="7" fill="#ffffff" stroke="#3b82f6" stroke-width="1.4"/>
+            <text x="480" y="191" text-anchor="middle" fill="#1e293b" font-size="11.5" font-weight="700">WORKFLOW_STEP_APPROVAL</text>
+
+            <rect x="92" y="178" width="164" height="46" rx="7" fill="#ffffff" stroke="#1d4ed8" stroke-width="1.8"/>
+            <text x="174" y="199" text-anchor="middle" fill="#1e3a8a" font-size="12" font-weight="700">BUSINESS_EVENT</text>
+            <text x="174" y="215" text-anchor="middle" fill="#475569" font-size="10">event_date / intent / qualifier</text>
+
+            <rect x="92" y="274" width="186" height="48" rx="7" fill="#ffffff" stroke="#1d4ed8" stroke-width="1.8"/>
+            <text x="185" y="295" text-anchor="middle" fill="#1e3a8a" font-size="12" font-weight="700">TRADE_STATE</text>
+            <text x="185" y="312" text-anchor="middle" fill="#475569" font-size="10">不変状態 / position / closed</text>
+
+            <rect x="368" y="274" width="224" height="48" rx="7" fill="#dbeafe" stroke="#1d4ed8" stroke-width="1.8"/>
+            <text x="480" y="295" text-anchor="middle" fill="#1e3a8a" font-size="11.8" font-weight="700">TRADE_STATE_TRANSITION</text>
+            <text x="480" y="312" text-anchor="middle" fill="#1e40af" font-size="10">before_id → event → after_id (DAG)</text>
+
+            <rect x="106" y="374" width="206" height="46" rx="7" fill="#ffffff" stroke="#2563eb" stroke-width="1.5"/>
+            <text x="209" y="401" text-anchor="middle" fill="#1e3a8a" font-size="11.3" font-weight="700">POSITION_BUSINESS_EVENT</text>
+
+            <rect x="368" y="374" width="210" height="46" rx="7" fill="#ffffff" stroke="#2563eb" stroke-width="1.5"/>
+            <text x="473" y="401" text-anchor="middle" fill="#1e3a8a" font-size="11.5" font-weight="700">POSITION_STATE</text>
+
+            <!-- Entities: Zone 2 -->
+            <rect x="656" y="68" width="202" height="48" rx="7" fill="#ffffff" stroke="#ca8a04" stroke-width="2"/>
+            <text x="757" y="89" text-anchor="middle" fill="#713f12" font-size="12" font-weight="700">CURRENT_TRADE_STATE</text>
+            <text x="757" y="106" text-anchor="middle" fill="#854d0e" font-size="10">最新取引 Projection (Read Model)</text>
+
+            <rect x="906" y="68" width="222" height="44" rx="7" fill="#ffffff" stroke="#eab308" stroke-width="1.5"/>
+            <text x="1017" y="94" text-anchor="middle" fill="#1e293b" font-size="11.8" font-weight="700">TRADE_IDENTIFIER</text>
+
+            <rect x="906" y="136" width="222" height="44" rx="7" fill="#ffffff" stroke="#eab308" stroke-width="1.5"/>
+            <text x="1017" y="162" text-anchor="middle" fill="#1e293b" font-size="11.8" font-weight="700">TRADE_PARTY_ROLE</text>
+
+            <rect x="906" y="194" width="222" height="44" rx="7" fill="#ffffff" stroke="#eab308" stroke-width="1.5"/>
+            <text x="1017" y="220" text-anchor="middle" fill="#1e293b" font-size="11.8" font-weight="700">TRADE_LEGAL_AGREEMENT</text>
+
+            <rect x="656" y="214" width="202" height="46" rx="7" fill="#ffffff" stroke="#ca8a04" stroke-width="1.8"/>
+            <text x="757" y="241" text-anchor="middle" fill="#713f12" font-size="11.5" font-weight="700">CURRENT_POSITION_STATE</text>
+
+            <!-- Entities: Zone 3 -->
+            <rect x="656" y="340" width="190" height="46" rx="7" fill="#ffffff" stroke="#0284c7" stroke-width="1.6"/>
+            <text x="751" y="361" text-anchor="middle" fill="#0c4a6e" font-size="12" font-weight="700">TRADE_RESET</text>
+            <text x="751" y="377" text-anchor="middle" fill="#0369a1" font-size="10">reset_date / reset_value</text>
+
+            <rect x="914" y="340" width="214" height="46" rx="7" fill="#ffffff" stroke="#0284c7" stroke-width="1.5"/>
+            <text x="1021" y="367" text-anchor="middle" fill="#0c4a6e" font-size="11.8" font-weight="700">MARKET_OBSERVATION</text>
+
+            <rect x="656" y="416" width="226" height="48" rx="7" fill="#ffffff" stroke="#0284c7" stroke-width="1.8"/>
+            <text x="769" y="437" text-anchor="middle" fill="#0c4a6e" font-size="12" font-weight="700">TRADE_TRANSFER</text>
+            <text x="769" y="454" text-anchor="middle" fill="#0369a1" font-size="10">settlement_date / status / amount</text>
+
+            <rect x="656" y="482" width="226" height="44" rx="7" fill="#ffffff" stroke="#0284c7" stroke-width="1.5"/>
+            <text x="769" y="508" text-anchor="middle" fill="#0c4a6e" font-size="11.5" font-weight="700">TRADE_OBSERVATION_EVENT</text>
+
+            <rect x="914" y="482" width="214" height="44" rx="7" fill="#ffffff" stroke="#0284c7" stroke-width="1.5"/>
+            <text x="1021" y="508" text-anchor="middle" fill="#0c4a6e" font-size="11.8" font-weight="700">TRADE_VALUATION</text>
+
+            <!-- Entities: Zone 5 -->
+            <rect x="30" y="516" width="170" height="44" rx="7" fill="#ffffff" stroke="#059669" stroke-width="1.5"/>
+            <text x="115" y="542" text-anchor="middle" fill="#064e3b" font-size="11.5" font-weight="700">PARTY_MASTER</text>
+
+            <rect x="246" y="516" width="160" height="44" rx="7" fill="#d1fae5" stroke="#059669" stroke-width="1.8"/>
+            <text x="326" y="542" text-anchor="middle" fill="#064e3b" font-size="11.5" font-weight="700">PARTY_VERSION</text>
+
+            <rect x="446" y="516" width="150" height="44" rx="7" fill="#ffffff" stroke="#059669" stroke-width="1.4"/>
+            <text x="521" y="542" text-anchor="middle" fill="#064e3b" font-size="11.2" font-weight="700">PARTY_IDENTIFIER</text>
+
+            <rect x="30" y="594" width="170" height="44" rx="7" fill="#ffffff" stroke="#059669" stroke-width="1.5"/>
+            <text x="115" y="620" text-anchor="middle" fill="#064e3b" font-size="11.5" font-weight="700">ACCOUNT_MASTER</text>
+
+            <rect x="246" y="594" width="160" height="44" rx="7" fill="#d1fae5" stroke="#059669" stroke-width="1.8"/>
+            <text x="326" y="620" text-anchor="middle" fill="#064e3b" font-size="11.5" font-weight="700">ACCOUNT_VERSION</text>
+
+            <rect x="30" y="674" width="170" height="46" rx="7" fill="#ffffff" stroke="#059669" stroke-width="1.5"/>
+            <text x="115" y="695" text-anchor="middle" fill="#064e3b" font-size="10.8" font-weight="700">LEGAL_AGREEMENT</text>
+            <text x="115" y="710" text-anchor="middle" fill="#064e3b" font-size="10.8" font-weight="700">_MASTER</text>
+
+            <rect x="246" y="674" width="160" height="46" rx="7" fill="#d1fae5" stroke="#059669" stroke-width="1.8"/>
+            <text x="326" y="695" text-anchor="middle" fill="#064e3b" font-size="10.8" font-weight="700">LEGAL_AGREEMENT</text>
+            <text x="326" y="710" text-anchor="middle" fill="#064e3b" font-size="10.8" font-weight="700">_VERSION</text>
+          </svg>
+          <div class="diagram-caption">図 7-1：イベントストア・状態遷移 DAG・最新投影・履歴・バージョン付きマスタの概念 ER 図</div>
+        </div>
+
+        <h4>図 7-2：商品定義・ロット・OTC FX サブタイプ拡張関連図</h4>
+        <div class="diagram-card">
+          <svg viewBox="0 0 1000 410" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="商品定義・ロット・OTC FX サブタイプ拡張 ER 図">
+            <!-- Background Grouping for FX Subtypes -->
+            <rect x="520" y="176" width="464" height="218" rx="12" fill="#f5f3ff" stroke="#c4b5fd" stroke-width="1.5"/>
+            <text x="538" y="200" fill="#5b21b6" font-size="12" font-weight="700">OTC FX 特化サブタイプ拡張（Class Table Inheritance）</text>
+
+            <!-- Connectors -->
+            <!-- TRADE_STATE -> TRADE_LOT -> TRADE_PRICE_QUANTITY -->
+            <line x1="125" y1="88" x2="125" y2="162" stroke="#475569" stroke-width="1.6"/>
+            <text x="176" y="130" fill="#475569" font-size="10.8">has_lots (1 : 1..*)</text>
+
+            <line x1="125" y1="218" x2="125" y2="292" stroke="#475569" stroke-width="1.6"/>
+            <text x="200" y="260" fill="#475569" font-size="10.8">has_price_quantity (1 : 1..*)</text>
+
+            <!-- TRADE_STATE -> PRODUCT_DEFINITION -->
+            <line x1="224" y1="58" x2="344" y2="58" stroke="#1d4ed8" stroke-width="1.8"/>
+            <text x="284" y="48" text-anchor="middle" fill="#1e40af" font-size="10.8">uses_product</text>
+            <text x="284" y="74" text-anchor="middle" fill="#1e40af" font-size="10.5">0..* : 1</text>
+
+            <!-- PRODUCT_DEFINITION -> PRODUCT_TAXONOMY -->
+            <line x1="566" y1="58" x2="684" y2="58" stroke="#475569" stroke-width="1.6"/>
+            <text x="625" y="48" text-anchor="middle" fill="#475569" font-size="10.8">classified_by</text>
+            <text x="625" y="74" text-anchor="middle" fill="#475569" font-size="10.5">1 : 0..*</text>
+
+            <!-- PRODUCT_DEFINITION -> PRODUCT_PAYOUT -->
+            <line x1="455" y1="90" x2="455" y2="162" stroke="#7c3aed" stroke-width="1.8"/>
+            <text x="516" y="130" fill="#5b21b6" font-size="10.8">has_payout_legs (1 : 1..*)</text>
+
+            <!-- PRODUCT_PAYOUT -> FX_SETTLEMENT_PAYOUT_DETAIL -->
+            <path d="M 455 224 L 455 246 L 548 246" fill="none" stroke="#7c3aed" stroke-width="1.7"/>
+            <text x="502" y="239" text-anchor="middle" fill="#5b21b6" font-size="10.2">1 : 0..1</text>
+
+            <!-- PRODUCT_PAYOUT -> FX_OPTION_PAYOUT_DETAIL -->
+            <path d="M 455 246 L 455 336 L 548 336" fill="none" stroke="#7c3aed" stroke-width="1.7"/>
+            <text x="502" y="328" text-anchor="middle" fill="#5b21b6" font-size="10.2">1 : 0..1</text>
+
+            <!-- FX_OPTION_PAYOUT_DETAIL -> FX_OPTION_BARRIER -->
+            <line x1="766" y1="336" x2="808" y2="336" stroke="#7c3aed" stroke-width="1.7"/>
+            <text x="787" y="326" text-anchor="middle" fill="#5b21b6" font-size="10">1:0..*</text>
+
+            <!-- Entities -->
+            <rect x="26" y="28" width="198" height="60" rx="8" fill="#dbeafe" stroke="#1d4ed8" stroke-width="2"/>
+            <text x="125" y="54" text-anchor="middle" fill="#1e3a8a" font-size="13" font-weight="700">TRADE_STATE</text>
+            <text x="125" y="73" text-anchor="middle" fill="#1e40af" font-size="10.5">trade_state_id / product_id</text>
+
+            <rect x="26" y="162" width="198" height="56" rx="8" fill="#e0f2fe" stroke="#0284c7" stroke-width="1.6"/>
+            <text x="125" y="186" text-anchor="middle" fill="#0c4a6e" font-size="12.5" font-weight="700">TRADE_LOT</text>
+            <text x="125" y="204" text-anchor="middle" fill="#075985" font-size="10.3">lot_identifier</text>
+
+            <rect x="26" y="292" width="234" height="68" rx="8" fill="#e0f2fe" stroke="#0284c7" stroke-width="1.6"/>
+            <text x="143" y="317" text-anchor="middle" fill="#0c4a6e" font-size="12.2" font-weight="700">TRADE_PRICE_QUANTITY</text>
+            <text x="143" y="335" text-anchor="middle" fill="#075985" font-size="10.2">quantity / currency / price_type</text>
+            <text x="143" y="350" text-anchor="middle" fill="#075985" font-size="10.2">spot_rate_base / forward_points</text>
+
+            <rect x="344" y="26" width="222" height="64" rx="8" fill="#ffffff" stroke="#1d4ed8" stroke-width="2"/>
+            <text x="455" y="51" text-anchor="middle" fill="#1e3a8a" font-size="12.5" font-weight="700">PRODUCT_DEFINITION</text>
+            <text x="455" y="69" text-anchor="middle" fill="#475569" font-size="10.2">asset_class / qualifier / eff_date / term_date</text>
+
+            <rect x="684" y="30" width="236" height="56" rx="8" fill="#ffffff" stroke="#475569" stroke-width="1.5"/>
+            <text x="802" y="54" text-anchor="middle" fill="#1e293b" font-size="12.2" font-weight="700">PRODUCT_TAXONOMY</text>
+            <text x="802" y="72" text-anchor="middle" fill="#475569" font-size="10.2">source / value / primaryAssetClass</text>
+
+            <rect x="310" y="162" width="194" height="62" rx="8" fill="#ffffff" stroke="#7c3aed" stroke-width="2"/>
+            <text x="407" y="187" text-anchor="middle" fill="#4c1d95" font-size="12.5" font-weight="700">PRODUCT_PAYOUT</text>
+            <text x="407" y="205" text-anchor="middle" fill="#6b21a8" font-size="10.2">基底（全アセット共通）</text>
+
+            <rect x="548" y="216" width="414" height="62" rx="8" fill="#ffffff" stroke="#7c3aed" stroke-width="1.7"/>
+            <text x="755" y="239" text-anchor="middle" fill="#4c1d95" font-size="12" font-weight="700">FX_SETTLEMENT_PAYOUT_DETAIL</text>
+            <text x="755" y="257" text-anchor="middle" fill="#5b21b6" font-size="10.2">FX Fwd / Swap / NDF / NDS：currency1/2, value_date, fx_fixing_date, settlement_ccy</text>
+
+            <rect x="548" y="302" width="218" height="72" rx="8" fill="#ffffff" stroke="#7c3aed" stroke-width="1.7"/>
+            <text x="657" y="325" text-anchor="middle" fill="#4c1d95" font-size="11.6" font-weight="700">FX_OPTION_PAYOUT_DETAIL</text>
+            <text x="657" y="343" text-anchor="middle" fill="#5b21b6" font-size="9.9">option_type / style / expiration_date</text>
+            <text x="657" y="359" text-anchor="middle" fill="#5b21b6" font-size="9.9">strike_rate / fx_fixing_date (NDO)</text>
+
+            <rect x="808" y="304" width="154" height="68" rx="8" fill="#ede9fe" stroke="#7c3aed" stroke-width="1.6"/>
+            <text x="885" y="328" text-anchor="middle" fill="#4c1d95" font-size="11.3" font-weight="700">FX_OPTION_BARRIER</text>
+            <text x="885" y="346" text-anchor="middle" fill="#5b21b6" font-size="9.8">KnockIn / KnockOut</text>
+            <text x="885" y="361" text-anchor="middle" fill="#5b21b6" font-size="9.8">trigger_level / rebate</text>
+          </svg>
+          <div class="diagram-caption">図 7-2：商品定義・ロット・OTC FX サブタイプ拡張の概念 ER 図（他アセット拡張時は <code>PRODUCT_PAYOUT</code> 配下にサブタイプを追加）</div>
+        </div>
+
+        <h3 id="sec-7-3">7.3 代表的ライフサイクルシナリオにおけるレコード遷移例（USD/KRW NDF の例）</h3>
+        <ol>
+          <li><strong>Step 1：新規約定（<code>Execution</code>、<code>action = New</code>）</strong>
+            <ul>
+              <li><code>workflow_step</code>、<code>business_event</code>、<code>trade_state</code>（TS1）、<code>trade_state_transition</code>（<code>before = NULL</code> → <code>after = TS1</code>）を追記。</li>
+              <li><code>product_definition</code>、<code>product_payout</code>、<code>fx_settlement_payout_detail</code>（<code>currency1 = USD</code>, <code>currency2 = KRW</code>, <code>is_non_deliverable = TRUE</code>, <code>settlement_currency = USD</code>, <code>fx_fixing_date = 2026-12-15</code>, <code>value_date = 2026-12-17</code>）、<code>trade_lot</code>、<code>trade_price_quantity</code> を登録。</li>
+              <li><code>current_trade_state</code> に論理取引行（<code>latest_trade_state_id = TS1</code>, <code>position_state = Executed</code>）を投影。</li>
+            </ul>
+          </li>
+          <li><strong>Step 2：契約形成の提案と承認確定（<code>Proposed</code> → <code>Accepted</code>）</strong>
+            <ul>
+              <li>提案：<code>workflow_step</code>（WS2, <code>step_category = Proposed</code>, <code>previous_workflow_step_id = WS1</code>）および <code>workflow_step_approval</code> を追記。この時点では <code>current_trade_state</code> は変更しない。</li>
+              <li>承認確定：<code>workflow_step</code>（WS3, <code>step_category = Accepted</code>, <code>previous_workflow_step_id = WS2</code>）、<code>business_event</code>、<code>trade_state</code>（TS2, <code>position_state = Formed</code>）、<code>trade_state_transition</code>（<code>TS1</code> → <code>TS2</code>）、<code>trade_legal_agreement</code>（ISDA Master の <code>legal_agreement_version_id</code> 参照）を追記し、<code>current_trade_state</code> を TS2 へ更新。</li>
+            </ul>
+          </li>
+          <li><strong>Step 3：フィキシング到来とリセット記録（<code>Reset</code>）</strong>
+            <ul>
+              <li>日次バッチが <code>current_trade_state</code> ⋈ <code>fx_settlement_payout_detail</code> から <code>fx_fixing_date = 2026-12-15</code> かつ未リセットの取引を抽出。</li>
+              <li>市場レート確定後、<code>workflow_step</code>（WS4）、<code>trade_state</code>（TS3）、<code>trade_state_transition</code>（<code>TS2</code> → <code>TS3</code>）、<code>market_observation</code>、<code>trade_reset</code> を追記し、<code>current_trade_state</code> を TS3 へ更新。</li>
+            </ul>
+          </li>
+          <li><strong>Step 4：差金決済キャッシュフロー生成・決済完了（<code>Transfer</code>）</strong>
+            <ul>
+              <li><code>workflow_step</code>（WS5）、<code>trade_state</code>（TS4）、<code>trade_transfer</code>（<code>transfer_status = Pending</code>, <code>settlement_date = 2026-12-17</code>, <code>reset_origin_id</code> 参照）を追記。決済完了イベント（WS6）で <code>Settled</code> 状態の遷移を記録し、満期クローズイベントで <code>position_state = Closed</code> / <code>closed_state = Matured</code> とする。</li>
+            </ul>
+          </li>
+          <li><strong>Step 5：フィキシングレートの訂正（<code>action = Correct</code>）</strong>
+            <ul>
+              <li>WS4 を <code>previous_workflow_step_id</code> に指す新規ステップ WS7（<code>action = Correct</code>, <code>eventIdentifier.version = 2</code>）を追記。WS4 の物理レコードは不変のまま保持しつつ、有効チェーン管理により WS4 を論理無効化（<code>superseded</code>）し、訂正後の <code>trade_reset</code>・最新投影へ反映する。</li>
+            </ul>
+          </li>
+        </ol>
+      </section>
+
+      <!-- Section 8 -->
+      <section id="sec-8">
+        <h2>8. データ整合性・バリデーション責務境界および非機能要件</h2>
+
+        <h3 id="sec-8-1">8.1 トランザクション整合性要件</h3>
+        <ul>
+          <li><strong>単一 RDB トランザクションによる ACID 強整合</strong>:
+            <ul>
+              <li>1 件の <code>WorkflowStep</code> 永続化処理において、①イベントストア層（<code>workflow_step</code> / <code>business_event</code> / <code>trade_state</code> / <code>trade_state_transition</code>）、②切り出し子テーブル（識別子・履歴・商品/FX 拡張）、③最新状態投影層（<code>current_trade_state</code> / <code>current_position_state</code>）の書き込みを <strong>同一の PostgreSQL トランザクション内で原子的に実行</strong> する。</li>
+              <li>これにより、書き込み直後の画面照会や定期バッチ実行において結果整合性による参照遅延・不整合を発生させない。</li>
+            </ul>
+          </li>
+          <li><strong>冪等性・楽観排他制御</strong>:
+            <ul>
+              <li>同一 <code>WorkflowStep</code> の二重取り込みを防止するため、<code>workflow_step.global_key</code> および <code>MessageInformation.messageId</code>（指定時）にユニーク制約を設ける。</li>
+              <li>同一取引に対する同時並行のライフサイクル遷移競合を防ぐため、<code>current_trade_state</code> に対して <code>latest_trade_state_id</code>（または楽観ロック用バージョン番号）を用いた排他検証を行う。</li>
+            </ul>
+          </li>
+        </ul>
+
+        <h3 id="sec-8-2">8.2 バリデーション責務境界（アプリ層 vs RDB 層）</h3>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th style="width: 24%;">検証カテゴリ</th>
+                <th style="width: 38%;">アプリ層（CDM エンジン等）の責務</th>
+                <th style="width: 38%;">RDB 層（PostgreSQL 制約）の責務</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>CDM 構文・データルール（<code>condition</code>）</strong></td>
+                <td>Rosetta DSL の全 <code>condition</code>（例：<code>WorkflowStepStatus</code>、<code>PriceQuantityTriangulation</code>、<code>NewTrade</code>、<code>ExclusiveSplitPrimitive</code> 等）の検証、および商品・イベント適格性判定（<code>Qualify_*</code>）の実行。</td>
+                <td>実施しない（複雑な条件分岐の二重実装による乖離を防ぐ）。</td>
+              </tr>
+              <tr>
+                <td><strong><code>globalKey</code> 算出・参照整合性（<code>externalKey</code> / <code>address</code>）</strong></td>
+                <td>CDM 標準の <code>GlobalKeyHashCalculator</code> によるハッシュ計算およびドキュメント内参照解決。</td>
+                <td>算出済み <code>global_key</code> の格納・一意制約（<code>UNIQUE</code>）およびテーブル間外部キー制約（<code>FOREIGN KEY</code>）を担保。</td>
+              </tr>
+              <tr>
+                <td><strong>型・ドメイン・必須制約</strong></td>
+                <td>業務入力時の事前チェック。</td>
+                <td><code>NOT NULL</code>、基本データ型（<code>DATE</code> / <code>NUMERIC</code> / <code>TIMESTAMPTZ</code>）、列挙値チェック（<code>CHECK</code> またはコード参照）、複合ユニーク制約（識別子・マスタ版など）を強制。</td>
+              </tr>
+              <tr>
+                <td><strong>イミュータビリティ保護</strong></td>
+                <td>追記専用 API の提供（過去ステップ更新 API を公開しない）。</td>
+                <td>運用上、イベントストア層・バージョン付きマスタ層に対する <code>UPDATE</code> / <code>DELETE</code> を DB 権限またはルール設計で禁止する。</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h3 id="sec-8-3">8.3 非機能要件</h3>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th style="width: 24%;">カテゴリ</th>
+                <th style="width: 76%;">要件内容</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>規模前提・性能</strong></td>
+                <td>小〜中規模（有効取引数千〜数万件、日次イベント数千件）を前提とする。識別子検索（UC-QR-04）および単一取引の最新状態取得は数十ミリ秒以内、日次定期イベント抽出バッチ（UC-PE-01〜04）は数秒以内で完了するインデックス設計（B-Tree 複合インデックス中心）とする。</td>
+              </tr>
+              <tr>
+                <td><strong>保守性・シンプルさ</strong></td>
+                <td>複雑なトリガ・ストアドプロシージャや多重の JSONB 式インデックスは避け、標準的な SQL と明示的な物理テーブル構造で運用・デバッグできることを優先する。</td>
+              </tr>
+              <tr>
+                <td><strong>監査・証跡・長期保持</strong></td>
+                <td>イミュータブルなイベントストアとバージョン付きマスタにより、すべての取引状態遷移と訂正・取消の経緯を改ざんなく追跡可能とする。将来的なデータ増大時は <code>workflow_step</code> の <code>recorded_at</code> / <code>event_date</code> 単位でのアーカイブ・パーティショニング拡張が可能なキー設計とする。</td>
+              </tr>
+              <tr>
+                <td><strong>CDM v6.x スキーマ進化・再射影</strong></td>
+                <td>CDM v6 系のマイナー/パッチ改訂に備え、<code>workflow_step</code> に CDM バージョン識別子（例：<code>cdm_version</code>）を保持する。切り出しテーブルや最新状態投影の仕様変更時は、イミュータブルなイベントストア（JSONB 原本）を起点として再射影（Replay / Re-projection）できる構成を維持する。</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- Section 9 -->
+      <section id="sec-9">
+        <h2>9. 次工程（論理・物理 DB 設計）に向けた検討事項</h2>
+        <p>本要求定義書をベースとして次工程の論理・物理 DB 設計へ進むにあたり、以下の詳細論点を検証・確定する。</p>
+        <ol>
+          <li><strong>JSONB 原本格納粒度（方式2 vs 方式3）の最終決定と PoC 検証</strong>:
+            <ul>
+              <li>実際の OTC FX <code>WorkflowStep</code> JSON サンプル（単一 FX Forward、FX Swap、NDF リセット/決済、多数取引の Allocation 等）を用いて、方式2（全体格納）と方式3（分割格納＋再構成）のストレージ容量・読込レイテンシ・CDM Java SDK による <code>globalKey</code> Round-trip 一致性を検証し、最終方式を確定する。</li>
+            </ul>
+          </li>
+          <li><strong>主キー設計（サロゲートキー UUID/BIGINT vs CDM <code>globalKey</code>）</strong>:
+            <ul>
+              <li><code>globalKey</code> はコンテンツハッシュであり長大かつ外部データ不備時に欠損・再計算リスクがあるため、RDB の主キーおよび外部キーには内部サロゲートキー（<code>BIGINT</code> / <code>UUIDv7</code>）を用い、<code>global_key</code> は <code>UNIQUE</code> 索引付きの業務キー列として併設する方針の詳細化。</li>
+            </ul>
+          </li>
+          <li><strong>FX Swap（2 レグ）および部分ロール・一部解約のモデリング細部</strong>:
+            <ul>
+              <li><code>SettlementPayout</code> が 2 レグ（Near / Far）存在する FX Swap / NDS において、Near レグ決済完了後も Far レグが有効である状態（<code>TradeLot</code> / <code>Payout</code> 単位の残存状態管理）を <code>fx_settlement_payout_detail</code> および <code>trade_transfer</code> でどう追跡するかの詳細設計。</li>
+            </ul>
+          </li>
+          <li><strong>訂正・取消（<code>Correct</code> / <code>Cancel</code>）のカスケード影響範囲ルール</strong>:
+            <ul>
+              <li>後続イベント（例：Reset 後の Transfer）が既に存在する状態で過去イベントが <code>Cancel</code> / <code>Correct</code> された場合の、有効チェーン再計算および業務エラー判定ルールの定義。</li>
+            </ul>
+          </li>
+          <li><strong>バージョン付きマスタの自動取り込み（Upsert / Diff 判定）仕様</strong>:
+            <ul>
+              <li>受信した <code>WorkflowStep</code> 内の <code>Party</code> / <code>Account</code> / <code>LegalAgreement</code> と既存マスタの <code>globalKey</code>（または主要属性）を比較し、未変更なら既存 <code>*_version_id</code> を再利用、変更ありなら新規バージョン行を自動発行する取り込みロジックの詳細設計。</li>
+            </ul>
+          </li>
+        </ol>
+      </section>
+
+      <!-- Appendix -->
+      <section id="sec-appendix">
+        <h2>付録：要件検討ヒアリング（<code>/grill-me</code>）決定ログ一覧</h2>
+        <p>本要求定義書の前提・比較方針・設計判断の根拠として、全 4 フェーズ・全 16 問のヒアリングにおける質問内容、提示した全対応案（推奨案を含む）、および最終選択内容を以下に記録する。</p>
+
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th style="width: 6%;">No.</th>
+                <th style="width: 14%;">フェーズ</th>
+                <th style="width: 20%;">質問内容</th>
+                <th style="width: 38%;">提示したすべての対応案</th>
+                <th style="width: 22%;">最終選択</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>1-1</strong></td>
+                <td>フェーズ1：<br>前提・スコープ・業務ユースケース</td>
+                <td>想定している RDB 製品・JSON サポートの前提はどれですか？</td>
+                <td>
+                  1. <span class="badge badge-rec">推奨</span> PostgreSQL（<code>JSONB</code> + GINインデックス / 生成列・部分インデックス活用を前提）<br>
+                  2. Oracle Database（JSON型 / JSON Search Index / Relational Duality 活用を前提）<br>
+                  3. 特定製品に依存しない汎用 RDB（標準 SQL + JSON文字列格納を前提、JSON検索機能には依存しない）<br>
+                  4. MySQL / SQL Server 等その他の RDB（JSON型＋生成列による部分インデックスを前提）
+                </td>
+                <td><strong>案1（推奨案）</strong><br>PostgreSQL（<code>JSONB</code> + GINインデックス / 生成列・部分インデックス活用を前提）</td>
+              </tr>
+              <tr>
+                <td><strong>1-2</strong></td>
+                <td>フェーズ1</td>
+                <td>永続化・管理対象とする <code>WorkflowStep</code> の範囲はどこまでですか？（複数選択）</td>
+                <td>
+                  1. <span class="badge badge-rec">推奨</span> 確定済み取引イベント（<code>WorkflowStep.businessEvent</code> + <code>TradeState</code>）<br>
+                  2. 提案・承認ワークフロー中のイベント（<code>proposedEvent</code> / <code>nextEvent</code> / <code>approval</code> / <code>rejected</code> / <code>workflowState</code>）<br>
+                  3. イベントの訂正・取消（<code>action = Correct / Cancel</code> および <code>previousWorkflowStep</code> による系譜管理）<br>
+                  4. ポジション系イベント（<code>CounterpartyPositionBusinessEvent</code> + <code>CounterpartyPositionState</code>）
+                </td>
+                <td><strong>案1・2・3・4 すべて選択</strong></td>
+              </tr>
+              <tr>
+                <td><strong>1-3</strong></td>
+                <td>フェーズ1</td>
+                <td>対象とする金融商品（Asset Class / Payout）の範囲はどれですか？（複数選択）</td>
+                <td>
+                  1. <span class="badge badge-rec">推奨</span> 金利デリバティブ中心（IRS / FRA / Swaption 等：<code>InterestRatePayout</code> / <code>OptionPayout</code>）<br>
+                  2. マルチアセット OTC デリバティブ全般（金利・FX・クレジット・エクイティ・コモディティ）<br>
+                  3. 証券金融取引（Repo / 証券貸借：<code>AssetPayout</code> / <code>Billing</code> 等）<br>
+                  4. 現物・キャッシュ商品（<code>SettlementPayout</code> 中心）
+                </td>
+                <td><strong>自由記述（その他）</strong><br>「OTCのFXデリバティブをスコープとする。その前提で自然に対応可能な範囲でその他のアセットOTCデリバティブについてもカバーできるとよい。」</td>
+              </tr>
+              <tr>
+                <td><strong>1-4</strong></td>
+                <td>フェーズ1</td>
+                <td>この RDB で効率的に実行したいライフサイクル管理業務・データ操作の主たるユースケースはどれですか？（複数選択）</td>
+                <td>
+                  1. <span class="badge badge-rec">推奨</span> 取引ライフサイクル管理（約定・契約形成・更改・増減額・一部/全部解約・清算・アロケーション等）<br>
+                  2. 定期イベント処理（金利リセット・キャッシュフロー生成/決済状況管理・満期到来処理）<br>
+                  3. ポートフォリオ照会・ポジション集計・リスク/バリュエーション連携（<code>Valuation</code>履歴・エクスポージャー把握）<br>
+                  4. 規制報告・監査・証跡照会（UTI/USI検索、過去時点の状態再現、イベント系譜の追跡）
+                </td>
+                <td><strong>案1（推奨案）・案2</strong><br>取引ライフサイクル管理、定期イベント処理</td>
+              </tr>
+              <tr>
+                <td><strong>2-1</strong></td>
+                <td>フェーズ2：<br>イベントソーシング・系譜・時間軸・正本粒度</td>
+                <td>イベントソーシング指向（Append-Only）を維持しつつ、「現在有効な取引・ポジション状態」をどう管理・検索しますか？</td>
+                <td>
+                  1. <span class="badge badge-rec">推奨</span> CQRS / Projection 併用（Append-Only のイベントストア ＋ 検索・定期バッチ用の最新 <code>TradeState</code> / <code>PositionState</code> 投影テーブルを維持）<br>
+                  2. イミュータブル履歴テーブル中心＋最新フラグ/部分インデックス（<code>is_current</code> 等で最新行を特定し、別テーブルへの投影は最小限に抑える）<br>
+                  3. 純粋なイベントストアのみ（最新状態は PostgreSQL の Materialized View やクエリ時集約で導出）
+                </td>
+                <td><strong>案1（推奨案）</strong><br>CQRS / Projection 併用</td>
+              </tr>
+              <tr>
+                <td><strong>2-2</strong></td>
+                <td>フェーズ2</td>
+                <td>分岐・統合（Allocation / Clearing / Novation / Compression 等）を含む <code>TradeState</code> の多対多遷移（DAG）を RDB 上でどう追跡しますか？</td>
+                <td>
+                  1. <span class="badge badge-rec">推奨</span> 遷移グラフを明示テーブル化（<code>WorkflowStep</code> の前ステップ連鎖とは別に、<code>before TradeState</code> → <code>BusinessEvent</code> → <code>after TradeState</code> の多対多エッジテーブルを持つ）<br>
+                  2. <code>WorkflowStep</code> 連鎖＋論理取引ID（<code>TradeIdentifier</code> / 内部 <code>trade_id</code>）による系列管理とし、分岐・統合のみ親取引参照で繋ぐ<br>
+                  3. 系譜は <code>WorkflowStep.previousWorkflowStep</code> と JSON 内の <code>before</code> 参照（<code>globalKey</code>）に委ね、RDB 上の専用グラフテーブルは持たない
+                </td>
+                <td><strong>自由記述（その他）</strong><br>「要求定義書にはこの３つの対応案を比較提示しつつ、１を推奨案と記載する。」</td>
+              </tr>
+              <tr>
+                <td><strong>2-3</strong></td>
+                <td>フェーズ2</td>
+                <td><code>ActionEnum</code> (<code>New</code> / <code>Correct</code> / <code>Cancel</code>) による訂正・取消と、時間軸（As-Of / 過去時点再現）はどこまで要件に含めますか？</td>
+                <td>
+                  1. <span class="badge badge-rec">推奨</span> 業務日（<code>eventDate</code> / <code>effectiveDate</code>）とシステム記録日時（<code>recorded_at</code>）の二軸（Bi-temporal）を保持し、任意過去時点の状態再現・訂正履歴追跡を可能にする<br>
+                  2. 業務日（<code>eventDate</code> / <code>effectiveDate</code>）軸の時系列検索は必須だが、訂正・取消は「現在有効な最新チェーン」のみ効率よく引ければよい（過去認識時点の再現はイベントログ再生で対応）<br>
+                  3. 最新状態と全イベントの追記ログ保持のみでよく、過去時点（As-Of）での状態再現クエリは要件外とする
+                </td>
+                <td><strong>案2</strong><br>業務日軸の時系列検索は必須だが、訂正・取消は「現在有効な最新チェーン」のみ効率よく引ければよい（過去認識時点の再現はイベントログ再生で対応）</td>
+              </tr>
+              <tr>
+                <td><strong>2-4</strong></td>
+                <td>フェーズ2</td>
+                <td>JSONB 原本の格納粒度と CDM JSON の完全復元（Round-trip：<code>globalKey</code> / <code>externalKey</code> 参照の保持）に対する方針はどれですか？</td>
+                <td>
+                  1. <span class="badge badge-rec">推奨</span> <code>WorkflowStep</code> JSON 全体を原本（Single Source of Truth）として丸ごと保持しつつ、各 <code>TradeState</code> JSON も独立して取得・参照できるよう正規化テーブル側にも部分保持または抽出可能にする<br>
+                  2. <code>WorkflowStep</code> 全体の JSONB を唯一の原本として保持し、<code>TradeState</code> や <code>Party</code> 等の下位 JSON は重複保存せず必要属性のみテーブル列へ抽出する<br>
+                  3. <code>WorkflowStep</code> をそのまま保存せず、Header JSON / <code>BusinessEvent</code> JSON / <code>TradeState</code> JSON 等に分割格納し、読み出し時に CDM オブジェクトへ再構成する
+                </td>
+                <td><strong>自由記述（その他）</strong><br>「要求定義書には2と3についてメリットデメリットを比較検討するかたちで記載する。データ効率からいくと3がよさそうだが？」</td>
+              </tr>
+              <tr>
+                <td><strong>3-1</strong></td>
+                <td>フェーズ3：<br>切り出し基準・CDM 主要型の扱い</td>
+                <td>テーブル切り出し vs JSONB 内包の基本アーキテクチャ方針はどれを採りますか？</td>
+                <td>
+                  1. <span class="badge badge-rec">推奨</span> 3層ハイブリッド方針（①正規化テーブル：配列展開・JOIN・一意性/FK・定期バッチ抽出対象、②物理列/生成列＋B-Tree：1対1の主要フィルタ項目、③JSONB内包＋必要時GIN/式Index：商品固有の深い条件）<br>
+                  2. 明示的スキーマ重視方針（検索・業務ロジックで参照する項目はすべて物理テーブル/物理列へ切り出し、JSONBへの式インデックスやJSONPath検索には原則依存しない）<br>
+                  3. JSONB活用重視方針（テーブル切り出しは <code>WorkflowStep</code> / <code>TradeState</code> / <code>Identifier</code> / <code>Party</code> 等の最小骨格に留め、商品条件や詳細検索は PostgreSQL の JSONB 生成列・GIN・JSONPath を積極活用する）
+                </td>
+                <td><strong>自由記述（その他）</strong><br>「1は技術的に複雑な印象で私の手には負えない印象。2と3を比較検討する記載にしたい。」</td>
+              </tr>
+              <tr>
+                <td><strong>3-2</strong></td>
+                <td>フェーズ3</td>
+                <td><code>TradeState</code> 配下の累積肥大化する履歴リスト（<code>resetHistory</code> / <code>transferHistory</code> / <code>observationHistory</code> / <code>valuationHistory</code>）をどう扱いますか？</td>
+                <td>
+                  1. <span class="badge badge-rec">推奨</span> 履歴要素（<code>Reset</code> / <code>TransferState</code> / <code>ObservationEvent</code> / <code>Valuation</code>）はすべて独立子テーブルに切り出し、定期イベント処理（決済ステータス更新・未フィキシング検出・履歴照会）をリレーショナルに高速実行する<br>
+                  2. <code>TransferState</code>（キャッシュフロー・決済管理）と <code>Reset</code>（フィキシング）のみ独立テーブル化し、<code>ObservationEvent</code> や <code>Valuation</code> は JSONB 内包（または将来拡張）に留める<br>
+                  3. 累積履歴はすべて <code>TradeState</code> JSONB 内にのみ保持し、必要な最新値・ステータスのみ親テーブルのサマリ列に持つ
+                </td>
+                <td><strong>案1（推奨案）</strong><br>履歴要素（<code>Reset</code> / <code>TransferState</code> / <code>ObservationEvent</code> / <code>Valuation</code>）はすべて独立子テーブルに切り出す</td>
+              </tr>
+              <tr>
+                <td><strong>3-3</strong></td>
+                <td>フェーズ3</td>
+                <td>OTC FX デリバティブ中心の商品条件・スケジュール（<code>EconomicTerms</code> / <code>Payout</code> / <code>TradeLot</code> / <code>PriceQuantity</code>）をどの深さまでテーブルに切り出しますか？</td>
+                <td>
+                  1. <span class="badge badge-rec">推奨</span> 共通抽象レイヤー＋イベント予定日テーブル（<code>ProductTaxonomy</code>・契約期間・<code>TradeLot</code>/<code>PriceQuantity</code>の通貨/金額/レートを汎用抽出し、FXのフィキシング日・バリューデート・オプション満期日等は共通の「イベント予定（Schedule/Obligation）」テーブルへ射影する）<br>
+                  2. FX特化サブテーブル併設（共通レイヤーに加え、FX Forward/Swap用の通貨ペア・バリューデート、NDF用のフィキシング日・決済通貨、FX Option用のストライク・満期日・バリア条件等を FX 専用テーブルに切り出す）<br>
+                  3. 最小限の共通ヘッダのみ切り出し（資産クラス・通貨ペア・想定元本・満期日程度に留め、NDFフィキシング日やオプション行使条件・バリア判定は JSONB 読み込み後にアプリ層で評価する）
+                </td>
+                <td><strong>案2</strong><br>FX特化サブテーブル併設</td>
+              </tr>
+              <tr>
+                <td><strong>3-4</strong></td>
+                <td>フェーズ3</td>
+                <td>当事者（<code>Party</code> / <code>PartyIdentifier</code> / <code>Account</code>）や法的契約（<code>LegalAgreement</code>）の参照・マスタ管理方針はどれですか？</td>
+                <td>
+                  1. <span class="badge badge-rec">推奨</span> マスタ併用＋イベント時点スナップショット（<code>Party</code> / <code>Account</code> の論理マスタ参照テーブルを持ち検索・名寄せを高速化しつつ、各 <code>WorkflowStep</code> / <code>Trade</code> 時点の属性はイミュータブルなスナップショットとして JSON 原本に保持する）<br>
+                  2. 完全マスタ正規化（<code>Party</code> / <code>Account</code> / <code>LegalAgreement</code> はマスタテーブルのみに持ち、取引テーブルからは FK 参照のみとする）<br>
+                  3. マスタを持たずイベント完結（<code>Party</code> / <code>Account</code> は取引・イベントごとの子テーブルに都度展開し、LEI 等の識別子文字列で横断検索する）
+                </td>
+                <td><strong>案2</strong><br>完全マスタ正規化</td>
+              </tr>
+              <tr>
+                <td><strong>4-1</strong></td>
+                <td>フェーズ4：<br>マスタ版管理・整合性・非機能・出力仕様</td>
+                <td>完全マスタ正規化（<code>Party</code> / <code>Account</code> / <code>LegalAgreement</code>）において、マスタ改定時と過去イベントの不変性（イミュータビリティ）をどう両立させますか？</td>
+                <td>
+                  1. <span class="badge badge-rec">推奨</span> バージョン付きイミュータブルマスタ（SCD Type 2 / <code>globalKey</code> 単位で改定のたび新バージョン行を追加し、過去 <code>WorkflowStep</code> からの不変参照を維持）<br>
+                  2. 現行マスタ1行を直接上書き更新（常に最新の当事者・契約情報を参照できればよく、過去時点の旧属性や <code>globalKey</code> の完全再計算一致は不要）<br>
+                  3. 現行マスタは直接更新しつつ、<code>WorkflowStep</code> 側の JSON 原本にはイベント発生時点のスナップショットを残す（論理参照は最新マスタ、監査証跡は JSON 原本）
+                </td>
+                <td><strong>案1（推奨案）</strong><br>バージョン付きイミュータブルマスタ（SCD Type 2 / <code>globalKey</code> 単位）</td>
+              </tr>
+              <tr>
+                <td><strong>4-2</strong></td>
+                <td>フェーズ4</td>
+                <td>JSON 原本・切り出しテーブル・最新状態 Projection 間のトランザクション整合性と、CDM バリデーション（<code>condition</code> 評価）の責務境界はどれですか？</td>
+                <td>
+                  1. <span class="badge badge-rec">推奨</span> 同一 RDB トランザクション内で強整合（ACID）に同時書き込み（イベントストア＋切り出し子テーブル＋最新状態 Projection を原子的に更新）。CDM の <code>condition</code> 検証・<code>globalKey</code> 算出はアプリ層（CDM エンジン）の責務とする<br>
+                  2. イベントストアへ先行コミット＋非同期 Projection（Outbox パターン等で結果整合）。書き込みスループットを優先し、検索用テーブルの反映遅延を許容する<br>
+                  3. 同一 RDB トランザクション内で強整合とし、CDM の主要業務ルール（<code>WorkflowStepStatus</code> や状態遷移制約等）も可能な限り RDB の <code>CHECK</code> / <code>UNIQUE</code> / トリガ制約で二重担保する
+                </td>
+                <td><strong>案1（推奨案）</strong><br>同一 RDB トランザクション内で強整合（ACID）に同時書き込み＋CDM 検証・<code>globalKey</code> 算出はアプリ層責務</td>
+              </tr>
+              <tr>
+                <td><strong>4-3</strong></td>
+                <td>フェーズ4</td>
+                <td>要求定義書の前提とする非機能要件（データ規模感・保持期間・スキーマ進化）のレンジはどれですか？</td>
+                <td>
+                  1. <span class="badge badge-rec">推奨</span> 中〜大規模 OTC FX 運用を想定（有効取引数万〜数十万件、日次イベント数万件、法令監査保持 7〜10 年、CDM v6.x マイナー改訂時の後方互換・再射影運用を要件に含める）<br>
+                  2. 小〜中規模・PoC/業務システム初期導入を想定（有効取引数千〜数万件、日次イベント数千件、まずは機能要件と保守性・シンプルさを最優先）<br>
+                  3. 高頻度・大規模グローバル運用を想定（有効取引数百万件、日次イベント数十万〜数百万件、パーティショニング・アーカイブ・読み取りレプリカ前提の性能設計を重視）
+                </td>
+                <td><strong>案2</strong><br>小〜中規模・PoC/業務システム初期導入を想定（機能要件と保守性・シンプルさ優先）</td>
+              </tr>
+              <tr>
+                <td><strong>4-4</strong></td>
+                <td>フェーズ4</td>
+                <td>要求定義書の出力先と含める設計コンテンツの範囲はどれにしますか？</td>
+                <td>
+                  1. <span class="badge badge-rec">推奨</span> 会話のアーティファクト（Markdown）として要求定義書を出力（判断フレームワーク・CDM v6 型分類マトリクス・概念 ER 図 Mermaid・ユースケース別アクセスパターンを含む）<br>
+                  2. 会話のアーティファクトに加え、ワークスペース内の管理ディレクトリ配下にもドキュメントとして保存・インデックス登録する<br>
+                  3. まずは要求定義書の章立て案（骨子）だけを提示してもらい、確認後に本文を執筆する
+                </td>
+                <td><strong>案1（推奨案）</strong><br>会話のアーティファクト（Markdown）として要求定義書を出力</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </article>
+  </main>
+</div>
+
+<script>
+  (function () {
+    const links = Array.from(document.querySelectorAll('.toc a'));
+    const targets = links
+      .map((a) => document.querySelector(a.getAttribute('href')))
+      .filter(Boolean);
+
+    if (!('IntersectionObserver' in window) || targets.length === 0) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            links.forEach((l) => l.classList.remove('active'));
+            const active = links.find(
+              (l) => l.getAttribute('href') === '#' + entry.target.id
+            );
+            if (active) active.classList.add('active');
+          }
+        });
+      },
+      { rootMargin: '-12% 0px -75% 0px', threshold: 0 }
+    );
+
+    targets.forEach((el) => observer.observe(el));
+  })();
+</script>
+</body>
+</html>
